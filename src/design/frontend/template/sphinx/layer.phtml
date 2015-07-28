@@ -1,0 +1,59 @@
+<?php /* @var $this EcomDev_Sphinx_Block_Layer */ ?>
+<?php if ($this->getFacets()): ?>
+<div class="block block-layered-nav">
+    <div class="block-title">
+        <strong><span><?php echo $this->__('Shop By') ?></span></strong>
+    </div>
+    <div class="block-content toggle-content">
+        <p class="block-subtitle block-subtitle--filter"><?php echo $this->__('Filter') ?></p>
+        <dl id="narrow-by-list">
+        <?php foreach ($this->getFacets() as $_facet): ?>
+            <?php $_render = $this->getRenderer($_facet); ?>
+            <?php if ($_render->isVisible($_facet)): ?>
+            <?php echo $_render->render($_facet); ?>
+            <?php endif; ?>
+        <?php endforeach; ?>
+        </dl>
+        <script type="text/javascript">decorateDataList('narrow-by-list')</script>
+    </div>
+</div>
+<?php endif;?>
+<?php if (!$this->getRequest()->isXmlHttpRequest()): ?>
+<script type="text/javascript">
+    bindAjaxProductUrl = function () { 
+        var links = $$('.product-ajax-link');
+        for (var i = 0, l = links.length; i < l; i ++) {
+            links[i].observe('click', function (evt) {
+                Event.stop(evt);
+                var link = Event.findElement(evt, 'a');
+                updateFromUrl(link.href, false);
+            });
+        }
+    };
+    bindAjaxProductUrl();
+    updateFromUrl = function (href, noClick) {
+        if (window.history && history.pushState && !noClick) {
+            history.pushState({page:href}, null, href);
+        }
+        
+        return new Ajax.Request(href, {method: 'get', onComplete: function (response) {
+            if (response.responseText.isJSON()) {
+                data = response.responseText.evalJSON();
+                $$('div.block-layered-nav').first().replace(data.filters);
+                $$('div.category-products').first().replace(data.products);
+                data.filters.evalScripts();
+                data.products.evalScripts();
+                bindAjaxProductUrl();
+            }
+        }});
+    };
+    Event.observe(window, 'popstate', function(evt){
+        var state = evt.state;
+        if (state !== null) {
+            if (state.page !== undefined && state.page !== '') {
+                updateFromUrl(state.page, true);
+            }
+        }
+    });
+</script>
+<?php endif; ?>

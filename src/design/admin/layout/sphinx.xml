@@ -1,0 +1,78 @@
+<layout>
+    <adminhtml_sphinx_attribute_index>
+        <block name="sphinx.attribute"
+               parent="content"
+               type="ecomdev_sphinx/adminhtml_attribute">
+            <block name="sphinx.attribute.grid" as="grid"
+                   type="ecomdev_sphinx/adminhtml_attribute_grid" />
+        </block>
+    </adminhtml_sphinx_attribute_index>
+
+    <adminhtml_sphinx_attribute_grid>
+        <block name="sphinx.attribute.grid" as="grid"
+               type="ecomdev_sphinx/adminhtml_attribute_grid" output="toHtml" />
+    </adminhtml_sphinx_attribute_grid>
+
+    <adminhtml_sphinx_attribute_new>
+        <block name="sphinx.attribute.edit"
+               parent="content"
+               type="ecomdev_sphinx/adminhtml_attribute_edit">
+            <block name="sphinx.attribute.new.form" as="form"
+                   type="ecomdev_sphinx/adminhtml_attribute_edit_create_form" />
+        </block>
+    </adminhtml_sphinx_attribute_new>
+
+    <adminhtml_sphinx_attribute_edit>
+        <block name="sphinx.attribute.edit"
+               parent="content"
+               type="ecomdev_sphinx/adminhtml_attribute_edit">
+            <block name="sphinx.attribute.edit.form" as="form"
+                   type="ecomdev_sphinx/adminhtml_attribute_edit_form" />
+        </block>
+    </adminhtml_sphinx_attribute_edit>
+
+    <adminhtml_sphinx_scope_index>
+        <block name="sphinx.scope"
+               parent="content"
+               type="ecomdev_sphinx/adminhtml_attribute">
+            <block name="sphinx.scope.grid" as="grid"
+                   type="ecomdev_sphinx/adminhtml_scope_grid" />
+        </block>
+    </adminhtml_sphinx_scope_index>
+
+    <adminhtml_sphinx_scope_grid>
+        <block name="sphinx.scope.grid" as="grid"
+               type="ecomdev_sphinx/adminhtml_scope_grid" output="toHtml" />
+    </adminhtml_sphinx_scope_grid>
+
+    <adminhtml_sphinx_scope_new>
+        <block name="sphinx.scope.edit"
+               parent="content"
+               type="ecomdev_sphinx/adminhtml_scope_edit">
+            <block name="sphinx.scope.new.form" as="form"
+                   type="ecomdev_sphinx/adminhtml_scope_edit_create_form" />
+        </block>
+    </adminhtml_sphinx_scope_new>
+
+    <adminhtml_sphinx_scope_edit>
+        <block name="sphinx.scope.edit"
+               parent="content"
+               type="ecomdev_sphinx/adminhtml_scope_edit">
+            <block name="sphinx.scope.edit.form" as="form"
+                   type="ecomdev_sphinx/adminhtml_scope_edit_form" />
+        </block>
+    </adminhtml_sphinx_scope_edit>
+
+    <adminhtml_sphinx_configure_index>
+        <block name="sphinx.configure"
+               parent="content"
+               type="ecomdev_sphinx/adminhtml_configure">
+            <block name="sphinx.configure.grid" as="grid"
+                   type="ecomdev_sphinx/adminhtml_configure_grid" />
+        </block>
+        <block name="sphinx.configure.action"
+               parent="content"
+               type="ecomdev_sphinx/adminhtml_configure_action"
+               template="ecomdev/sphinx/configure/action.phtml" />
+    </adminhtml_sphinx_configure_index>
+</layout>

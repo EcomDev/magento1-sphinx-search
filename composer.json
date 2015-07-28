@@ -1,0 +1,42 @@
+{
+  "name": "ecomdev/sphinx",
+  "license": "OSL-3.0",
+  "type": "magento-module",
+  "description": "Sphinx Extension For Magento",
+  "require": {
+    "php": ">=5.4.0",
+    "magento-hackathon/magento-composer-installer": "2.1.1",
+    "ecomdev/composer_autoload": "*",
+    "foolz/sphinxql-query-builder": "*"
+  },
+  "require-dev": {
+    "magento/core": "1.9.1.0",
+    "aoepeople/aoe_profiler": "*"
+  },
+  "suggest": {
+    "herzult/php-ssh": "*"
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "http://packages.firegento.com"
+    },
+    {
+      "type": "vcs",
+      "url": "git@github.com:EcomDev/EcomDev_ComposerAutoload.git"
+    }
+  ],
+  "authors":[
+    {
+      "name":"Ivan Chepurnyi",
+      "email": "ivan.chepurnyi@gmail.com"
+    }
+  ],
+  "config": {
+    "bin-dir": "bin"
+  },
+  "extra": {
+    "magento-root-dir": "build",
+    "magento-force": true
+  }
+}

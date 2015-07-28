@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<config>
+    <menu>
+        <catalog>
+            <children>
+                <sphinx module="ecomdev_sphinx" translate="title">
+                    <title>Sphinx</title>
+                    <sort_order>200</sort_order>
+                    <children>
+                        <attribute translate="title">
+                            <title>Manage Sphinx Attributes</title>
+                            <sort_order>100</sort_order>
+                            <action>adminhtml/sphinx_attribute/index</action>
+                        </attribute>
+                        <scope translate="title">
+                            <title>Manage Sphinx Scopes</title>
+                            <sort_order>200</sort_order>
+                            <action>adminhtml/sphinx_scope/index</action>
+                        </scope>
+                        <configure translate="title">
+                            <title>Configure Sphinx</title>
+                            <sort_order>300</sort_order>
+                            <action>adminhtml/sphinx_configure/index</action>
+                        </configure>
+                    </children>
+                </sphinx>
+            </children>
+        </catalog>
+    </menu>
+    <acl>
+        <resources>
+            <admin>
+                <children>
+                    <catalog>
+                        <children>
+                            <sphinx module="ecomdev_sphinx" translate="title">
+                                <title>Sphinx</title>
+                                <sort_order>200</sort_order>
+                                <children>
+                                    <attribute translate="title">
+                                        <title>Manage Sphinx Attributes</title>
+                                        <sort_order>100</sort_order>
+                                    </attribute>
+                                    <scope translate="title">
+                                        <title>Manage Sphinx Scopes</title>
+                                        <sort_order>200</sort_order>
+                                    </scope>
+                                    <configure translate="title">
+                                        <title>Configure Sphinx</title>
+                                        <sort_order>300</sort_order>
+                                    </configure>
+                                </children>
+                            </sphinx>
+                        </children>
+                    </catalog>
+                    <system>
+                        <children>
+                            <config>
+                                <children>
+                                    <ecomdev_sphinx>
+                                        <title>Sphinx Search Configuration</title>
+                                        <sort_order>1000</sort_order>
+                                    </ecomdev_sphinx>
+                                </children>
+                            </config>
+                        </children>
+                    </system>
+                </children>
+            </admin>
+        </resources>
+    </acl>
+</config>

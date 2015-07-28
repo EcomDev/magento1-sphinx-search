@@ -1,0 +1,14 @@
+<?php /* @var $this EcomDev_Sphinx_Block_Layer_Facet_Renderer_Option */ ?>
+<dt><?php echo $this->getLabel() ?></dt>
+<dd>
+    <ul>
+        <?php foreach ($this->getOptions() as $_option):?>
+            <li>
+                <a class="product-ajax-link" href="<?php echo $this->getOptionUrl($_option) ?>" <?php if($_option->isActive()):?> style="font-weight: bold" <?php endif;?>>
+                    <?php echo $_option->getLabel() ?>
+                    <span class="count">(<?php echo $_option->getCount() ?>)</span>
+                </a>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+</dd>

@@ -1,0 +1,39 @@
+<?php
+/* @var EcomDev_Sphinx_Block_Adminhtml_Configure_Action $this */
+?>
+<div class="content-header">
+    <table cellspacing="0">
+        <tr>
+            <td style="<?php echo $this->getHeaderWidth() ?>"><?php echo $this->getHeaderHtml() ?></td>
+            <td class="form-buttons">&nbsp;</td>
+        </tr>
+    </table>
+</div>
+<div>
+    <table class="form-list">
+        <tr>
+            <td class="scope-label">
+                <button onclick="setLocation('<?php echo $this->getDaemonControlUrl()?>')" type="button" class="scalable" style="width: 300px;"><span><span><span><?php echo $this->__('Control Daemon') ?></span></span></span></button>
+            </td>
+            <td class="scope-label">
+                <?php echo $this->__('Updates Sphinx daemon config, if it needs to be changed (can start a daemon)')?>
+            </td>
+        </tr>
+        <tr>
+            <td class="scope-label">
+                <button onclick="setLocation('<?php echo $this->getIndexControlUrl()?>')" type="button" class="scalable" style="width: 300px;"><span><span><span><?php echo $this->__('Control Index') ?></span></span></span></button>
+            </td>
+            <td class="scope-label">
+                <?php echo $this->__('Updates Sphinx index config, if it needs to be changed (might reindex full data)')?>
+            </td>
+        </tr>
+        <tr>
+            <td class="scope-label">
+                <button onclick="setLocation('<?php echo $this->getIndexDeltaUrl()?>')" type="button" class="scalable" style="width: 300px;"><span><span><span><?php echo $this->__('Update Deltas')?></span></span></span></button>
+            </td>
+            <td class="scope-label">
+                <?php echo $this->__('Updates Sphinx delta index changes, if there are any data out of sync')?>
+            </td>
+        </tr>
+    </table>
+</div>

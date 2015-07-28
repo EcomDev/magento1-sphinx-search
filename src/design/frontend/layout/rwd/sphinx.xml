@@ -1,0 +1,71 @@
+<layout>
+    <catalog_category_layered_ecomdev_sphinx>
+        <remove name="catalog.leftnav"/>
+        <block name="sphinx.loader" type="ecomdev_sphinx/layer_loader">
+            <action method="setListBlock"><block>product_list</block></action>
+        </block>
+        <reference name="content">
+            <action method="insert"><block>sphinx.loader</block></action>
+        </reference>
+        <reference name="left_first">
+            <action method="insert"><block>sphinx.loader</block></action>
+            <block name="sphinx.leftnav"
+                   type="ecomdev_sphinx/layer"
+                   template="ecomdev/sphinx/layer.phtml">
+                <block type="ecomdev_sphinx/layer_facet_renderer_option"
+                       name="sphinx.facet.option" as="renderer_option"
+                       template="ecomdev/sphinx/layer/facet/renderer/option.phtml" />
+                <block type="ecomdev_sphinx/layer_facet_renderer_slider"
+                       name="sphinx.facet.slider" as="renderer_slider"
+                       template="ecomdev/sphinx/layer/facet/renderer/slider.phtml" />
+
+                <action method="addRenderer"><type>option</type><block>renderer_option</block></action>
+                <action method="addRenderer"><type>range</type><block>renderer_option</block></action>
+                <action method="addRenderer"><type>limit</type><block>renderer_slider</block></action>
+            </block>
+        </reference>
+        <remove name="product_list.swatches" />
+    </catalog_category_layered_ecomdev_sphinx>
+    
+    <catalogsearch_result_index_ecomdev_sphinx>
+        <remove name="catalogsearch.leftnav"/>
+        <block name="sphinx.loader" type="ecomdev_sphinx/layer_loader">
+            <action method="setListBlock"><block>search_result_list</block></action>
+        </block>
+        <reference name="content">
+            <action method="insert"><block>sphinx.loader</block></action>
+        </reference>
+        <reference name="left_first">
+            <action method="insert"><block>sphinx.loader</block></action>
+            <block name="sphinx.leftnav"
+                   type="ecomdev_sphinx/layer"
+                   template="ecomdev/sphinx/layer.phtml">
+                <block type="ecomdev_sphinx/layer_facet_renderer_option"
+                       name="sphinx.facet.option" as="renderer_option"
+                       template="ecomdev/sphinx/layer/facet/renderer/option.phtml" />
+                <block type="ecomdev_sphinx/layer_facet_renderer_slider"
+                       name="sphinx.facet.slider" as="renderer_slider"
+                       template="ecomdev/sphinx/layer/facet/renderer/slider.phtml" />
+
+                <action method="addRenderer"><type>option</type><block>renderer_option</block></action>
+                <action method="addRenderer"><type>range</type><block>renderer_option</block></action>
+                <action method="addRenderer"><type>limit</type><block>renderer_slider</block></action>
+            </block>
+        </reference>
+        <remove name="product_list.swatches" />
+    </catalogsearch_result_index_ecomdev_sphinx>
+
+    <catalog_category_layered_ecomdev_sphinx_json>
+        <update handle="remove_all_elements" />
+    </catalog_category_layered_ecomdev_sphinx_json>
+
+    <catalogsearch_result_index_ecomdev_sphinx_json>
+        <update handle="remove_all_elements" />
+    </catalogsearch_result_index_ecomdev_sphinx_json>
+    
+    <remove_all_elements>
+        <remove name="head" />
+        <remove name="header" />
+        <remove name="footer" />
+    </remove_all_elements>
+</layout>

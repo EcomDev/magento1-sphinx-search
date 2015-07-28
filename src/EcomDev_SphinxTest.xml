@@ -1,0 +1,8 @@
+<config>
+    <modules>
+        <EcomDev_SphinxTest>
+            <codePool>community</codePool>
+            <active>true</active>
+        </EcomDev_SphinxTest>
+    </modules>
+</config>

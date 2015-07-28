@@ -1,0 +1,9 @@
+<config>
+    <phpunit>
+        <suite>
+            <modules>
+                <EcomDev_SphinxTest />
+            </modules>
+        </suite>
+    </phpunit>
+</config>

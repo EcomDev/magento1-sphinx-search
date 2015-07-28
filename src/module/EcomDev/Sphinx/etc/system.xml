@@ -1,0 +1,273 @@
+<config>
+    <sections>
+        <ecomdev_sphinx module="ecomdev_sphinx" translate="label">
+            <label>Sphinx Search</label>
+            <tab>catalog</tab>
+            <show_in_default>1</show_in_default>
+            <show_in_website>1</show_in_website>
+            <show_in_store>1</show_in_store>
+            <sort_order>900</sort_order>
+            <groups>
+                <daemon translate="label">
+                    <label>Search Daemon Configurations</label>
+                    <show_in_default>1</show_in_default>
+                    <sort_order>300</sort_order>
+                    <fields>
+                        <index_path translate="label comment">
+                            <label>Index Data Path</label>
+                            <comment>Directory with index files location</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </index_path>
+                        
+                        <index_config_path translate="label comment">
+                            <label>Index Configuration File Save Path</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Configuration file path where to save index information</comment>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </index_config_path>
+                        
+                        <index_product_merge_limit translate="label comment">
+                            <label>Product Index Merge Limit</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Limit of updated rows after which system will do a full reindex, instead of delta update</comment>
+                            <sort_order>31</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </index_product_merge_limit>
+
+                        <index_category_merge_limit translate="label comment">
+                            <label>Category Index Merge Limit</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Limit of updated rows after which system will do a full reindex, instead of delta update</comment>
+                            <sort_order>32</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </index_category_merge_limit>
+                        
+                        <indexer_command>
+                            <label>Indexer script command</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>35</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </indexer_command>
+                        
+                        <manage translate="label comment">
+                            <label>Manage Daemon Configuration</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>ecomdev_sphinx/source_yesno</source_model>
+                            <comment>If you choose yes, then sphinx daemon configuration will be managed by Magento</comment>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </manage>
+
+                        <daemon_config_path translate="label comment">
+                            <label>Index Configuration File Save Path</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Configuration file path where to save daemon information</comment>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <manage>1</manage>
+                            </depends>
+                        </daemon_config_path>
+
+                        <listen translate="label comment">
+                            <label>Listen Instructions for Daemon</label>
+                            <frontend_type>textarea</frontend_type>
+                            <comment>If you need a new statement added as a newline</comment>
+                            <sort_order>40</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <manage>1</manage>
+                            </depends>
+                        </listen>
+
+                        <pid translate="label comment">
+                            <label>Pid File</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Location of pid file in system</comment>
+                            <sort_order>50</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <manage>1</manage>
+                            </depends>
+                        </pid>
+
+                        <log translate="label comment">
+                            <label>Log File</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Location of log file in system</comment>
+                            <sort_order>55</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <manage>1</manage>
+                            </depends>
+                        </log>
+
+                        <read_timeout translate="label comment">
+                            <label>Read timeout</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Timeout in seconds for client to read data</comment>
+                            <sort_order>60</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <manage>1</manage>
+                            </depends>
+                        </read_timeout>
+
+                        <max_children translate="label comment">
+                            <label>Maximum Search Processes</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Number of maximum concurrent search processes</comment>
+                            <sort_order>70</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <manage>1</manage>
+                            </depends>
+                        </max_children>
+
+                        <daemon_command  translate="label comment">
+                            <label>Daemon script command</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>80</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <manage>1</manage>
+                            </depends>
+                        </daemon_command>
+
+                        <before_start_command translate="label comment">
+                            <label>Before start commands</label>
+                            <frontend_type>textarea</frontend_type>
+                            <sort_order>90</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <manage>1</manage>
+                            </depends>
+                        </before_start_command>
+
+                        <is_remote translate="label comment">
+                            <label>Is Remote Daemon?</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>ecomdev_sphinx/source_yesno</source_model>
+                            <comment>If you choose yes, then php-ssh extension should be installed on your system, in order to connect to a remote system</comment>
+                            <sort_order>95</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </is_remote>
+
+                        <ssh_host translate="label comment">
+                            <label>SSH Host</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>100</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <is_remote>1</is_remote>
+                            </depends>
+                        </ssh_host>
+
+                        <ssh_port translate="label comment">
+                            <label>SSH Port</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>110</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <is_remote>1</is_remote>
+                            </depends>
+                        </ssh_port>
+                        
+                        <ssh_user translate="label comment">
+                            <label>SSH User</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>120</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <is_remote>1</is_remote>
+                            </depends>
+                        </ssh_user>
+
+                        <ssh_publickey translate="label comment">
+                            <label>SSH Public Key</label>
+                            <frontend_type>textarea</frontend_type>
+                            <sort_order>130</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <is_remote>1</is_remote>
+                            </depends>
+                        </ssh_publickey>
+
+                        <ssh_privatekey translate="label comment">
+                            <label>SSH Private Key</label>
+                            <frontend_type>textarea</frontend_type>
+                            <sort_order>140</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <is_remote>1</is_remote>
+                            </depends>
+                        </ssh_privatekey>
+                    </fields>
+                </daemon>
+                <connection translate="label">
+                    <label>Search Connection Configurations</label>
+                    <show_in_default>1</show_in_default>
+                    <sort_order>200</sort_order>
+                    <fields>
+                        <host translate="label comment">
+                            <label>Host For SphinxQL Adapter</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>IP Address or hostname</comment>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </host>
+                        <port translate="label comment">
+                            <label>Port For SphinxQL Adapter</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Port for where sphinx listens with MySQL protocol</comment>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </port>
+                    </fields>
+                </connection>
+                <general translate="label comment">
+                    <label>Search Options</label>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <sort_order>100</sort_order>
+                    <fields>
+                        <active translate="label comment">
+                            <label>Active</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>ecomdev_sphinx/source_yesno</source_model>
+                            <comment>Do not active sphinx search unless you've reindex the data</comment>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </active>
+                        <replace_menu translate="label comment">
+                            <label>Replace Menu Provider</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>ecomdev_sphinx/source_yesno</source_model>
+                            <comment>Replaces menu provider for a category</comment>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </replace_menu>
+                        <scope>
+                            <label>Scope</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>ecomdev_sphinx/source_scope</source_model>
+                            <comment>Sphinx Search Configuration Scope</comment>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </scope>
+                    </fields>
+                </general>
+            </groups>
+        </ecomdev_sphinx>
+    </sections>
+</config>
