@@ -5,7 +5,7 @@
   "description": "Sphinx Extension For Magento",
   "require": {
     "php": ">=5.4.0",
-    "magento-hackathon/magento-composer-installer": "2.1.1",
+    "magento-hackathon/magento-composer-installer": "^2.*",
     "ecomdev/composer_autoload": "*",
     "foolz/sphinxql-query-builder": "*"
   },
