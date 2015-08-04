@@ -11,7 +11,12 @@ class EcomDev_Sphinx_Model_Catalog_Layer
      */
     public function applyRequest(Mage_Core_Controller_Request_Http $request)
     {
-        Mage::getSingleton('ecomdev_sphinx/config')->getScope()
+        $scope = null;
+        if ($this->getCurrentCategory()) {
+            $scope = $this->getCurrentCategory()->getSphinxScope();
+        }
+
+        Mage::getSingleton('ecomdev_sphinx/config')->getScope($scope)
             ->setLayer($this)
             ->applyRequest($request);
         return $this;

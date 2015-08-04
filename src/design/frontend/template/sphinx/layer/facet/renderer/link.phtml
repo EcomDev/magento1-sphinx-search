@@ -1,0 +1,23 @@
+<?php /* @var $this EcomDev_Sphinx_Block_Layer_Facet_Renderer_Link */ ?>
+<dt><?php echo $this->getLabel() ?></dt>
+<?php $_rendererCategory = function ($category, $renderer) { ?>
+    <li>
+        <a href="<?php echo $category->getUrl() ?>" <?php if($this->isCurrentCategory($category)):?> style="font-weight: bold" <?php endif;?>>
+            <?php echo $category->getName() ?>
+        </a>
+        <?php if ($category->hasChildNodes() && $category->getChildNodes()): ?>
+            <ul class="sub-nav">
+            <?php foreach ($category->getChildNodes() as $subCategory):?>
+                <?php $renderer($subCategory, $renderer);?>
+            <?php endforeach;?>
+            </ul>
+        <?php endif ?>
+    </li>
+<?php } ?>
+<dd>
+    <ul>
+        <?php foreach ($this->getCategoryTree() as $_category):?>
+            <?php $_rendererCategory($_category, $_rendererCategory); ?>
+        <?php endforeach; ?>
+    </ul>
+</dd>

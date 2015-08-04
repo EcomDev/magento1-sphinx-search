@@ -276,13 +276,26 @@ abstract class EcomDev_Sphinx_Model_Sphinx_AbstractFacet
 
         $result = array();
         $optionClass = $this->_getOptionClass();
-        foreach ($this->_sphinxResponse as $row) {
+        $totalItems = count($this->_sphinxResponse);
+        foreach ($this->_sphinxResponse as $index => $row) {
+            $row['label'] = $this->_prepareOptionLabel($row);
             /* @var $option OptionInterface */
             $option = new $optionClass($this, $row);
             $result[$option->getValue()] = $option;
         }
 
         return $result;
+    }
+
+    /**
+     * Should return back a label value for facet
+     *
+     * @param string[] $row
+     * @return string
+     */
+    protected function _prepareOptionLabel($row)
+    {
+        return $row['label'];
     }
 
     /**

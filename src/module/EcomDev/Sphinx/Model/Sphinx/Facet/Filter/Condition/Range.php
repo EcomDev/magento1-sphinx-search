@@ -8,12 +8,19 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Filter_Condition_Range
     extends EcomDev_Sphinx_Model_Sphinx_Facet_Filter_AbstractCondition
 {
     /**
-     * Selected ranges list
-     * 
-     * @var Expression
+     * Available ranges
+     *
+     * @var float[]
      */
-    protected $_select;
-    
+    protected $_availableRanges;
+
+    /**
+     * Available ranges
+     *
+     * @var float[]
+     */
+    protected $_selectedRanges;
+
     /**
      * Constructs a ranged condition
      * 
@@ -26,45 +33,9 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Filter_Condition_Range
                                 array $availableRanges)
     {
         parent::__construct($facet);
-        
-        $collectedConditions = array();
-        foreach ($selectedRanges as $rangeId) {
-            if (!isset($availableRanges[$rangeId])) {
-                continue;
-            }
-            
-            if ($availableRanges[$rangeId] === 0) {
-                continue;
-            }
-            
-            $maxRange = $availableRanges[$rangeId];
-            $minRange = 0;
-            
-            if (isset($availableRanges[$rangeId - 1])) {
-                $minRange = $availableRanges[$rangeId - 1];
-            }
-            
-            $collectedConditions[] = sprintf(
-                '(%1$s >= %2$d and %1$s < %3$d)', 
-                $this->getFacet()->getColumnName(),
-                (float)$minRange,
-                (float)$maxRange
-            );
-        }
-        
-        
-        
-        if (empty($collectedConditions)) {
-            throw new RuntimeException('No valid ranges selected');
-        }
-        
-        $this->_select = new Expression(
-            sprintf(
-                'IF(%s,1,0) as %s_range_match', 
-                implode(' OR ', $collectedConditions), 
-                $this->getFacet()->getColumnName()
-            )
-        );
+
+        $this->_selectedRanges = $selectedRanges;
+        $this->_availableRanges = $availableRanges;
     }
 
     /**
@@ -75,8 +46,45 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Filter_Condition_Range
      */
     public function apply(QueryBuilder $query)
     {
-        $query->select($this->_select);
-        $query->where(sprintf('%s_range_match', $this->getFacet()->getColumnName()), 1);
+        $column = $this->getFacet()->getColumnName();
+        $collectedConditions = array();
+        foreach ($this->_selectedRanges as $rangeId) {
+            if (!isset($this->_availableRanges[$rangeId]) && isset($this->_availableRanges[$rangeId - 1])) {
+                $collectedConditions[] = sprintf('%1$s >= %2$d', $column, (float)$this->_availableRanges[$rangeId - 1]);
+                continue;
+            } elseif (!isset($this->_availableRanges[$rangeId])) {
+                continue;
+            }
+
+            if ($this->_availableRanges[$rangeId] === 0) {
+                continue;
+            }
+
+            $maxRange = $this->_availableRanges[$rangeId];
+            $minRange = 0;
+
+            if (isset($this->_availableRanges[$rangeId - 1])) {
+                $minRange = $this->_availableRanges[$rangeId - 1];
+            }
+
+            $collectedConditions[] = sprintf('(%1$s >= %2$d AND %1$s <= %3$d)', $column, (int)$minRange, (int)$maxRange);
+        }
+
+        if ($collectedConditions) {
+           $query->select(new Expression(sprintf(
+                'IF(%s,1,0) as %s_range_match',
+                implode(' OR ', $collectedConditions),
+                $this->getFacet()->getColumnName()
+            )));
+
+            $query->where(
+                sprintf('%s_range_match', $this->getFacet()->getColumnName()),
+                '=',
+                1
+            );
+        }
+
+
         return $this;
     }
 }

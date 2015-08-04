@@ -21,7 +21,7 @@ abstract class EcomDev_Sphinx_Model_Sphinx_Facet_AbstractRangedAttribute
      * 
      * @var bool
      */
-    protected $_isSelfFilterable = true;
+    protected $_isSelfFilterable = false;
 
     /**
      * Is custom value allowed
@@ -125,6 +125,16 @@ abstract class EcomDev_Sphinx_Model_Sphinx_Facet_AbstractRangedAttribute
                 implode(',', $this->_ranges),
                 $query->quoteIdentifier('value')
             ),
+            $query->exprFormat(
+                'MIN(%s) as %s',
+                $this->getColumnName(),
+                $query->quoteIdentifier('min_range')
+            ),
+            $query->exprFormat(
+                'MAX(%s) as %s',
+                $this->getColumnName(),
+                $query->quoteIdentifier('max_range')
+            ),
             $query->exprFormat('COUNT(*) as %s', $query->quoteIdentifier('count'))
         );
 
@@ -204,6 +214,11 @@ abstract class EcomDev_Sphinx_Model_Sphinx_Facet_AbstractRangedAttribute
             
             if (isset($this->_ranges[$row['value']])) {
                 $row['label'] = $this->_ranges[$row['value']];
+                $result[] = $row;
+            }
+
+            if (isset($this->_ranges[$row['value'] - 1])) {
+                $row['label'] = $this->_ranges[$row['value'] - 1];
                 $result[] = $row;
             }
         }

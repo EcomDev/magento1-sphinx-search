@@ -3,9 +3,9 @@
 interface EcomDev_Sphinx_Model_LayerInterface
 {
     /**
-     * Returns list of available category names  
+     * Returns current category instance
      * 
-     * @return string[]
+     * @return Mage_Catalog_Model_Category
      */
     public function getCurrentCategory();
 

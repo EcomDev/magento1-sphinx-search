@@ -164,7 +164,8 @@ class EcomDev_Sphinx_Model_Config
         
         Varien_Profiler::start(__FUNCTION__);
         $this->_attributes = Mage::getModel('ecomdev_sphinx/attribute')
-            ->getCollection();
+            ->getCollection()
+            ->addOrder('position', 'asc');
 
         Varien_Profiler::start(__FUNCTION__ . '::preloadAttributes');
         $codes = $this->_attributes->getColumnValues('attribute_code');
@@ -539,15 +540,33 @@ class EcomDev_Sphinx_Model_Config
     }
 
     /**
+     * Checks if sphinx is actually available
+     *
+     * @return bool
+     */
+    public function isSearchEnabled()
+    {
+        if ($this->isEnabled() && $this->getConfig('search_active', 'general') === '1') {
+           return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Returns a scope model
-     * 
+     *
+     * @param int $scopeId
      * @return EcomDev_Sphinx_Model_Scope
      */
-    public function getScope()
+    public function getScope($scopeId = null)
     {
         if ($this->_scope === null) {
             $this->_scope = Mage::getModel('ecomdev_sphinx/scope');
-            if ($scopeId = $this->getConfig('scope', 'general')) {
+            if ($scopeId === null) {
+                $scopeId = $this->getConfig('scope', 'general');
+            }
+            if ($scopeId) {
                 $this->_scope->load($scopeId);
             }
         }

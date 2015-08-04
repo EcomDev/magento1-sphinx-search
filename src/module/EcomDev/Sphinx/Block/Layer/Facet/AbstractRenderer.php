@@ -60,6 +60,16 @@ abstract class EcomDev_Sphinx_Block_Layer_Facet_AbstractRenderer
     }
 
     /**
+     * A callback after facet has been set
+     *
+     * @return $this
+     */
+    protected function _initRender()
+    {
+        return $this;
+    }
+
+    /**
      * Returns a rendered html of facet instance
      *
      * @param FacetInterface $facet
@@ -68,6 +78,7 @@ abstract class EcomDev_Sphinx_Block_Layer_Facet_AbstractRenderer
     public function render(FacetInterface $facet)
     {
         $this->setData('facet', $facet);
+        $this->_initRender();
         return $this->toHtml();
     }
 

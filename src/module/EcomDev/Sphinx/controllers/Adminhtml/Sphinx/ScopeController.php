@@ -32,7 +32,7 @@ class EcomDev_Sphinx_Adminhtml_Sphinx_ScopeController
         if ($currentObject !== null) {
             $this->_title(
                 $currentObject->getId() ?
-                    $this->__('Edit Sphinx Scope "%s"', $currentObject->getCode()) :
+                    $this->__('Edit Sphinx Scope "%s"', $currentObject->getName()) :
                     $this->__('New Sphinx Scope')
             );
         }

@@ -11,7 +11,7 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Category
      * 
      * @var string[]
      */
-    protected $_categoryNames;
+    protected $_categoryData;
 
     /**
      * Excluded category ids
@@ -26,22 +26,58 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Category
      * @var bool
      */
     protected $_isSelfFilterable = false;
+
+    /**
+     * Currently selected category id
+     *
+     * @var int|null
+     */
+    protected $_currentCategoryId;
     
     /**
      * Configures basic facet data
      *
      * @param string $label
-     * @param string[] $categoryNames
+     * @param string[] $categoryData
      * @param string[] $excludeCategoryIds
      */
-    public function __construct($label, array $categoryNames, array $excludeCategoryIds = array())
+    public function __construct(
+        $label,
+        array $categoryData,
+        array $excludeCategoryIds = array(),
+        $renderType = null
+    )
     {
         parent::__construct('anchor_category_ids', 'cat', $label);
-        $this->_categoryNames = $categoryNames;
+        $this->_categoryData = $categoryData;
         $this->_excludeCategoryIds = $excludeCategoryIds;
+        $this->_currentCategoryId = reset($excludeCategoryIds);
+        if ($renderType !== null) {
+            $this->_renderType = $renderType;
+        }
     }
-        
-    
+
+
+    /**
+     * Returns a list of array data
+     *
+     * @return string[][]
+     */
+    public function getCategoryData()
+    {
+        return $this->_categoryData;
+    }
+
+    /**
+     * Returns current category id
+     *
+     * @return int|null
+     */
+    public function getCurrentCategoryId()
+    {
+        return $this->_currentCategoryId;
+    }
+
     /**
      * Initializes filter condition
      *
@@ -69,7 +105,7 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Category
     {
         return array_filter(explode(',', $value), function ($item) {
             return $item !== '' 
-                && isset($this->_categoryNames[$item]) 
+                && isset($this->_categoryData[$item])
                 && !in_array($item, $this->_excludeCategoryIds);
         });
     }
@@ -104,12 +140,12 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Category
     {
         $result = array();
         
-        $categoryOrder = array_keys($this->_categoryNames);
+        $categoryOrder = array_keys($this->_categoryData);
         
         foreach ($data as $row) {
-            if (isset($this->_categoryNames[$row['value']]) 
+            if (isset($this->_categoryData[$row['value']])
                 && !in_array($row['value'], $this->_excludeCategoryIds)) {
-                $row['label'] = $this->_categoryNames[$row['value']];
+                $row['label'] = $this->_categoryData[$row['value']]['name'];
                 $result[array_search($row['value'], $categoryOrder)] = $row;
             }
         }
@@ -129,7 +165,7 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Category
     protected function _serializableData()
     {
         return parent::_serializableData() 
-            + array('_categoryNames' => $this->_categoryNames, 
+            + array('_categoryData' => $this->_categoryData,
                     '_excludeCategoryIds' => $this->_excludeCategoryIds);
     }
 

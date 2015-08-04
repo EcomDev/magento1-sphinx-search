@@ -79,7 +79,7 @@ class EcomDev_Sphinx_Model_Resource_Scope
                 ),
                 'option_default'
             )
-            ->order(array('option.attribute_id ASC','option.sort_order ASC'));
+            ->order(array('option.attribute_id ASC', 'option.sort_order ASC', 'option.option_id ASC'));
         ;
         
         return $this->_getReadAdapter()->fetchPairs(

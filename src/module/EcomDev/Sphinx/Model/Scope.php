@@ -88,16 +88,9 @@ class EcomDev_Sphinx_Model_Scope
     public function setDataFromArray(array $data)
     {
         $jsonData = array();
-        
-        if (isset($data['configuration']) && is_string($data['configuration'])) {
-            $jsonData = json_decode($data['configuration'], true);
 
-            if (!is_array($jsonData)) {
-                $jsonData = null;
-            }
-
-            $this->setOriginalConfiguration($this->getConfiguration());
-            $this->setFailedConfiguration($data['configuration']);
+        if (isset($data['configuration']) && is_array($data['configuration'])) {
+            $jsonData = $data['configuration'];
         }
         
         $this->setConfiguration($jsonData);
@@ -126,13 +119,22 @@ class EcomDev_Sphinx_Model_Scope
      */
     protected function _getCategoryFilterLabel()
     {
-        $config = $this->getConfiguration();
-        
-        if (isset($config['category']['filter']['label'])) {
-            return $config['category']['filter']['label'];
+        if ($label = $this->getConfigurationValue('category_filter/label')) {
+            return $label;
         }
         
         return Mage::helper('ecomdev_sphinx')->__('Categories');
+    }
+
+    /**
+     * Returns a configuration value
+     *
+     * @param string $path
+     * @return bool
+     */
+    public function getConfigurationValue($path)
+    {
+        return $this->getData('configuration/' . $path);
     }
 
     /**
@@ -142,17 +144,15 @@ class EcomDev_Sphinx_Model_Scope
      */
     protected function _getPriceOptions()
     {
-        $config = $this->getConfiguration();
-
         $result = array();
         $result['range_step'] = 0;
         $result['range_count'] = 0;
         
-        if (isset($config['price']['filter']['range_step'])) {
-            $result['range_step'] = (float)$config['price']['filter']['range_step'];
+        if ($value = $this->getConfigurationValue('price_filter/range_step')) {
+            $result['range_step'] = (float)$value;
         }
-        if (isset($config['price']['filter']['range_count'])) {
-            $result['range_count'] = (int)$config['price']['filter']['range_count'];
+        if ($value = $this->getConfigurationValue('price_filter/range_count')) {
+            $result['range_count'] = (int)$value;
         }
         
         if ($result['range_step'] <= 0) {
@@ -174,8 +174,9 @@ class EcomDev_Sphinx_Model_Scope
         $class = Mage::getConfig()->getModelClassName('ecomdev_sphinx/sphinx_facet_category');
         return new $class(
             $this->_getCategoryFilterLabel(),
-            $this->_getCategoryNames(),
-            array($this->getLayer()->getCurrentCategory()->getId())
+            $this->_getCategoryData(),
+            array($this->getLayer()->getCurrentCategory()->getId()),
+            $this->getConfigurationValue('category_filter/renderer')
         );
     }
     
@@ -233,26 +234,30 @@ class EcomDev_Sphinx_Model_Scope
         );
 
         if (Mage::app()->useCache('sphinx') && $data = Mage::app()->loadCache($cacheKey)) {
-            $this->_facets = unserialize($data);
-            return $this;
-        }
-
-        $this->_facets = array();
-
-        $categoryFacet = $this->_getCategoryFacet();
-        $this->_facets[$categoryFacet->getFilterField()] = $categoryFacet;
-
-        foreach ($this->_getConfig()->getActiveAttributes() as $attribute) {
-            if ($attribute->getIsLayered()
-                && ($facet = $attribute->getFacetModel())
-                && $facet->isAvailable()) {
-                $this->_facets[$facet->getFilterField()] = $facet;
+            $facets = unserialize($data);
+        } else {
+            $excludedFacets = $this->getConfigurationValue('general/limit_facet');
+            $facets = array();
+            foreach ($this->_getConfig()->getActiveAttributes() as $attribute) {
+                if (is_array($excludedFacets) && in_array($attribute->getId(), $excludedFacets)) {
+                    continue;
+                }
+                if ($attribute->getIsLayered()
+                    && ($facet = $attribute->getFacetModel())
+                    && $facet->isAvailable()) {
+                    $facets[$facet->getFilterField()] = $facet;
+                }
             }
         }
 
+        $this->_facets = array();
+        $categoryFacet = $this->_getCategoryFacet();
+        $this->_facets[$categoryFacet->getFilterField()] = $categoryFacet;
+        $this->_facets += $facets;
+
         if (Mage::app()->useCache('sphinx')) {
             Mage::app()->saveCache(
-                serialize($this->_facets),
+                serialize($facets),
                 $cacheKey,
                 array(
                     self::CACHE_TAG,
@@ -396,22 +401,44 @@ class EcomDev_Sphinx_Model_Scope
         return $this;
     }
     
-    protected function _getCategoryNames()
+    protected function _getCategoryData()
     {
+        Varien_Profiler::start(__METHOD__);
+        $parentPath = $this->getLayer()->getCurrentCategory()->getPath();
+        $maxLevel = (int)$this->getConfigurationValue('category_filter/max_level_deep');
+
+        $minLevel = $this->getLayer()->getCurrentCategory()->getLevel();
+
+        if ($maxLevel <= 0) {
+            $maxLevel = 2;
+        }
+
+        $maxLevel = $this->getLayer()->getCurrentCategory()->getLevel() + $maxLevel;
+
+        if ((int)$this->getConfigurationValue('category_filter/include_same_level') > 0) {
+            $parentPath = dirname($parentPath);
+            $minLevel -= 1;
+        }
+
         $query = $this->_getConfig()->getContainer()->queryBuilder();
         $query
-            ->select('category_id', 'name')
+            ->select('category_id', 'name', 'path', 'request_path')
             ->from($this->_getConfig()->getContainer()->getIndexNames('category'))
             ->where('is_active', 1)
+            ->where('level', '<=', $maxLevel)
+            ->where('level', '>', $minLevel)
+            ->orderBy('level', 'asc')
+            ->orderBy('position', 'asc')
             ->match('path', $query->expr(
-                '"^' . $query->escapeMatch($this->getLayer()->getCurrentCategory()->getPath()) . '"'
+                '"^' . $query->escapeMatch($parentPath) . '"'
             ));
-        
+
         $result = array();
         foreach ($query->execute() as $row) {
-            $result[(int)$row['category_id']] = $row['name'];
+            $result[(int)$row['category_id']] = $row;
         }
-        
+
+        Varien_Profiler::stop(__METHOD__);
         return $result;
     }
     

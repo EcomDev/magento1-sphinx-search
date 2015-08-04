@@ -237,4 +237,6 @@ class EcomDev_Sphinx_Block_Layer
 
         return $this->_renderTypes['default'];
     }
+
+
 }

@@ -177,7 +177,14 @@ class EcomDev_Sphinx_Model_Attribute
      */
     public function setDataFromArray(array $data)
     {
-        $modifiableFields = array('is_fulltext', 'is_layered', 'is_custom_value_allowed', 'filter_type');
+        $modifiableFields = array(
+            'is_fulltext',
+            'is_layered',
+            'is_custom_value_allowed',
+            'filter_type',
+            'position',
+            'is_sort'
+        );
         
         if (!$this->getIsSystem()) {
             $modifiableFields[] = 'is_active';

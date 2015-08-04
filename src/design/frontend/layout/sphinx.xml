@@ -19,9 +19,13 @@
                 <block type="ecomdev_sphinx/layer_facet_renderer_slider"
                        name="sphinx.facet.slider" as="renderer_slider"
                        template="ecomdev/sphinx/layer/facet/renderer/slider.phtml" />
+                <block type="ecomdev_sphinx/layer_facet_renderer_link"
+                       name="sphinx.facet.link" as="renderer_link"
+                       template="ecomdev/sphinx/layer/facet/renderer/link.phtml" />
                 <action method="addRenderer"><type>option</type><block>renderer_option</block></action>
                 <action method="addRenderer"><type>range</type><block>renderer_option</block></action>
                 <action method="addRenderer"><type>limit</type><block>renderer_slider</block></action>
+                <action method="addRenderer"><type>link</type><block>renderer_link</block></action>
             </block>
         </reference>
         <update handle="sphinx_renderer_add" />
@@ -46,9 +50,13 @@
                 <block type="ecomdev_sphinx/layer_facet_renderer_slider"
                        name="sphinx.facet.slider" as="renderer_slider"
                        template="ecomdev/sphinx/layer/facet/renderer/slider.phtml" />
+                <block type="ecomdev_sphinx/layer_facet_renderer_link"
+                       name="sphinx.facet.link" as="renderer_link"
+                       template="ecomdev/sphinx/layer/facet/renderer/link.phtml" />
                 <action method="addRenderer"><type>option</type><block>renderer_option</block></action>
                 <action method="addRenderer"><type>range</type><block>renderer_option</block></action>
                 <action method="addRenderer"><type>limit</type><block>renderer_slider</block></action>
+                <action method="addRenderer"><type>link</type><block>renderer_link</block></action>
             </block>
         </reference>
     </catalogsearch_result_index_ecomdev_sphinx>

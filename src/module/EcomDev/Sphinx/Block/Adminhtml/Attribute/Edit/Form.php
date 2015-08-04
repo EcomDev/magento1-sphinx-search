@@ -1,5 +1,7 @@
 <?php
 
+use EcomDev_Sphinx_Model_Source_Attribute_Filter_Type as FilterType;
+
 class EcomDev_Sphinx_Block_Adminhtml_Attribute_Edit_Form
     extends EcomDev_Sphinx_Block_Adminhtml_Edit_Form
 {
@@ -33,11 +35,11 @@ class EcomDev_Sphinx_Block_Adminhtml_Attribute_Edit_Form
             $excludedOptions = array();
             
             if ($dataObject->isOption()) {
-                $excludedOptions[] = EcomDev_Sphinx_Model_Source_Attribute_Filter_Type::TYPE_RANGE;
-                $excludedOptions[] = EcomDev_Sphinx_Model_Source_Attribute_Filter_Type::TYPE_SLIDER;
+                $excludedOptions[] = FilterType::TYPE_RANGE;
+                $excludedOptions[] = FilterType::TYPE_SLIDER;
             } else {
-                $excludedOptions[] = EcomDev_Sphinx_Model_Source_Attribute_Filter_Type::TYPE_SINGLE;
-                $excludedOptions[] = EcomDev_Sphinx_Model_Source_Attribute_Filter_Type::TYPE_MULTIPLE;
+                $excludedOptions[] = FilterType::TYPE_SINGLE;
+                $excludedOptions[] = FilterType::TYPE_MULTIPLE;
             }
             
             $this->_addField('filter_type', 'select', $this->__('Type of Filter'), array(
@@ -48,19 +50,15 @@ class EcomDev_Sphinx_Block_Adminhtml_Attribute_Edit_Form
             $this->_addField('is_custom_value_allowed', 'select', $this->__('Allow Custom Value Input for Filter'), array(
                 'option_model' => 'ecomdev_sphinx/source_yesno',
                 'required' => false
-            ));       
-            
-            $this->_fieldDependence(
-                'is_custom_value_allowed', 
-                'filter_type', 
-                EcomDev_Sphinx_Model_Source_Attribute_Filter_Type::TYPE_RANGE
-            );
+            ));
 
-            $this->_fieldDependence(
-                'filter_type',
-                'is_layered',
-                '1'
-            );
+            $this->_addField('position', 'text', $this->__('Position in Layered Navigation'));
+            
+            $this
+                ->_fieldDependence('is_custom_value_allowed', 'filter_type', FilterType::TYPE_RANGE)
+                ->_fieldDependence('filter_type', 'is_layered', '1')
+                ->_fieldDependence('position', 'is_layered', '1')
+            ;
         }
 
 
@@ -73,7 +71,7 @@ class EcomDev_Sphinx_Block_Adminhtml_Attribute_Edit_Form
         $this->_addField('is_sort', 'select', $this->__('Use In Sorting Results'), array(
             'option_model' => 'ecomdev_sphinx/source_yesno'
         ));
-        
+
         return $this;
     }
 }

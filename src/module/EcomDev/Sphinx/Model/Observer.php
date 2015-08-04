@@ -239,7 +239,7 @@ class EcomDev_Sphinx_Model_Observer
      */
     public function onInitSearch(Varien_Event_Observer $observer)
     {
-        if ($this->_getConfig()->isEnabled()) {
+        if ($this->_getConfig()->isSearchEnabled()) {
             $this->_layerModel = Mage::getModel('ecomdev_sphinx/search_layer');
             
             Mage::register(

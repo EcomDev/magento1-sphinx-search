@@ -17,6 +17,20 @@ abstract class EcomDev_Sphinx_Block_Adminhtml_Edit_Form
     protected $_fieldNameSuffix = '';
 
     /**
+     * Pattern for field identifier
+     *
+     * @var string
+     */
+    protected $_fieldIdPattern = '';
+
+    /**
+     * Pattern for field name
+     *
+     * @var string
+     */
+    protected $_fieldNamePattern = '';
+
+    /**
      * Prepare form before rendering HTML
      *
      * @return $this
@@ -116,7 +130,17 @@ abstract class EcomDev_Sphinx_Block_Adminhtml_Edit_Form
         }
         
         if (!isset($options['name'])) {
-            $options['name'] = $name;
+            if ($this->_fieldNamePattern) {
+                $options['name'] = sprintf($this->_fieldNamePattern, $name);
+            } else {
+                $options['name'] = $name;
+            }
+        }
+
+        $fieldId = $name;
+
+        if ($this->_fieldIdPattern) {
+            $fieldId = sprintf($this->_fieldIdPattern, $fieldId);
         }
 
         $sourceModel = false;
@@ -144,7 +168,7 @@ abstract class EcomDev_Sphinx_Block_Adminhtml_Edit_Form
         }
 
         $this->_currentFieldset
-            ->addField($name, $type, $options);
+            ->addField($fieldId, $type, $options);
         
         return $this;
     }
@@ -158,6 +182,10 @@ abstract class EcomDev_Sphinx_Block_Adminhtml_Edit_Form
      */
     protected function _modifyField($name, array $values)
     {
+        if (isset($this->_fieldIdPattern)) {
+            $name = sprintf($this->_fieldIdPattern, $name);
+        }
+
         if ($this->getForm() && $element = $this->getForm()->getElement($name)) {
             foreach ($values as $key => $value) {
                 $element->setDataUsingMethod($key, $value);

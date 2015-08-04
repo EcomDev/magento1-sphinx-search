@@ -56,6 +56,8 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Filter_Option
             $info['count'] = 0;
         }
 
+
+
         $this->_count = $info['count'];
     }
     
