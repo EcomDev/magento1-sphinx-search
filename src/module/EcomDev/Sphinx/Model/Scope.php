@@ -407,7 +407,7 @@ class EcomDev_Sphinx_Model_Scope
         $parentPath = $this->getLayer()->getCurrentCategory()->getPath();
         $maxLevel = (int)$this->getConfigurationValue('category_filter/max_level_deep');
 
-        $minLevel = $this->getLayer()->getCurrentCategory()->getLevel();
+        $minLevel = (int)$this->getLayer()->getCurrentCategory()->getLevel();
 
         if ($maxLevel <= 0) {
             $maxLevel = 2;
