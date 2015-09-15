@@ -1,6 +1,6 @@
 <?php
 
-$catalogInstaller = new Mage_Catalog_Model_Resource_Setup();
+$catalogInstaller = new Mage_Catalog_Model_Resource_Setup('core_setup');
 $catalogInstaller->addAttribute(
     Mage_Catalog_Model_Category::ENTITY,
     'sphinx_scope',
