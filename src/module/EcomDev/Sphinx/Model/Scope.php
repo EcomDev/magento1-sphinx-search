@@ -176,6 +176,7 @@ class EcomDev_Sphinx_Model_Scope
             $this->_getCategoryFilterLabel(),
             $this->_getCategoryData(),
             array($this->getLayer()->getCurrentCategory()->getId()),
+            $this->getLayer()->getCurrentCategory()->getData(),
             $this->getConfigurationValue('category_filter/renderer')
         );
     }
@@ -347,6 +348,10 @@ class EcomDev_Sphinx_Model_Scope
             ->queryBuilder();
         $this->getLayer()
             ->getProductCollection()
+            ->setFlag(
+                EcomDev_Sphinx_Model_Resource_Product_Collection::FLAG_ONLY_DIRECT_CATEGORY,
+                (bool)$this->getConfigurationValue('category_filter', 'only_direct_products')
+            )
             ->initQuery(
                 $this->_baseQuery,
                 $this->_getConfig()->getContainer()->getIndexNames('product')
@@ -407,7 +412,7 @@ class EcomDev_Sphinx_Model_Scope
         $parentPath = $this->getLayer()->getCurrentCategory()->getPath();
         $maxLevel = (int)$this->getConfigurationValue('category_filter/max_level_deep');
 
-        $minLevel = (int)$this->getLayer()->getCurrentCategory()->getLevel();
+        $minLevel = $this->getLayer()->getCurrentCategory()->getLevel();
 
         if ($maxLevel <= 0) {
             $maxLevel = 2;
@@ -422,16 +427,17 @@ class EcomDev_Sphinx_Model_Scope
 
         $query = $this->_getConfig()->getContainer()->queryBuilder();
         $query
-            ->select('category_id', 'name', 'path', 'request_path')
+            ->select('category_id', 'name', 'path', 'request_path', 'include_in_menu')
             ->from($this->_getConfig()->getContainer()->getIndexNames('category'))
             ->where('is_active', 1)
-            ->where('level', '<=', $maxLevel)
-            ->where('level', '>', $minLevel)
+            ->where('level', '<=', (int)$maxLevel)
+            ->where('level', '>', (int)$minLevel)
             ->orderBy('level', 'asc')
             ->orderBy('position', 'asc')
             ->match('path', $query->expr(
                 '"^' . $query->escapeMatch($parentPath) . '"'
-            ));
+            ))
+            ->limit(1000);
 
         $result = array();
         foreach ($query->execute() as $row) {

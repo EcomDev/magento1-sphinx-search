@@ -31,8 +31,6 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Attribute_Price
      * Should return back a label value for facet
      *
      * @param string[] $row
-     * @param bool $isFirst
-     * @param bool $isLast
      * @return string
      */
     protected function _prepareOptionLabel($row)

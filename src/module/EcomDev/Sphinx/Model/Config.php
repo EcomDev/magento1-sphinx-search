@@ -2,7 +2,7 @@
 
 class EcomDev_Sphinx_Model_Config
 {
-    const XML_PATH_INDEXERS = 'global/index/sphinx/product/indexer';
+    const XML_PATH_TRIGGERS = 'global/index/sphinx/%s/trigger';
     const INTERFACE_PRODUCT_INDEXER = 'EcomDev_Sphinx_Model_Resource_Indexer_Catalog_Product_IndexerInterface';
     const INTERFACE_CONFIGURATION_RENDERER = '';
     const PRICE_PREFIX = 'price_index_';
@@ -376,46 +376,6 @@ class EcomDev_Sphinx_Model_Config
     }
 
     /**
-     * Returns list of indexer classes for product
-     * 
-     * @return string[]
-     */
-    public function getProductIndexerClasses()
-    {
-        if ($this->_productIndexerClasses === null) {
-            $this->_productIndexerClasses = array();
-            $indexerConfig = Mage::getConfig()->getNode(self::XML_PATH_INDEXERS);
-
-            if ($indexerConfig) {
-                foreach ($indexerConfig->children() as $code => $indexerClass) {
-                    $indexerClass = (string)$indexerClass;
-                    if (!$indexerClass) {
-                        continue;
-                    }
-                    
-                    $class = Mage::getConfig()->getResourceModelClassName($indexerClass);
-
-                    if (!class_exists($class)) {
-                        Mage::log(sprintf('Sphinx:Config Indexer class %s does not exists', $class));
-                        continue;
-                    }
-                    
-                    $reflection = new ReflectionClass($class);
-                    
-                    if (!$reflection->implementsInterface(self::INTERFACE_PRODUCT_INDEXER)) {
-                        Mage::log(sprintf('Sphinx:Config Indexer class %s does not implement required interface', $class));
-                        continue;
-                    }
-
-                    $this->_productIndexerClasses[$code] = $class;
-                }
-            }
-        }
-        
-        return $this->_productIndexerClasses;
-    }
-
-    /**
      * Returns price columns by group
      * 
      * @param bool $byGroup
@@ -572,5 +532,69 @@ class EcomDev_Sphinx_Model_Config
         }
         
         return $this->_scope;
+    }
+
+    /**
+     * Returns triggers for specified entity type
+     *
+     * @param string $entityType
+     * @return string[][][]
+     */
+    public function getTriggers($entityType)
+    {
+        $triggers = [];
+        foreach (Mage::getConfig()
+                     ->getNode(sprintf(self::XML_PATH_TRIGGERS, $entityType))->children() as $name => $node) {
+            $types = ['insert', 'update', 'delete'];
+            if (!isset($node->table)) {
+                continue;
+            }
+
+            if (!isset($node->table->prefix)) {
+                $tableName = (string) $node->table;
+            } else {
+                $tableName = [(string)$node->table->prefix, (string)$node->table->suffix];
+            }
+
+            try {
+                $tableName = Mage::getSingleton('core/resource')->getTableName($tableName);
+            } catch (Exception $e) {
+                Mage::logException($e);
+                continue;
+            }
+
+            // To allow deletion of triggers
+            $triggers[$tableName] = [];
+
+            foreach ($types as $type) {
+                if (isset($node->types)
+                    && (!isset($node->types->{$type}) || (string)$node->types->{$type} === '0')) {
+                    continue;
+                }
+
+                if (!isset($node->field) || (string)$node->field == '') {
+                    continue;
+                }
+
+                $check = [];
+                if ($type === 'update' && isset($node->update)) {
+                    foreach ($node->update->children() as $name => $flag) {
+                        if ((string)$flag === '0') {
+                            continue;
+                        }
+                        $check[] = $name;
+                    }
+                }
+
+                $triggers[$tableName][$type] = [
+                    'field' => (string)$node->field,
+                    'check' => $check,
+                    'type' => $type,
+                    'table' => $tableName
+                ];
+            }
+        }
+
+        return $triggers;
     }
 }

@@ -5,7 +5,6 @@ class EcomDev_Sphinx_Model_Indexer_Catalog_Product
 {
     const EVENT_MATCH_RESULT_KEY = 'sphinx_catalog_product_match_result';
     const EVENT_MATCH_SKIP_KEY = 'sphinx_catalog_product_skip';
-    const EVENT_PRODUCT_ID = 'sphinx_catalog_product_id';
     const EVENT_PRODUCT_IDS = 'sphinx_catalog_product_ids';
 
     /**
@@ -14,25 +13,18 @@ class EcomDev_Sphinx_Model_Indexer_Catalog_Product
      * @var array
      */
     protected $_matchedEntities = array(
-        Mage_Catalog_Model_Product::ENTITY => array(
-            Mage_Index_Model_Event::TYPE_SAVE,
-            Mage_Index_Model_Event::TYPE_MASS_ACTION
-        ),
         Mage_Core_Model_Store::ENTITY => array(
             Mage_Index_Model_Event::TYPE_SAVE
         ),
         Mage_Core_Model_Store_Group::ENTITY => array(
             Mage_Index_Model_Event::TYPE_SAVE
         ),
-        Mage_Catalog_Model_Convert_Adapter_Product::ENTITY => array(
-            Mage_Index_Model_Event::TYPE_SAVE
-        ),
         EcomDev_Sphinx_Model_Attribute::ENTITY => array(
             Mage_Index_Model_Event::TYPE_SAVE,
             Mage_Index_Model_Event::TYPE_DELETE
         ),
-        Mage_Customer_Model_Group::ENTITY => array(
-            Mage_Index_Model_Event::TYPE_SAVE
+        EcomDev_Sphinx_Model_Update::ENTITY => array(
+            Mage_Index_Model_Event::TYPE_MASS_ACTION
         )
     );
 
@@ -109,6 +101,13 @@ class EcomDev_Sphinx_Model_Indexer_Catalog_Product
             } else {
                 $result = false;
             }
+        } elseif ($entity == EcomDev_Sphinx_Model_Update::ENTITY) {
+            $container = $event->getDataObject();
+            if ($container->getType() === 'product') {
+                $result = true;
+            } else {
+                $result = false;
+            }
         } elseif ($entity == Mage_Core_Model_Store_Group::ENTITY) {
             /* @var $storeGroup Mage_Core_Model_Store_Group */
             $storeGroup = $event->getDataObject();
@@ -117,8 +116,6 @@ class EcomDev_Sphinx_Model_Indexer_Catalog_Product
             } else {
                 $result = false;
             }
-        } elseif ($event->getEntity() == Mage_Customer_Model_Group::ENTITY) {
-            $result = $event->getDataObject() && $event->getDataObject()->isObjectNew();
         } else {
             $result = parent::matchEvent($event);
         }
@@ -138,50 +135,17 @@ class EcomDev_Sphinx_Model_Indexer_Catalog_Product
     {
         $event->addNewData(self::EVENT_MATCH_RESULT_KEY, true);
         switch ($event->getEntity()) {
-            case Mage_Catalog_Model_Product::ENTITY:
-                $this->_registerCatalogProductEvent($event);
+            case EcomDev_Sphinx_Model_Update::ENTITY:
+                $container = $event->getDataObject();
+                $event->addNewData(self::EVENT_PRODUCT_IDS, $container->getEntityIds());
                 break;
-            
-            case Mage_Catalog_Model_Convert_Adapter_Product::ENTITY:
+
             case Mage_Core_Model_Store::ENTITY:
             case Mage_Core_Model_Store_Group::ENTITY:
-            case Mage_Customer_Model_Group::ENTITY:
             case EcomDev_Sphinx_Model_Attribute::ENTITY:
                 $this->_changeStatus($event);
                 break;
         }
-    }
-
-    /**
-     * Register data required by catalog product process in event object
-     *
-     * @param Mage_Index_Model_Event $event
-     * @return Mage_Catalog_Model_Product_Indexer_Flat
-     */
-    protected function _registerCatalogProductEvent(Mage_Index_Model_Event $event)
-    {
-        switch ($event->getType()) {
-            case Mage_Index_Model_Event::TYPE_SAVE:
-                /* @var $product Mage_Catalog_Model_Product */
-                $product = $event->getDataObject();
-                $event->addNewData(self::EVENT_PRODUCT_ID, $product->getId());
-                break;
-
-            case Mage_Index_Model_Event::TYPE_MASS_ACTION:
-                /* @var $actionObject Varien_Object */
-                $actionObject = $event->getDataObject();
-                
-                $updatedAttributes = array_keys($actionObject->getAttributesData());
-                $usedAttributeCodes = $this->getConfig()->getUsedAttributeCodes();
-                
-                if (is_array($actionObject->getProductIds()) 
-                    && array_intersect($usedAttributeCodes, $updatedAttributes)) {
-                    $event->addNewData(self::EVENT_PRODUCT_IDS, $actionObject->getProductIds());
-                }
-                break;
-        }
-
-        return $this;
     }
 
     /**

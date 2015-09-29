@@ -35,9 +35,14 @@ class EcomDev_Sphinx_Block_Adminhtml_Configure_Grid
         $this->_addTextColumn('code', $this->__('Index'));
 
         $this->_addOptionsColumn(
+            'store_id', $this->__('Store'), 'ecomdev_sphinx/source_index_store', '100px'
+        );
+
+        $this->_addOptionsColumn(
             'state', $this->__('State'), 'ecomdev_sphinx/source_index_state', '100px', null,
             array($this, 'decorateStatus')
         );
+
         
         $this->_addNumberColumn('pending_rows', $this->__('# Pending'), '100px');
         $this->_addNumberColumn('indexed_rows', $this->__('# Indexed'), '100px');

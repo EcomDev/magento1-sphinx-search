@@ -3,7 +3,8 @@
 abstract class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_AbstractIndexer
     extends Mage_Index_Model_Resource_Abstract
 {
-    const TRIGGER_FORMAT = 'ecomdev_sphinx_trigger_%s';
+    const TRIGGER_FORMAT = 'ecomdev_sphinx_trigger_%2$s_%1$s';
+    const CODE_DELIMETER = '/*--ECOMDEV_SPHINX_ADDITIONAL_STATEMENT--*/';
 
     /**
      * Returns an instance of EAV config
@@ -120,70 +121,6 @@ abstract class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_AbstractIndexer
     }
 
     /**
-     * Get insert from Select object query
-     *
-     * @param Varien_Db_Select $select
-     * @param string $table     insert into table
-     * @param string[] $columns 
-     * @param array $fields
-     * @param bool|int $mode
-     * @return string
-     */
-    public function insertFromSelectInternal(Varien_Db_Select $select, $table, array $columns = array(), array $fields = array(), $mode = false)
-    {
-        $query = 'INSERT';
-        if ($mode == Varien_Db_Adapter_Interface::INSERT_IGNORE) {
-            $query .= ' IGNORE';
-        }
-        
-        $query = sprintf('%s INTO %s', $query, $this->_getIndexAdapter()->quoteIdentifier($table));
-        if ($columns) {
-            $columns = array_map(array($this->_getIndexAdapter(), 'quoteIdentifier'), $columns);
-            $query = sprintf('%s (%s)', $query, join(', ', $columns));
-        }
-
-        $query = sprintf('%s %s', $query, $select->assemble());
-
-        if ($mode == Varien_Db_Adapter_Interface::INSERT_ON_DUPLICATE) {
-            if (!$fields) {
-                $describe = $this->_getIndexAdapter()->describeTable($table);
-                foreach ($describe as $column) {
-                    if ($column['PRIMARY'] === false) {
-                        $fields[] = $column['COLUMN_NAME'];
-                    }
-                }
-            }
-
-            $update = array();
-            foreach ($fields as $k => $v) {
-                $field = $value = null;
-                if (!is_numeric($k)) {
-                    $field = $this->_getIndexAdapter()->quoteIdentifier($k);
-                    if ($v instanceof Zend_Db_Expr) {
-                        $value = $v->__toString();
-                    } elseif (is_string($v)) {
-                        $value = sprintf('VALUES(%s)', $this->_getIndexAdapter()->quoteIdentifier($v));
-                    } elseif (is_numeric($v)) {
-                        $value = $this->_quoteInto('?', $v);
-                    }
-                } elseif (is_string($v)) {
-                    $value = sprintf('VALUES(%s)', $this->_getIndexAdapter()->quoteIdentifier($v));
-                    $field = $this->_getIndexAdapter()->quoteIdentifier($v);
-                }
-
-                if ($field && $value) {
-                    $update[] = sprintf('%s = %s', $field, $value);
-                }
-            }
-            if ($update) {
-                $query = sprintf('%s ON DUPLICATE KEY UPDATE %s', $query, join(', ', $update));
-            }
-        }
-
-        return $query;
-    }
-
-    /**
      * Renders conditions from provided arguments
      *
      * @param [$condition1]
@@ -226,58 +163,281 @@ abstract class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_AbstractIndexer
         return $affectedRows;
     }
 
-    protected function _createIndexTrigger($table, $type, $field = 'document_id')
+    /**
+     * Updates index from passed select and applies limit if there is any
+     *
+     * @param Varien_Db_Select $select
+     * @param Varien_Db_Select $limit
+     * @param string[]|null $table
+     * @return $this
+     */
+    protected function _updateIndexTableFromSelect(
+        Varien_Db_Select $select,
+        Varien_Db_Select $limit = null,
+        $table = null
+    )
     {
-        if ($this->_triggerExists($table)) {
-            return $this;
+        if ($limit !== null) {
+            $select->where(sprintf('index.%s IN(?)', $this->getIdFieldName()), $limit);
         }
 
-        $triggerName = $this->_triggerName($table);
-        $trigger = new Magento_Db_Sql_Trigger();
-        $trigger->setName($triggerName);
-        $trigger->setEvent(Magento_Db_Sql_Trigger::SQL_EVENT_DELETE);
-        $trigger->setTime(Magento_Db_Sql_Trigger::SQL_TIME_AFTER);
-        $insertStatement = sprintf(
-            'INSERT IGNORE INTO %s (%s, %s) VALUES (?, old.%s);',
-            $this->getTable('ecomdev_sphinx/index_deleted'),
-            $this->_getIndexAdapter()->quoteIdentifier('type'),
-            $this->_getIndexAdapter()->quoteIdentifier('document_id'),
-            $field
+        if ($table === null) {
+            $table = array('index' => $this->getMainTable());
+        }
+
+        $sql = $this->_getIndexAdapter()->updateFromSelect(
+            $select, $table
         );
 
-        $trigger->setBody($this->_getIndexAdapter()->quoteInto($insertStatement, $type));
+        $this->_getIndexAdapter()->query(
+            $sql
+        );
+
+        return $this;
+    }
+
+    /**
+     * Creates a new trigger
+     *
+     * @param string $triggerName
+     * @param string $table
+     * @param string $event
+     * @param string $time
+     * @param string $code
+     * @return $this
+     */
+    protected function _createTrigger($triggerName, $table, $event, $time, $code)
+    {
+        $trigger = new Magento_Db_Sql_Trigger();
+        $trigger->setName($triggerName);
+        $trigger->setEvent($event);
+        $trigger->setTime($time);
+        $trigger->setBody($code);
         $trigger->setTarget($table);
 
         $this->_getIndexAdapter()->query($trigger->assemble());
         return $this;
     }
 
-    protected function _dropIndexTrigger($table)
-    {
-        $triggerName = $this->_triggerName($table);
-        $this->_getIndexAdapter()->dropTrigger($triggerName);
-        return $this;
-    }
-
-    protected function _triggerExists($table)
-    {
-        $triggerName = $this->_triggerName($table);
-        $query = $this->_getIndexAdapter()->quoteInto(
-            sprintf(
-                'SHOW TRIGGERS WHERE %s = ?',
-                $this->_getIndexAdapter()->quoteIdentifier('Trigger')
-            ),
-            $triggerName
-        );
-        return $this->_getIndexAdapter()->fetchOne($query) === $triggerName;
-    }
-
-    protected function _triggerName($table)
+    /**
+     * Trigger name generator
+     *
+     * @param string $table
+     * @param string $event
+     * @return string
+     */
+    protected function _triggerName($table, $event)
     {
         if (strpos($table, '/') !== false) {
             $table = $this->getTable($table);
         }
 
-        return sprintf(self::TRIGGER_FORMAT, $table);
+        $name = sprintf(self::TRIGGER_FORMAT, $table, $event);
+
+        if (strlen($name) > 64) {
+            $name = substr($name, 0, 31) . '_' . md5($name);
+        }
+
+        return $name;
+    }
+
+    /**
+     * Returns additional trigger code
+     *
+     * @param string $row
+     * @return bool|string
+     */
+    protected function _getAdditionalTriggerCode($row)
+    {
+        $code = '';
+        $matches = [];
+        if (strpos($row['Trigger'], 'ecomdev_sphinx') !== false) {
+            $pattern = preg_quote(self::CODE_DELIMETER, '/');
+            if (preg_match(sprintf('/^%1$s(.*?)%1$s$/m', $pattern), $row['Statement'], $matches)) {
+                $code = self::CODE_DELIMETER . "\n" . $matches[1] . "\n" . self::CODE_DELIMETER;
+            }
+        } elseif (preg_match('/^\s*begin(.*?)end$\s*/mi', $row['Statement'], $matches)) {
+            $code = self::CODE_DELIMETER . "\n" . $matches[1] . "\n" . self::CODE_DELIMETER;
+        }
+
+        return $code;
+    }
+
+    /**
+     * Returns trigger list for passed tables
+     *
+     * @param array $tableNames
+     * @return string[][][]
+     */
+    protected function _getCurrentTriggers(array $tableNames)
+    {
+        $currentTriggers = [];
+        $stmt = $this->_getIndexAdapter()->query(
+            $this->_getIndexAdapter()->quoteInto(
+                sprintf(
+                    'SHOW TRIGGERS WHERE %s IN(?)',
+                    $this->_getIndexAdapter()->quoteIdentifier('Table')
+                ),
+                $tableNames
+            )
+        );
+
+        while ($row = $stmt->fetch()) {
+            if ($row['Timing'] !== Magento_Db_Sql_Trigger::SQL_TIME_AFTER) {
+                continue;
+            }
+
+            $currentTriggers[$row['Table']][strtolower($row['Event'])] = [
+                'additional_code' => $this->_getAdditionalTriggerCode($row),
+                'code' => preg_replace('/^\s*begin\s*(.*?)\s*end\s*$/mi', '\\1', $row['Statement']),
+                'name' => $row['Trigger']
+            ];
+        }
+
+        return $currentTriggers;
+    }
+
+    /**
+     * Validates all triggers for the entity
+     *
+     * @param $entityType
+     * @param bool|string[] $deleteTrigger
+     * @return $this
+     */
+    protected function _validateTriggers($entityType, $deleteTrigger = false)
+    {
+        $allowedTriggers = $this->_getConfig()->getTriggers($entityType);
+
+        if ($deleteTrigger !== false) {
+            $allowedTriggers[$this->getTable($deleteTrigger[0])]['delete'] = [
+                'field' => $deleteTrigger[1],
+                'target' => 'ecomdev_sphinx/index_deleted',
+                'date_field' => 'deleted_at',
+                'check' => [],
+                'type' => 'delete',
+                'table' => $this->getTable($deleteTrigger[0])
+            ];
+        }
+
+
+        $currentTriggers = $this->_getCurrentTriggers(array_keys($allowedTriggers));
+
+        $toRemove = [];
+        $toCreate = [];
+
+        foreach ($allowedTriggers as $table => $types) {
+            if (isset($currentTriggers[$table])) {
+                foreach ($currentTriggers[$table] as $type => $triggerInfo) {
+                    if (!isset($allowedTriggers[$table][$type])) {
+                        $toRemove[] = $triggerInfo['name'];
+                        if (!empty($triggerInfo['additional_code'])) {
+                            $toCreate[] = [
+                                'table' => $table,
+                                'type' => $type,
+                                'code' => $triggerInfo['additional_code']
+                            ];
+                        }
+                    }
+                }
+            }
+
+            foreach ($types as $type => $triggerInfo) {
+                if (isset($currentTriggers[$table][$type])) {
+                    $code = $this->_generateTriggerCode(
+                        $entityType,
+                        $triggerInfo,
+                        $currentTriggers[$table][$type]['additional_code']
+                    );
+
+                    if ($code !== $currentTriggers[$table][$type]) {
+                        $toRemove[] = $currentTriggers[$table][$type]['name'];
+                    }
+                } else {
+                    $toCreate[] = [
+                        'table' => $table,
+                        'type' => $type,
+                        'code' => $this->_generateTriggerCode($entityType, $triggerInfo, '')
+                    ];
+                }
+            }
+        }
+
+        foreach ($toRemove as $triggerName) {
+            $this->_getIndexAdapter()->dropTrigger($triggerName);
+        }
+
+        foreach ($toCreate as $triggerInfo) {
+            $triggerName = $this->_triggerName(
+                $triggerInfo['table'],
+                $triggerInfo['type']
+            );
+
+            $this->_createTrigger(
+                $triggerName,
+                $triggerInfo['table'],
+                strtoupper($triggerInfo['type']),
+                Magento_Db_Sql_Trigger::SQL_TIME_AFTER,
+                $triggerInfo['code']
+            );
+        }
+
+        return $this;
+    }
+
+    /**
+     * Generates trigger code
+     *
+     * @param string $entityType
+     * @param string[] $triggerInfo
+     * @param string $additionalCode
+     * @return string
+     */
+    protected function _generateTriggerCode($entityType, $triggerInfo, $additionalCode)
+    {
+        $dateField = isset($triggerInfo['date_field']) ? $triggerInfo['date_field'] : 'updated_at';
+        $targetTable = isset($triggerInfo['target']) ? $triggerInfo['target'] : 'ecomdev_sphinx/index_updated';
+        $targetTable = $this->getTable($targetTable);
+
+        $fieldPrefix = 'NEW';
+        if ($triggerInfo['type'] === 'delete') {
+            $fieldPrefix = 'OLD';
+        }
+
+        $adapter = $this->_getIndexAdapter();
+
+        $statement = 'INSERT %1$s (%2$s, %3$s, %4$s) '
+                   . ' VALUES (%5$s, %6$s, %7$s) '
+                   . ' ON DUPLICATE KEY UPDATE %4$s = VALUES(%4$s);';
+
+        $statement = sprintf(
+            $statement,
+            $targetTable,
+            $adapter->quoteIdentifier($triggerInfo['field']),
+            $adapter->quoteIdentifier('type'),
+            $adapter->quoteIdentifier($dateField),
+            $fieldPrefix . '.' . $adapter->quoteIdentifier($triggerInfo['field']),
+            $adapter->quote($entityType),
+            'NOW()'
+        );
+
+        if ($triggerInfo['type'] === 'update' && !empty($triggerInfo['check'])) {
+            $conditions = [];
+            foreach ((array)$triggerInfo['check'] as $field) {
+                $conditions[] = sprintf('OLD.%1$s <> NEW.%1$s', $field);
+            }
+            $code = sprintf(
+                "IF %s THEN\n%s\nEND IF;",
+                implode(' OR ', $conditions),
+                $statement
+            );
+        } else {
+            $code = $statement;
+        }
+
+        if ($additionalCode !== '') {
+            $code .= "\n" . $additionalCode;
+        }
+
+        return $code;
     }
 }

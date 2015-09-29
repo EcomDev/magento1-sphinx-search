@@ -1,7 +1,7 @@
 <config>
     <modules>
         <EcomDev_Sphinx>
-            <version>1.0.1</version>
+            <version>2.0.0</version>
         </EcomDev_Sphinx>
     </modules>
     <global>
@@ -21,12 +21,15 @@
                     <scope>
                         <table>ecomdev_sphinx_scope</table>
                     </scope>
-                    <attribute>
-                        <table>ecomdev_sphinx_attribute</table>
-                    </attribute>
                     <sort>
                         <table>ecomdev_sphinx_sort</table>
                     </sort>
+                    <attribute>
+                        <table>ecomdev_sphinx_attribute</table>
+                    </attribute>
+                    <field>
+                        <table>ecomdev_sphinx_field</table>
+                    </field>
                     <index_metadata>
                         <table>ecomdev_sphinx_index_metadata</table>
                     </index_metadata>
@@ -36,78 +39,12 @@
                     <index_product>
                         <table>ecomdev_sphinx_index_product</table>
                     </index_product>
-                    <index_product_attribute>
-                        <table>ecomdev_sphinx_index_product_attribute</table>
-                    </index_product_attribute>
-                    <index_product_option_idx>
-                        <table>ecomdev_sphinx_index_product_option_idx</table>
-                    </index_product_option_idx>
-                    <index_product_string_idx>
-                        <table>ecomdev_sphinx_index_product_string_idx</table>
-                    </index_product_string_idx>
-                    <index_product_text_idx>
-                        <table>ecomdev_sphinx_index_product_text_idx</table>
-                    </index_product_text_idx>
-                    <index_product_decimal_idx>
-                        <table>ecomdev_sphinx_index_product_decimal_idx</table>
-                    </index_product_decimal_idx>
-                    <index_product_timestamp_idx>
-                        <table>ecomdev_sphinx_index_product_timestamp_idx</table>
-                    </index_product_timestamp_idx>
-                    <index_product_price_idx>
-                        <table>ecomdev_sphinx_index_product_price_idx</table>
-                    </index_product_price_idx>
-                    <index_product_integer_idx>
-                        <table>ecomdev_sphinx_index_product_integer_idx</table>
-                    </index_product_integer_idx>
-                    <index_product_option_tmp>
-                        <table>ecomdev_sphinx_index_product_option_tmp</table>
-                    </index_product_option_tmp>
-                    <index_product_string_tmp>
-                        <table>ecomdev_sphinx_index_product_string_tmp</table>
-                    </index_product_string_tmp>
-                    <index_product_text_tmp>
-                        <table>ecomdev_sphinx_index_product_text_tmp</table>
-                    </index_product_text_tmp>
-                    <index_product_decimal_tmp>
-                        <table>ecomdev_sphinx_index_product_decimal_tmp</table>
-                    </index_product_decimal_tmp>
-                    <index_product_timestamp_tmp>
-                        <table>ecomdev_sphinx_index_product_timestamp_tmp</table>
-                    </index_product_timestamp_tmp>
-                    <index_product_price_tmp>
-                        <table>ecomdev_sphinx_index_product_price_tmp</table>
-                    </index_product_price_tmp>
-                    <index_product_integer_tmp>
-                        <table>ecomdev_sphinx_index_product_integer_tmp</table>
-                    </index_product_integer_tmp>
-                    <index_product_option>
-                        <table>ecomdev_sphinx_index_product_option</table>
-                    </index_product_option>
-                    <index_product_integer>
-                        <table>ecomdev_sphinx_index_product_integer</table>
-                    </index_product_integer>
-                    <index_product_string>
-                        <table>ecomdev_sphinx_index_product_string</table>
-                    </index_product_string>
-                    <index_product_text>
-                        <table>ecomdev_sphinx_index_product_text</table>
-                    </index_product_text>
-                    <index_product_decimal>
-                        <table>ecomdev_sphinx_index_product_decimal</table>
-                    </index_product_decimal>
-                    <index_product_timestamp>
-                        <table>ecomdev_sphinx_index_product_timestamp</table>
-                    </index_product_timestamp>
-                    <index_product_price>
-                        <table>ecomdev_sphinx_index_product_price</table>
-                    </index_product_price>
                     <index_deleted>
                         <table>ecomdev_sphinx_index_deleted</table>
                     </index_deleted>
-                    <index_store>
-                        <table>ecomdev_sphinx_index_store</table>
-                    </index_store>
+                    <index_updated>
+                        <table>ecomdev_sphinx_index_updated</table>
+                    </index_updated>
                 </entities>
             </ecomdev_sphinx_resource>
         </models>
@@ -133,25 +70,143 @@
                 </sphinx_category>
                 <sphinx_product>
                     <model>ecomdev_sphinx/indexer_catalog_product</model>
-                    <depends>
-                        <sphinx_category/>
-                        <catalog_category_product/>
-                        <catalog_product_price/>
-                    </depends>
                 </sphinx_product>
             </indexer>
             <sphinx>
                 <product>
-                    <indexer>
-                        <option>ecomdev_sphinx/indexer_catalog_product_option</option>
-                        <integer>ecomdev_sphinx/indexer_catalog_product_integer</integer>
-                        <decimal>ecomdev_sphinx/indexer_catalog_product_decimal</decimal>
-                        <string>ecomdev_sphinx/indexer_catalog_product_string</string>
-                        <text>ecomdev_sphinx/indexer_catalog_product_text</text>
-                        <timestamp>ecomdev_sphinx/indexer_catalog_product_timestamp</timestamp>
-                        <price>ecomdev_sphinx/indexer_catalog_product_price</price>
-                    </indexer>
+                    <trigger>
+                        <entity>
+                            <table>catalog/product</table>
+                            <field>entity_id</field>
+                            <update>
+                                <type_id />
+                                <sku />
+                                <attribute_set_id />
+                                <has_options />
+                                <required_options />
+                            </update>
+                        </entity>
+                        <entity_int>
+                            <table><prefix>catalog/product</prefix><suffix>int</suffix></table>
+                            <field>entity_id</field>
+                            <update>
+                                <value>1</value>
+                            </update>
+                        </entity_int>
+                        <entity_varchar>
+                            <table><prefix>catalog/product</prefix><suffix>varchar</suffix></table>
+                            <field>entity_id</field>
+                            <update>
+                                <value>1</value>
+                            </update>
+                        </entity_varchar>
+                        <entity_text>
+                            <table><prefix>catalog/product</prefix><suffix>text</suffix></table>
+                            <field>entity_id</field>
+                            <update>
+                                <value>1</value>
+                            </update>
+                        </entity_text>
+                        <entity_decimal>
+                            <table><prefix>catalog/product</prefix><suffix>decimal</suffix></table>
+                            <field>entity_id</field>
+                            <update>
+                                <value>1</value>
+                            </update>
+                        </entity_decimal>
+                        <entity_datetime>
+                            <table><prefix>catalog/product</prefix><suffix>datetime</suffix></table>
+                            <field>entity_id</field>
+                            <update>
+                                <value>1</value>
+                            </update>
+                        </entity_datetime>
+                        <entity_media_gallery>
+                            <table><prefix>catalog/product</prefix><suffix>media_gallery</suffix></table>
+                            <field>entity_id</field>
+                            <update>
+                                <value>1</value>
+                            </update>
+                        </entity_media_gallery>
+                        <price_index>
+                            <table>catalog/product_index_price</table>
+                            <field>entity_id</field>
+                            <update>
+                                <price>1</price>
+                                <min_price>1</min_price>
+                                <max_price>1</max_price>
+                            </update>
+                        </price_index>
+                        <stock_index>
+                            <table>cataloginventory/stock_status</table>
+                            <field>product_id</field>
+                            <types>
+                                <update>1</update>
+                                <delete>1</delete>
+                            </types>
+                            <update>
+                                <stock_status>1</stock_status>
+                            </update>
+                        </stock_index>
+                        <category_index>
+                            <table>catalog/category_product_index</table>
+                            <field>product_id</field>
+                            <types>
+                                <insert>1</insert>
+                                <delete>1</delete>
+                            </types>
+                        </category_index>
+                    </trigger>
                 </product>
+                <category>
+                    <trigger>
+                        <entity>
+                            <table>catalog/category</table>
+                            <field>entity_id</field>
+                            <update>
+                                <parent_id />
+                                <path />
+                                <position />
+                                <level />
+                            </update>
+                        </entity>
+                        <entity_int>
+                            <table><prefix>catalog/category</prefix><suffix>int</suffix></table>
+                            <field>entity_id</field>
+                            <update>
+                                <value>1</value>
+                            </update>
+                        </entity_int>
+                        <entity_varchar>
+                            <table><prefix>catalog/category</prefix><suffix>varchar</suffix></table>
+                            <field>entity_id</field>
+                            <update>
+                                <value>1</value>
+                            </update>
+                        </entity_varchar>
+                        <entity_text>
+                            <table><prefix>catalog/category</prefix><suffix>text</suffix></table>
+                            <field>entity_id</field>
+                            <update>
+                                <value>1</value>
+                            </update>
+                        </entity_text>
+                        <entity_decimal>
+                            <table><prefix>catalog/category</prefix><suffix>decimal</suffix></table>
+                            <field>entity_id</field>
+                            <update>
+                                <value>1</value>
+                            </update>
+                        </entity_decimal>
+                        <entity_datetime>
+                            <table><prefix>catalog/product</prefix><suffix>datetime</suffix></table>
+                            <field>entity_id</field>
+                            <update>
+                                <value>1</value>
+                            </update>
+                        </entity_datetime>
+                    </trigger>
+                </category>
             </sphinx>
         </index>
         <cache>
@@ -159,7 +214,7 @@
                 <sphinx translate="label,description" module="ecomdev_sphinx">
                     <label>Sphinx Metadata</label>
                     <description>Sphinx Configuration Scopes, Sphinx Attributes</description>
-                    <tags>SPHINX_SCOPE,SPHINX_ATTRIBUTE</tags>
+                    <tags>SPHINX_SCOPE,SPHINX_ATTRIBUTE,SPHINX_FIELD,SPHINX_FACET,SPHINX_SORT</tags>
                 </sphinx>
             </types>
         </cache>
@@ -224,6 +279,13 @@
         </routers>
     </admin>
     <frontend>
+        <category>
+            <collection>
+                <attributes>
+                    <sphinx_scope />
+                </attributes>
+            </collection>
+        </category>
         <events>
             <catalog_controller_category_init_after>
                 <observers>

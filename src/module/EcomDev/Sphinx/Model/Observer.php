@@ -107,6 +107,20 @@ class EcomDev_Sphinx_Model_Observer
             Mage::getSingleton('catalog/observer')->addCatalogToTopmenuItems($observer);
         }
     }
+
+    /**
+     * Returns menu items from sphinx
+     *
+     * @return array[]|bool
+     */
+    public function getCatalogMenuItems()
+    {
+        if ($this->_getConfig()->isEnabled() && $this->_getConfig()->getConfig('replace_menu', 'general')) {
+            return $this->_getStoreCategoriesTree();
+        }
+
+        return false;
+    }
     
     protected function _getStoreCategoriesTree()
     {

@@ -68,6 +68,13 @@ interface EcomDev_Sphinx_Model_Sphinx_FacetInterface
     public function getLabel();
 
     /**
+     * Returns position of facet
+     *
+     * @return int
+     */
+    public function getPosition();
+
+    /**
      * Apply filter parameter from request
      *
      * @param string|string[] $value

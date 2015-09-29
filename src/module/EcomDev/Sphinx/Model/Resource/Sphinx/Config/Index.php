@@ -208,16 +208,23 @@ class EcomDev_Sphinx_Model_Resource_Sphinx_Config_Index
             );
 
         if ($isDirect) {
-            $select->join(
-                array('category_index' => $this->_indexTables[self::INDEX_CATEGORY]),
-                implode(' and ', array(
-                    'category_index.category_id = category_product.category_id',
-                    'category_index.store_id = category_product.store_id'
-                )),
-                array()
-            );
-
-            $select->where('category_product.is_parent = ?', 0);
+            $select
+                ->join(
+                    array('catalog_category' => $this->getTable('catalog/category_product')),
+                    implode(' and ', array(
+                        'catalog_category.product_id = category_product.product_id',
+                        'catalog_category.category_id = category_product.category_id'
+                    )),
+                    array()
+                )
+                ->join(
+                    array('category_index' => $this->_indexTables[self::INDEX_CATEGORY]),
+                    implode(' and ', array(
+                        'category_index.category_id = category_product.category_id',
+                        'category_index.store_id = category_product.store_id'
+                    )),
+                    array()
+                );
         }
 
         $categoryColumn = (

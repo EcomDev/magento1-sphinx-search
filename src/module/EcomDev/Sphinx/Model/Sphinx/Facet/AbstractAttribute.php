@@ -30,7 +30,7 @@ abstract class EcomDev_Sphinx_Model_Sphinx_Facet_AbstractAttribute
         parent::__construct(
             $attribute->getAttributeCode(),
             $filterName,
-            $attribute->getAttribute()->getFrontendLabel() 
+            $attribute->getAttribute()->getStoreLabel()
         );
     }
 

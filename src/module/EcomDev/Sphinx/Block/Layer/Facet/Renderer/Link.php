@@ -17,15 +17,25 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Link
             return $this->_getData('category_tree');
         }
 
+        $categoryData = $this->getFacet()->getCurrentCategoryData();
+        $filterFirstLevel = false;
+
+        if (isset($categoryData['path'])) {
+            $filterFirstLevel = $categoryData['path'];
+        }
+
         $map = array();
         /* @var $categories Mage_Catalog_Model_Category[] */
         $categories = array();
 
         foreach ($this->getFacet()->getCategoryData() as $category) {
+            if (!$category['include_in_menu']) {
+                continue;
+            }
+
             $map[$category['path']] = Mage::getModel('catalog/category')
                 ->setData($category)
                 ->setId($category['category_id']);
-
             if (isset($map[dirname($category['path'])])) {
                 $parentCategory = $map[dirname($category['path'])];
                 $allNodes = $parentCategory->getData('child_nodes');
@@ -35,7 +45,9 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Link
 
                 $allNodes[] = $map[$category['path']];
                 $parentCategory->setData('child_nodes', $allNodes);
-            } else {
+            } elseif (!$filterFirstLevel ||
+                $filterFirstLevel === dirname($category['path']) ||
+                dirname($filterFirstLevel) === dirname($category['path'])) {
                 $categories[] = $map[$category['path']];
             }
         }
@@ -52,7 +64,8 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Link
      */
     public function isCurrentCategory($category)
     {
-        return $this->getFacet()->getCurrentCategoryId() == $category->getId();
+        $categoryData = $this->getFacet()->getCurrentCategoryData();
+        return isset($categoryData['entity_id']) && $categoryData['entity_id'] == $category->getId();
     }
 
     /**

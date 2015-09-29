@@ -5,6 +5,8 @@ use EcomDev_Sphinx_Model_Sphinx_Query_Builder as QueryBuilder;
 class EcomDev_Sphinx_Model_Resource_Product_Collection
     extends Mage_Catalog_Model_Resource_Product_Collection
 {
+    const FLAG_ONLY_DIRECT_CATEGORY = 'only_direct_category';
+
     /**
      * @var EcomDev_Sphinx_Model_LayerInterface
      */
@@ -41,7 +43,8 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
         
         if (isset($this->_productLimitationFilters['category_id'])) {
             $filterName = 'direct_category_ids';
-            if (empty($this->_productLimitationFilters['category_is_anchor'])) {
+            if (!empty($this->_productLimitationFilters['category_is_anchor'])
+                && !$this->getFlag(self::FLAG_ONLY_DIRECT_CATEGORY)) {
                 $filterName = 'anchor_category_ids';
             }
 

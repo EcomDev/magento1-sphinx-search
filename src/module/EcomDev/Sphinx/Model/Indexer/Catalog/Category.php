@@ -10,7 +10,6 @@ class EcomDev_Sphinx_Model_Indexer_Catalog_Category
 {
     const EVENT_MATCH_RESULT_KEY = 'sphinx_catalog_category_match_result';
     const EVENT_MATCH_SKIP_KEY = 'sphinx_catalog_category_skip';
-    const EVENT_CATEGORY_ID = 'sphinx_catalog_category_id';
     const EVENT_CATEGORY_IDS = 'sphinx_catalog_category_ids';
 
     /**
@@ -19,15 +18,15 @@ class EcomDev_Sphinx_Model_Indexer_Catalog_Category
      * @var array
      */
     protected $_matchedEntities = array(
-        Mage_Catalog_Model_Category::ENTITY => array(
-            Mage_Index_Model_Event::TYPE_SAVE
-        ),
         Mage_Core_Model_Store::ENTITY => array(
             Mage_Index_Model_Event::TYPE_SAVE
         ),
         Mage_Core_Model_Store_Group::ENTITY => array(
             Mage_Index_Model_Event::TYPE_SAVE
         ),
+        EcomDev_Sphinx_Model_Update::ENTITY => array(
+            Mage_Index_Model_Event::TYPE_MASS_ACTION
+        )
     );
 
     /**
@@ -92,6 +91,13 @@ class EcomDev_Sphinx_Model_Indexer_Catalog_Category
             } else {
                 $result = false;
             }
+        } elseif ($entity == EcomDev_Sphinx_Model_Update::ENTITY) {
+            $container = $event->getDataObject();
+            if ($container->getType() === 'category') {
+                $result = true;
+            } else {
+                $result = false;
+            }
         } elseif ($entity == Mage_Core_Model_Store_Group::ENTITY) {
             /** @var $storeGroup Mage_Core_Model_Store_Group */
             $storeGroup = $event->getDataObject();
@@ -118,20 +124,9 @@ class EcomDev_Sphinx_Model_Indexer_Catalog_Category
     {
         $event->addNewData(self::EVENT_MATCH_RESULT_KEY, true);
         switch ($event->getEntity()) {
-            case Mage_Catalog_Model_Category::ENTITY:
-                /* @var $category Mage_Catalog_Model_Category */
-                $category = $event->getDataObject();
-
-                /**
-                 * Check if category has another affected category ids (category move result)
-                 */
-                $affectedCategoryIds = $category->getAffectedCategoryIds();
-                
-                if ($affectedCategoryIds) {
-                    $event->addNewData(self::EVENT_CATEGORY_IDS, $affectedCategoryIds);
-                } else {
-                    $event->addNewData(self::EVENT_CATEGORY_ID, $category->getId());
-                }
+            case EcomDev_Sphinx_Model_Update::ENTITY:
+                $container = $event->getDataObject();
+                $event->addNewData(self::EVENT_CATEGORY_IDS, $container->getEntityIds());
                 break;
 
             case Mage_Core_Model_Store::ENTITY:

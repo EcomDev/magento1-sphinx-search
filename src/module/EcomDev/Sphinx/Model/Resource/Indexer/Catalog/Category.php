@@ -21,13 +21,11 @@ class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_Category
      * @param Mage_Index_Model_Event $event
      * @return $this
      */
-    public function catalogCategorySave(Mage_Index_Model_Event $event)
+    public function sphinxUpdateMassAction(Mage_Index_Model_Event $event)
     {
         $data = $event->getNewData();
         if (isset($data[CategoryIndexer::EVENT_CATEGORY_IDS])) {
             $categoryIds = $data[CategoryIndexer::EVENT_CATEGORY_IDS];
-        } elseif (isset($data[CategoryIndexer::EVENT_CATEGORY_ID])) {
-            $categoryIds = array($data[CategoryIndexer::EVENT_CATEGORY_ID]);
         } else {
             return $this;
         }
@@ -43,11 +41,7 @@ class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_Category
      */
     public function reindexAll()
     {
-        $this->_createIndexTrigger(
-            $this->getMainTable(),
-            EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_CATEGORY,
-            'document_id'
-        );
+        $this->_validateTriggers('category', ['ecomdev_sphinx/index_category', 'category_id']);
         $this->_reindexCategories();
         return $this;
     }
@@ -85,21 +79,11 @@ class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_Category
      */
     protected function _reindexCategories($limit = null)
     {
-        $deleteWhere = '';
-        if ($limit !== null) {
-            $deleteWhere = array('category_id IN(?)' => $limit);
-        }
+        $this->_transactional(function ($limit) {
+            $this->_generateMainData($limit);
+            $this->_removeInvalidRecords($limit);
+        }, $limit !== null, $limit);
 
-        $this->_getIndexAdapter()->delete($this->getMainTable(), $deleteWhere);
-
-        if ($limit === null) {
-            $this->_getIndexAdapter()->changeTableAutoIncrement($this->getMainTable(), '1');
-        }
-
-        $this->_getIndexAdapter()->beginTransaction();
-        $this->_generateMainData($limit);
-        $this->_generateAttributeValues($limit);
-        $this->_getIndexAdapter()->commit();
         return $this;
     }
 
@@ -111,82 +95,100 @@ class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_Category
      */
     protected function _generateMainData($limit = null)
     {
-        $columns = array(
+        $columns = [
             'category_id' => 'category.entity_id',
             'store_id' => 'store.store_id',
             'path' => 'category.path',
             'position' => 'category.position',
             'level' => 'category.level'
-        );
+        ];
 
         $select = $this->_getIndexAdapter()->select();
         $select
-            ->from(array('store' => $this->getTable('core/store')), array())
-            ->join(array('group' => $this->getTable('core/store_group')), 'group.group_id = store.group_id', array())
-            ->join(array('category' => $this->getTable('catalog/category')), 
-                         "category.path LIKE CONCAT('1/', group.root_category_id, '/%') or category.path = CONCAT('1/', group.root_category_id)", array())
-            ->columns($columns);
+            ->from(['store' => $this->getTable('core/store')], ['store_id'])
+            ->join(['group' => $this->getTable('core/store_group')], 'group.group_id = store.group_id', [])
+            ->join(['category' => $this->getTable('catalog/category')], 'category.entity_id = group.root_category_id', ['path'])
+            ->where('store.store_id <> ?', 0);
 
-        if ($limit !== null) {
-            $select->where('category.entity_id IN(?)', $limit);
+        $stmt = $this->_getIndexAdapter()->query($select);
+
+        $storeByPath = [];
+        while ($row = $stmt->fetch()) {
+            $storeByPath[$row['path']][] = $row['store_id'];
         }
 
-        $this->_getIndexAdapter()->query(
-            $this->_getIndexAdapter()->insertFromSelect(
-                $select, $this->getMainTable(), array_keys($columns), Varien_Db_Adapter_Interface::INSERT_ON_DUPLICATE
-            )
-        );
+        $condition = '%1$s.entity_id = category.entity_id and %1$s.attribute_id = %3$s and %1$s.store_id = %2$s';
+        $keys = array_keys($columns);
+        $keys[] = 'is_active';
+
+        foreach ($storeByPath as $path => $storeIds) {
+            $select->reset();
+
+            $storeCondition = $this->_getIndexAdapter()->quoteInto(
+                'store.store_id IN(?)', $storeIds
+            );
+
+            $select
+                ->from(['category' => $this->getTable('catalog/category')], [])
+                ->join(['store' => $this->getTable('core/store')], $storeCondition, [])
+                ->columns($columns)
+                ->where('category.path LIKE ?', $path . '%');
+
+            $this->_joinAttribute(
+                $select,
+                $condition ,
+                'is_active',
+                Mage_Catalog_Model_Category::ENTITY,
+                'store'
+            );
+
+            if ($limit !== null) {
+                $select->where('category.entity_id IN(?)', $limit);
+            }
+
+            $this->insertFromSelect($select, $this->getMainTable(), $keys);
+        }
 
         return $this;
     }
 
     /**
-     * Generates attribute values index
+     * Removes invalid data from index
      *
      * @param null|Zend_Db_Select|array $limit
      * @return $this
      */
-    protected function _generateAttributeValues($limit = null)
+    protected function _removeInvalidRecords($limit = null)
     {
-        $attributes = array('name', 'thumbnail', 'image', 
-                            'include_in_menu', 'description', 'is_active');
-
         $select = $this->_getIndexAdapter()->select();
 
-        foreach ($attributes as $attributeCode) {
-            $this->_joinAttribute(
-                $select,
-                '%1$s.entity_id = index.category_id and %1$s.attribute_id = %3$s and %1$s.store_id = %2$s',
-                $attributeCode,
-                Mage_Catalog_Model_Category::ENTITY,
-                'index',
-                'joinLeft'
+        $select
+            ->from(['store' => $this->getTable('core/store')], ['store_id'])
+            ->join(['group' => $this->getTable('core/store_group')], 'group.group_id = store.group_id', [])
+            ->join(['category' => $this->getTable('catalog/category')], 'category.entity_id = group.root_category_id', ['path']);
+
+        $stmt = $this->_getIndexAdapter()->query($select);
+
+        $storeByPath = [];
+        while ($row = $stmt->fetch()) {
+            $storeByPath[$row['path']][] = $row['store_id'];
+        }
+
+        $conditions = [];
+        if ($limit !== null) {
+            $conditions['category_id IN(?)'] = $limit;
+        }
+
+        foreach ($storeByPath as $path => $storeIds) {
+            // Remove invalid records per path
+            $this->_getIndexAdapter()->delete(
+                $this->getMainTable(),
+                $conditions + [
+                    'store_id IN(?)' => $storeIds,
+                    'path NOT LIKE ?' => $path . '%'
+                ]
             );
         }
-
-        $select->joinLeft(
-            array('rewrite' => $this->getTable('core/url_rewrite')),
-            $this->_createCondition(
-                $this->_quoteInto('rewrite.id_path LIKE ?', 'category/%'),
-                'rewrite.category_id = index.category_id',
-                'rewrite.store_id = index.store_id'
-            ),
-            array('request_path' => 'rewrite.request_path')
-        );
-
-        $select->columns(
-            array('updated_at' => new Zend_Db_Expr($this->_quoteInto('?', Varien_Date::now())))
-        );
-
-        if ($limit !== null) {
-            $select->where('index.category_id IN(?)', $limit);
-        }
-
-        $this->_getIndexAdapter()->query(
-            $this->_getIndexAdapter()->updateFromSelect(
-                $select, array('index' => $this->getMainTable())
-            )
-        );
 
         return $this;
     }

@@ -72,17 +72,26 @@ abstract class EcomDev_Sphinx_Model_Sphinx_AbstractFacet
     protected $_renderType = self::RENDER_TYPE_OPTION;
 
     /**
+     * Position of the facet
+     *
+     * @var int
+     */
+    protected $_position = 0;
+
+    /**
      * Configures basic facet data
      * 
      * @param string $columnName
      * @param string $filterField
      * @param string $label
+     * @param int $position
      */
-    public function __construct($columnName, $filterField, $label)
+    public function __construct($columnName, $filterField, $label, $position = 0)
     {
         $this->_columnName = $columnName;
         $this->_filterField = $filterField;
         $this->_label = $label;
+        $this->_position = $position;
     }
     
     /**
@@ -113,6 +122,16 @@ abstract class EcomDev_Sphinx_Model_Sphinx_AbstractFacet
     public function getLabel()
     {
         return $this->_label;
+    }
+
+    /**
+     * Returns position of facet
+     *
+     * @return int
+     */
+    public function getPosition()
+    {
+        return $this->_position;
     }
     
     /**
@@ -380,7 +399,8 @@ abstract class EcomDev_Sphinx_Model_Sphinx_AbstractFacet
             '_filterField' => $this->_filterField,
             '_label' => $this->_label,
             '_isSelfFilterable' => $this->_isSelfFilterable,
-            '_renderType' => $this->_renderType
+            '_renderType' => $this->_renderType,
+            '_position' => $this->_position
         );
     }
 
