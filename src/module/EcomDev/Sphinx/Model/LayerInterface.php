@@ -36,4 +36,11 @@ interface EcomDev_Sphinx_Model_LayerInterface
      * @return EcomDev_Sphinx_Model_Resource_Product_Collection
      */
     public function getProductCollection();
+
+    /**
+     * Returns scope instance
+     *
+     * @return EcomDev_Sphinx_Model_Scope
+     */
+    public function getScope();
 }

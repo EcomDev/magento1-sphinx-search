@@ -44,29 +44,4 @@ class EcomDev_Sphinx_Model_Resource_Attribute
         
         return $this->_systemAttributes;
     }
-
-    /**
-     * Returns an index table for an attribute
-     * 
-     * @param EcomDev_Sphinx_Model_Attribute $attribute
-     * @return string
-     */
-    public function getIndexTable(EcomDev_Sphinx_Model_Attribute $attribute)
-    {
-        if ($attribute->isOption()) {
-            return $this->getTable('ecomdev_sphinx/index_product_option');
-        } elseif ($attribute->getBackendType() === 'int') {
-            return $this->getTable('ecomdev_sphinx/index_product_integer');
-        } elseif ($attribute->getBackendType() === 'text') {
-            return $this->getTable('ecomdev_sphinx/index_product_text');
-        } elseif ($attribute->getBackendType() === 'datetime') {
-            return $this->getTable('ecomdev_sphinx/index_product_timestamp');
-        } elseif ($attribute->getAttributeCode() === 'price' ) {
-            return $this->getTable('ecomdev_sphinx/index_product_price');
-        } elseif ($attribute->getBackendType() === 'decimal') {
-            return $this->getTable('ecomdev_sphinx/index_product_decimal');
-        }
-        
-        return $this->getTable('ecomdev_sphinx/index_product_string');
-    }
 }

@@ -43,7 +43,7 @@ interface EcomDev_Sphinx_Contract_Reader_PluginContainerInterface
      *
      * @param int[] $identifiers
      * @param ScopeInterface $scope
-     * @return mixed
+     * @return mixed[][]
      */
     public function read(array $identifiers, ScopeInterface $scope);
 }

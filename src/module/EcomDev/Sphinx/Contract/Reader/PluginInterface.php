@@ -12,9 +12,9 @@ interface EcomDev_Sphinx_Contract_Reader_PluginInterface
     /**
      * Returns array of data per entity identifier
      *
-     * @param int[] $entityIds
+     * @param int[] $identifiers
      * @param ScopeInterface $scope
      * @return array[]
      */
-    public function read($entityIds, ScopeInterface $scope);
+    public function read(array $identifiers, ScopeInterface $scope);
 }

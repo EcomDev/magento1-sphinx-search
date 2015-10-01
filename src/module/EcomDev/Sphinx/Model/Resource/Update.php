@@ -14,7 +14,7 @@ class EcomDev_Sphinx_Model_Resource_Update extends Mage_Core_Model_Resource_Db_A
      */
     protected function _construct()
     {
-        $this->_init('ecomdev_sphinx/index_update', 'entity_id');
+        $this->_init('ecomdev_sphinx/index_updated', 'entity_id');
     }
 
     /**
@@ -32,7 +32,7 @@ class EcomDev_Sphinx_Model_Resource_Update extends Mage_Core_Model_Resource_Db_A
         $select = $this->_getLoadSelect('type', $type, null);
         $select->where(
             'updated_at >= ?',
-            $timeStamp->format('d-m-Y H:i:s')
+            $timeStamp->format('Y-m-d H:i:s')
         );
 
         $select->reset(Varien_Db_Select::COLUMNS)
@@ -49,7 +49,7 @@ class EcomDev_Sphinx_Model_Resource_Update extends Mage_Core_Model_Resource_Db_A
         }
 
         if ($ids) {
-            $processor($ids);
+            $processor($ids, $type);
         }
 
         return $this;

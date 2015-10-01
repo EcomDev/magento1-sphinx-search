@@ -5,3 +5,4 @@ src/design/admin/template/*     app/design/adminhtml/default/default/template/ec
 src/design/frontend/layout/*.xml   app/design/frontend/base/default/layout/ecomdev/
 src/design/frontend/layout/rwd/*.xml   app/design/frontend/rwd/default/layout/ecomdev/
 src/design/frontend/template/*     app/design/frontend/base/default/template/ecomdev/
+src/shell/*.php                    shell/

@@ -19,6 +19,24 @@ class EcomDev_Sphinx_Model_Resource_Config
     {
         return $this->getTable('ecomdev_sphinx/index_metadata');
     }
+
+    /**
+     * Returns updated at timestamp for metadata
+     *
+     * @param string $code
+     * @param int $storeId
+     * @return string
+     */
+    public function getMetaDataUpdatedAt($code, $storeId)
+    {
+        $select = $this->_getReadAdapter()->select();
+        $select->from($this->getTable('ecomdev_sphinx/index_metadata'), 'current_reindex_at');
+        $select->where('store_id = ?', $storeId);
+        $select->where('code = ?', $code);
+
+        $reindexAt = $this->_getReadAdapter()->fetchOne($select);
+        return $reindexAt ?: Varien_Date::now();
+    }
     
     /**
      * @return array
@@ -81,11 +99,13 @@ class EcomDev_Sphinx_Model_Resource_Config
     public function getPriceIndexColumns()
     {
         $baseColumns = $this->_getReadAdapter()->describeTable(
-            $this->getTable('ecomdev_sphinx/index_product_price')
+            $this->getTable('catalog/product_index_price')
         );
 
-        unset($baseColumns['document_id']);
+        unset($baseColumns['entity_id']);
         unset($baseColumns['customer_group_id']);
+        unset($baseColumns['website_id']);
+        unset($baseColumns['tax_class_id']);
 
         return array_keys($baseColumns);
     }
@@ -105,5 +125,42 @@ class EcomDev_Sphinx_Model_Resource_Config
         
         return array_keys($attributeColumns);
     }
-    
+
+
+    /**
+     * Returns attribute options per store view
+     *
+     * @param int[] $attributeIds
+     *
+     * @return string[][][]
+     */
+    public function getAttributeOptions(array $attributeIds)
+    {
+        if (!$attributeIds) {
+            return [];
+        }
+
+        $select = $this->_getReadAdapter()->select();
+        $select->from(['option' => $this->getTable('eav/attribute_option')], ['attribute_id', 'option_id'])
+            ->join(
+                ['label' => $this->getTable('eav/attribute_option_value')],
+                'label.option_id = option.option_id',
+                ['store_id', 'value']
+            )
+            ->order(['option.attribute_id ASC', 'option.sort_order ASC', 'option.option_id ASC']);
+
+        $select->where('option.attribute_id IN(?)', $attributeIds);
+
+        $result = [];
+
+        // Iterate over result, so no double fetch is done
+        foreach ($this->_getReadAdapter()->query($select) as $row) {
+            if (empty($row['value'])) {
+                continue;
+            }
+            $result[$row['attribute_id']][$row['option_id']][$row['store_id']] = $row['value'];
+        }
+
+        return $result;
+    }
 }

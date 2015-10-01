@@ -279,6 +279,20 @@ class EcomDev_Sphinx_Model_Config
     }
 
     /**
+     * Returns attribute options list
+     *
+     * @param array $attributeIds
+     * @param $entityType
+     * @return string[][][]
+     */
+    public function getAttributeOptions(array $attributeIds, $entityType)
+    {
+        $entityTypeId = Mage::getSingleton('eav/config')->getEntityType($entityType)->getId();
+
+        return $this->getResource()->getAttributeOptions($attributeIds, $entityTypeId);
+    }
+
+    /**
      * Returns an active attributes
      * 
      * @return EcomDev_Sphinx_Model_Attribute[]
@@ -532,6 +546,18 @@ class EcomDev_Sphinx_Model_Config
         }
         
         return $this->_scope;
+    }
+
+    /**
+     * Returns updated at timestamp for metadata
+     *
+     * @param string $code
+     * @param int $storeId
+     * @return string
+     */
+    public function getMetaDataUpdatedAt($code, $storeId)
+    {
+        return $this->getResource()->getMetaDataUpdatedAt($code, $storeId);
     }
 
     /**

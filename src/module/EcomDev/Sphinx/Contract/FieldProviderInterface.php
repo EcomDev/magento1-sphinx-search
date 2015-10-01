@@ -8,14 +8,14 @@ interface EcomDev_Sphinx_Contract_FieldProviderInterface
     /**
      * Returns fields based on internal logic
      *
-     * @return FieldInterface
+     * @return FieldInterface[]
      */
     public function getFields();
 
     /**
-     * Returns configuration instance
+     * Returns attribute codes by type
      *
-     * @return ConfigurationInterface
+     * @return string[][]
      */
-    public function getConfiguration();
+    public function getAttributeCodeByType();
 }

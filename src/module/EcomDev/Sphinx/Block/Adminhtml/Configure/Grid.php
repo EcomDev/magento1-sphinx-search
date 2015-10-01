@@ -35,7 +35,7 @@ class EcomDev_Sphinx_Block_Adminhtml_Configure_Grid
         $this->_addTextColumn('code', $this->__('Index'));
 
         $this->_addOptionsColumn(
-            'store_id', $this->__('Store'), 'ecomdev_sphinx/source_index_store', '100px'
+            'store_id', $this->__('Store'), 'ecomdev_sphinx/source_store', '100px'
         );
 
         $this->_addOptionsColumn(

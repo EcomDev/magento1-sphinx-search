@@ -42,10 +42,10 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
             ->from($indexes);
         
         if (isset($this->_productLimitationFilters['category_id'])) {
-            $filterName = 'direct_category_ids';
+            $filterName = 'anchor_category_ids';
             if (!empty($this->_productLimitationFilters['category_is_anchor'])
-                && !$this->getFlag(self::FLAG_ONLY_DIRECT_CATEGORY)) {
-                $filterName = 'anchor_category_ids';
+                || $this->getFlag(self::FLAG_ONLY_DIRECT_CATEGORY)) {
+                $filterName = 'direct_category_ids';
             }
 
             $query->match(
@@ -126,6 +126,8 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
             $query->orderBy($order, $direction);
         } elseif ($order === 'relevance') {
             $query->orderBy($query->expr('weight()'), $direction);
+        } elseif ($order === 'position') {
+            $query->orderBy('_category_position', $direction);
         }
         
         if ($scope->getPageSize() && $scope->getCurrentPage()) {

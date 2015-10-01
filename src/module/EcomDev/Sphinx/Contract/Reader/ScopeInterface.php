@@ -25,10 +25,17 @@ interface EcomDev_Sphinx_Contract_Reader_ScopeInterface
      *
      * @param string $field
      * @param bool $multiple
-     * @return bool
+     * @return FilterInterface[]|FilterInterface|bool
      */
     public function getFilter($field, $multiple = false);
 
+    /**
+     * Replaces existing filter instance
+     *
+     * @param FilterInterface $filter
+     * @return $this
+     */
+    public function replaceFilter(FilterInterface $filter);
 
     /**
      * Returns configuration instance

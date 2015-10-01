@@ -14,15 +14,25 @@ class EcomDev_Sphinx_Model_Resource_Sphinx_Config_Index_Collection
 
     protected function _initSelect()
     {
-        parent::_initSelect();
-        $this->getSelect()->where(
-            'main_table.code IN(?)', 
-            array(
-                EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT,
-                EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_CATEGORY,
-            )
-        );
+        $this->getSelect()->from(array('main_table' => $this->getMainTable()), [
+            'id' => 'CONCAT(main_table.code, main_table.store_id)',
+            'code' => 'code',
+            'store_id' => 'store_id',
+            'previous_reindex_at' => 'previous_reindex_at',
+            'current_reindex_at' => 'current_reindex_at'
+        ]);
+
         return $this;
+    }
+
+    /**
+     * Number of items in collection
+     *
+     * @return int
+     */
+    public function getSize()
+    {
+        return count(Mage::app()->getStores(false))*3;
     }
 
     /**
@@ -32,30 +42,41 @@ class EcomDev_Sphinx_Model_Resource_Sphinx_Config_Index_Collection
      */
     protected function _afterLoadData()
     {
-        $missingItems = array(
-            EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT => true,
-            EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_CATEGORY => true,
-        );
-        
-        foreach ($this->_data as $item) {
-            if (isset($missingItems[$item['code']])) {
-                unset($missingItems[$item['code']]);
+        $missingItems = [];
+        foreach (Mage::app()->getStores(false) as $store) {
+            $missingItems[EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT . '_catalog'][$store->getId()] = true;
+            $missingItems[EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT . '_search'][$store->getId()] = true;
+            $missingItems[EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_CATEGORY][$store->getId()] = true;
+        }
+
+
+        $id = 1;
+        foreach ($this->_data as $index => $item) {
+            $this->_data[$index]['id'] = $id++;
+            if (isset($missingItems[$item['code']][$item['store_id']])) {
+                unset($missingItems[$item['code']][$item['store_id']]);
             }
         }
         
         if ($missingItems) {
-            foreach (array_keys($missingItems) as $code) {
-                $this->_data[] = array(
-                    'code' => $code,
-                    'previous_reindex_at' => null,
-                    'current_reindex_at' => null
-                );
+            foreach ($missingItems as $code => $stores) {
+                foreach (array_keys($stores) as $storeId) {
+                    $this->_data[] = array(
+                        'id' => $id ++,
+                        'code' => $code,
+                        'store_id' => $storeId,
+                        'previous_reindex_at' => null,
+                        'current_reindex_at' => null
+                    );
+                }
             }
         }
         
         foreach ($this->_data as $index => $item) {
-            $this->_data[$index]['pending_rows'] = $this->getResource()->getPendingRowCount($item['code']);
-            $this->_data[$index]['indexed_rows'] = $this->getResource()->getIndexedRowCount($item['code']);
+            $this->_data[$index]['pending_rows'] = $this->getResource()
+                ->getPendingRowCount($item['code'], $item['store_id']);
+            $this->_data[$index]['indexed_rows'] = $this->getResource()
+                ->getIndexedRowCount($item['code'], $item['store_id']);
             
             $state = EcomDev_Sphinx_Model_Source_Index_State::STATE_SYNCED;
             if ($this->_data[$index]['current_reindex_at'] === null) {

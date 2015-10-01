@@ -16,13 +16,13 @@ class EcomDev_Sphinx_Block_Layer_Loader
     }
 
     /**
-     * Configuration model
+     * Layer model interface
      *
-     * @return EcomDev_Sphinx_Model_Config
+     * @return EcomDev_Sphinx_Model_LayerInterface
      */
-    public function getConfig()
+    public function getLayer()
     {
-        return Mage::getSingleton('ecomdev_sphinx/config');
+        return Mage::registry('sphinx_layer');
     }
 
     /**
@@ -32,29 +32,25 @@ class EcomDev_Sphinx_Block_Layer_Loader
      */
     public function loadData()
     {
-        if ($this->_isLoaded) {
+        if ($this->_isLoaded || !$this->getLayer()) {
             return $this;
         }
 
         if ($this->getListBlock()) {
-            $this->getConfig()->getScope()->setPageSize(
+            $this->getLayer()->getScope()->setPageSize(
                 $this->getListBlock()->getToolbarBlock()->getLimit()
             );
 
-
             $this->getListBlock()->setAvailableOrders(
-                $this->getConfig()->getScope()->getSortOrders()
+                $this->getLayer()->getScope()->getSortOrders()
             );
 
             $this->getListBlock()->setSortBy(
-                $this->getConfig()->getScope()->getCurrentOrder()
+                $this->getLayer()->getScope()->getCurrentOrder()
             );
         }
 
-        if (Mage::registry('sphinx_layer')) {
-            Mage::registry('sphinx_layer')->fetchData();
-        }
-
+        $this->getLayer()->getScope()->fetchData();
         $this->_isLoaded = true;
         return $this;
     }

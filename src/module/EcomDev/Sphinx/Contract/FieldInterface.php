@@ -1,6 +1,7 @@
 <?php
 
 use EcomDev_Sphinx_Contract_DataRowInterface as DataRowInterface;
+use EcomDev_Sphinx_Contract_Reader_ScopeInterface as ScopeInterface;
 
 /**
  * Field that should be used to retrieve values for indexer
@@ -28,7 +29,7 @@ interface EcomDev_Sphinx_Contract_FieldInterface
      *
      * @var string
      */
-    const TYPE_ATTRIBUTE_INT = 'attr_int';
+    const TYPE_ATTRIBUTE_INT = 'attr_uint';
 
     /**
      * Long integer type
@@ -59,11 +60,32 @@ interface EcomDev_Sphinx_Contract_FieldInterface
     const TYPE_ATTRIBUTE_STRING = 'attr_string';
 
     /**
+     * Regular text attribute
+     *
+     * @var string
+     */
+    const TYPE_ATTRIBUTE_FLOAT = 'attr_float';
+
+    /**
+     * Timestamp attribute
+     *
+     * @var string
+     */
+    const TYPE_ATTRIBUTE_TIMESTAMP = 'attr_timestamp';
+
+    /**
      * JSON type of attribute
      *
-     * @return string
+     * @var string
      */
     const TYPE_ATTRIBUTE_JSON = 'attr_json';
+
+    /**
+     * Boolean attribute
+     *
+     * @var string
+     */
+    const TYPE_ATTRIBUTE_BOOL = 'attr_bool';
 
     /**
      * Returns type of the field that should be used by Sphinx
@@ -83,7 +105,23 @@ interface EcomDev_Sphinx_Contract_FieldInterface
      * Returns data for sphinx
      *
      * @param DataRowInterface $row
-     * @return string
+     * @param ScopeInterface $scope
+     * @return string[]|string
      */
-    public function getValue(DataRowInterface $row);
+    public function getValue(DataRowInterface $row, ScopeInterface $scope);
+
+    /**
+     * @return bool
+     */
+    public function isText();
+
+    /**
+     * @return bool
+     */
+    public function isMultiple();
+
+    /**
+     * @return bool
+     */
+    public function isInt();
 }

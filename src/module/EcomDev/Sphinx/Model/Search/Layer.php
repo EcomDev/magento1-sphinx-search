@@ -5,16 +5,41 @@ class EcomDev_Sphinx_Model_Search_Layer
     implements EcomDev_Sphinx_Model_LayerInterface
 {
     /**
+     * Sphinx scope
+     *
+     * @var EcomDev_Sphinx_Model_Scope
+     */
+    private $scope;
+
+    /**
+     * Returns current scope instance
+     *
+     * @return EcomDev_Sphinx_Model_Scope
+     */
+    public function getScope()
+    {
+        if ($this->scope === null) {
+            $scope = null;
+            if ($this->getCurrentCategory()) {
+                $scope = $this->getCurrentCategory()->getSphinxScope();
+            }
+
+            $this->scope = Mage::getSingleton('ecomdev_sphinx/config')->getScope($scope);
+            $this->scope->setLayer($this);
+        }
+
+        return $this->scope;
+    }
+
+    /**
      * Applies request object of controller into layer
      *
      * @return $this
      */
     public function applyRequest(Mage_Core_Controller_Request_Http $request)
     {
-        Mage::getSingleton('ecomdev_sphinx/config')->getContainer()
-            ->activateSearchMode();
-        Mage::getSingleton('ecomdev_sphinx/config')->getScope()
-            ->setLayer($this)
+        Mage::getSingleton('ecomdev_sphinx/config')->getContainer()->activateSearchMode();
+        $this->getScope()
             ->setCurrentOrder('relevance')
             ->applyRequest($request);
         return $this;

@@ -207,6 +207,8 @@ class EcomDev_Sphinx_Model_Scope
 
             if ($this->getLayer() instanceof EcomDev_Sphinx_Model_Search_Layer) {
                 $this->_sortOptions['relevance'] = Mage::helper('ecomdev_sphinx')->__('Relevance');
+            } else {
+                $this->_sortOptions['position'] = Mage::helper('ecomdev_sphinx')->__('Best Value');
             }
             
             foreach ($this->_getConfig()->getActiveAttributes() as $attribute) {
@@ -290,7 +292,7 @@ class EcomDev_Sphinx_Model_Scope
         }
 
         $this->_searchableAttributes = array();
-        $this->_searchableAttributes[] = 'category_names';
+        $this->_searchableAttributes[] = 's_anchor_category_names';
         $this->_searchableAttributes[] = 'request_path';
 
         foreach ($this->_getConfig()->getActiveAttributes() as $attribute) {
@@ -341,17 +343,12 @@ class EcomDev_Sphinx_Model_Scope
     public function applyRequest(Mage_Core_Controller_Request_Http $request)
     {
         Varien_Profiler::start(__METHOD__);
-        $this->_facets = null;
         Varien_Profiler::start(__METHOD__ . '::queryBuilderInit');
         $this->_baseQuery = $this->_getConfig()
             ->getContainer()
             ->queryBuilder();
         $this->getLayer()
             ->getProductCollection()
-            ->setFlag(
-                EcomDev_Sphinx_Model_Resource_Product_Collection::FLAG_ONLY_DIRECT_CATEGORY,
-                (bool)$this->getConfigurationValue('category_filter', 'only_direct_products')
-            )
             ->initQuery(
                 $this->_baseQuery,
                 $this->_getConfig()->getContainer()->getIndexNames('product')
@@ -496,11 +493,14 @@ class EcomDev_Sphinx_Model_Scope
         }
         
         $results = $prevQuery->executeBatch();
-        
+        $results->store();
+        $results = $results->getStored();
+
         $collectionResult = array_shift($results);
         $collectionResultMeta = $this->_getConfig()->getContainer()->getHelper()->pairsToAssoc(
             array_shift($results)
         );
+
         
         $facets = $this->getFacets();
         $optionIds = array();
@@ -508,8 +508,10 @@ class EcomDev_Sphinx_Model_Scope
         
         foreach (array_keys($facetQueries) as $filterName) {
             $result = array_shift($results);
+
+            /** @var $result \Foolz\SphinxQL\Drivers\Pdo\ResultSet */
             $facet = $facets[$filterName];
-            $facet->setSphinxResponse($result);
+            $facet->setSphinxResponse($result->fetchAllAssoc());
             if ($facet instanceof EcomDev_Sphinx_Model_Sphinx_Facet_OptionAwareInterface) {
                 $optionIds = array_merge($optionIds, $facet->getOptionIds());
                 $setOptionNames[] = $facet;

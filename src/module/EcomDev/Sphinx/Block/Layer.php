@@ -110,7 +110,7 @@ class EcomDev_Sphinx_Block_Layer
             $queryParams = array();
         }
 
-        foreach (array('___SID', '___store', '___from_store') as $field) {
+        foreach (array('___SID', '___store', '___from_store', 'p') as $field) {
             if (isset($queryParams[$field])) {
                 unset($queryParams[$field]);
             }

@@ -232,22 +232,42 @@
         <jobs>
             <ecomdev_sphinx_revalidate_config>
                 <schedule>
-                    <cron_expr>* * * * *</cron_expr>
+                    <cron_expr>*/5 * * * *</cron_expr>
                 </schedule>
                 <run>
                     <model>ecomdev_sphinx/cron::checkIndex</model>
                 </run>
             </ecomdev_sphinx_revalidate_config>
 
-            <ecomdev_sphinx_update_deltas>
+            <ecomdev_sphinx_notify_category_changes>
                 <schedule>
                     <cron_expr>* * * * *</cron_expr>
+                </schedule>
+                <run>
+                    <model>ecomdev_sphinx/cron::validateCategoryChanges</model>
+                </run>
+            </ecomdev_sphinx_notify_category_changes>
+
+            <ecomdev_sphinx_notify_product_changes>
+                <schedule>
+                    <cron_expr>* * * * *</cron_expr>
+                </schedule>
+                <run>
+                    <model>ecomdev_sphinx/cron::validateProductChanges</model>
+                </run>
+            </ecomdev_sphinx_notify_product_changes>
+
+            <ecomdev_sphinx_update_deltas>
+                <schedule>
+                    <cron_expr>*/5 * * * *</cron_expr>
                 </schedule>
                 <run>
                     <model>ecomdev_sphinx/cron::updateDeltas</model>
                 </run>
             </ecomdev_sphinx_update_deltas>
 
+            <!-- once a day we perform a full reindex to make sure price changes are applied
+                 from catalog price index -->
             <ecomdev_sphinx_full_reindex>
                 <schedule>
                     <cron_expr>0 1 * * *</cron_expr>

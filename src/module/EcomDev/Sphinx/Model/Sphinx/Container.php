@@ -1,6 +1,6 @@
 <?php
 
-use \Foolz\SphinxQL\Connection as Connection;
+use \Foolz\SphinxQL\Drivers\Pdo\Connection as Connection;
 use EcomDev_Sphinx_Model_Sphinx_Query_Builder as QueryBuilder;
 use \Foolz\SphinxQL\Helper as SphinxHelper;
 
@@ -71,6 +71,7 @@ class EcomDev_Sphinx_Model_Sphinx_Container
             $this->_connection->setParam(
                 'port', $this->getConfig()->getConfig('port', 'connection')
             );
+            $this->_connection->connect(true);
         }
         
         return $this->_connection;

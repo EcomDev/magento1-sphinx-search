@@ -291,13 +291,8 @@ class EcomDev_Sphinx_Model_Sphinx_Config
             $reindex = true;
         }
 
-        $additionalArgs = '';
-        if ($this->isRunning()) {
-            $additionalArgs .= '--rotate';
-        }
-        
         if ($reindex) {
-            $this->executeIndexerCommand(sprintf('--all %s', $additionalArgs));
+            $this->controlIndexData(true);
         }
         
         return $this;
@@ -309,41 +304,40 @@ class EcomDev_Sphinx_Model_Sphinx_Config
      * 
      * @return $this
      */
-    public function controlIndexData()
+    public function controlIndexData($forceReindex = false)
     {
-        $indexesToControl = array(
-            EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_CATEGORY,
-            EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT
-        );
-
         $additionalArgs = '';
         if ($this->isRunning()) {
             $additionalArgs .= '--rotate';
         }
 
-        $reindexAll = false;
         $reindexPerType = array(
-            EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT => array('product', 'product_search'),
-            EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_CATEGORY => array('category')
+            'product_catalog' => ['product', EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT],
+            'product_search' => ['product_search', EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT],
+            'category' => ['category', EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_CATEGORY],
         );
-        foreach ($indexesToControl as $index) {
-            $rowsToIndex = $this->_getIndexConfig()->getPendingRowCount($index);
-            $configLimit = (int)$this->_getConfig()->getConfig(sprintf('index_%s_merge_limit', $index));
 
-            if (!$reindexAll && $rowsToIndex && $configLimit && $rowsToIndex < $configLimit) {
-                foreach ($reindexPerType[$index] as $item) {
-                    $this->reindexIndex($item . '_delta', $additionalArgs);
-                    $this->mergeDeltaIndex($item, $additionalArgs);
-                }
-            } elseif ($rowsToIndex && $configLimit) {
-                $reindexAll = true;
+        $collection = Mage::getResourceModel('ecomdev_sphinx/sphinx_config_index_collection');
+
+        foreach ($collection as $item) {
+            if (!isset($reindexPerType[$item->getCode()])) {
+                continue;
+            }
+
+            list($indexName, $type) = $reindexPerType[$item->getCode()];
+            $configLimit = (int)$this->_getConfig()->getConfig(sprintf('index_%s_merge_limit', $type));
+            $indexedRows = $item->getData('indexed_rows');
+            $pendingRows = $item->getData('pending_rows');
+            $storeId = (int)$item->getStoreId();
+
+            if (!$forceReindex && $configLimit && $pendingRows && $configLimit && $pendingRows < $configLimit) {
+                $this->reindexIndex($indexName . '_delta', $additionalArgs, $storeId);
+                $this->mergeDeltaIndex($indexName, $additionalArgs, $storeId);
+            } elseif ($forceReindex || !$indexedRows || ($configLimit && ($pendingRows > $configLimit))) {
+                $this->reindexIndex($indexName, $additionalArgs, $storeId);
             }
         }
 
-        if ($reindexAll) {
-            $this->executeIndexerCommand(sprintf('--all %s', $additionalArgs));
-        }
-        
         return $this;
     }
 
@@ -352,15 +346,14 @@ class EcomDev_Sphinx_Model_Sphinx_Config
      *
      * @param string $indexName
      * @param string $additionalArguments
+     * @param int $storeId
      * @return $this
      */
-    protected function reindexIndex($indexName, $additionalArguments)
+    protected function reindexIndex($indexName, $additionalArguments, $storeId)
     {
-        foreach (Mage::app()->getStores(false) as $store) {
-            $this->executeIndexerCommand(sprintf(
-                '%s_%s %s', $indexName, $store->getId(), $additionalArguments
-            ));
-        }
+        $this->executeIndexerCommand(sprintf(
+            '%s_%s %s', $indexName, $storeId, $additionalArguments
+        ));
 
         return $this;
     }
@@ -370,17 +363,29 @@ class EcomDev_Sphinx_Model_Sphinx_Config
      *
      * @param string $indexName
      * @param string $additionalArguments
+     * @param int $storeId
      * @return $this
      */
-    protected function mergeDeltaIndex($indexName, $additionalArguments)
+    protected function mergeDeltaIndex($indexName, $additionalArguments, $storeId)
     {
-        foreach (Mage::app()->getStores(false) as $store) {
-            $this->executeIndexerCommand(sprintf(
-                '--merge %1$s_%2$s %1$s_delta_%2$s %3$s',
-                $indexName, $store->getId(), $additionalArguments
-            ));
-        }
+        $this->executeIndexerCommand(sprintf(
+            '--merge %1$s_%2$s %1$s_delta_%2$s %3$s',
+            $indexName, $storeId, $additionalArguments
+        ));
 
+        return $this;
+    }
+
+    /**
+     * Validates that everything is fine with index data
+     *
+     * @return $this
+     */
+    public function validateData()
+    {
+        $update = Mage::getSingleton('ecomdev_sphinx/update');
+        $update->notify('category');
+        $update->notify('product');
         return $this;
     }
 

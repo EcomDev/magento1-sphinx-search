@@ -80,14 +80,22 @@ class EcomDev_Sphinx_Adminhtml_Sphinx_ConfigureController
 
     public function indexDeltaAction()
     {
-        $this->_manageAction('controlIndexData', $this->__('Delta update operation has been successfully executed'));
+        $this->_manageAction(['validateData', 'controlIndexData'], $this->__('Delta update operation has been successfully executed'));
     }
 
 
     protected function _manageAction($method, $successText)
     {
         try {
-            $this->_getModel()->$method();
+            if (is_array($method)) {
+                foreach ($method as $sequnce) {
+                    $this->_getModel()->$sequnce();
+                }
+            } else {
+                $this->_getModel()->$method();
+            }
+
+
             $this->_getSession()->addSuccess($successText);
         } catch (Exception $e) {
             Mage::logException($e);

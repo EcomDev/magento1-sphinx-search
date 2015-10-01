@@ -126,17 +126,18 @@ class EcomDev_Sphinx_Model_Observer
     {
         $query = $this->_getConfig()->getContainer()->queryBuilder();
         $indexNames = $this->_getConfig()->getContainer()->getIndexNames('category');
-        $category = $query->select('path', 'level')
+        $result = $query->select('path', 'level')
             ->from($indexNames)
-            ->where('category_id', (int)Mage::app()->getStore()->getRootCategoryId())
+            ->where('id', (int)Mage::app()->getStore()->getRootCategoryId())
             ->limit(1)
-            ->execute();
-        
-        if (!$category) {
-            return array();
+            ->execute()
+            ->store();
+
+        if ($result->getCount() === 0) {
+            return [];
         }
-        
-        $category = current($category);
+
+        $category = $result[0];
 
         $recursionLevel  = max(0, (int) Mage::app()->getStore()->getConfig('catalog/navigation/max_depth'));
         $query = $this->_getConfig()->getContainer()->queryBuilder();
@@ -166,7 +167,7 @@ class EcomDev_Sphinx_Model_Observer
         
         $result = array();
         $parents = array();
-        
+
         foreach ($query->execute() as $item) {
             if (dirname($item['path']) === $category['path']) {
                 $item['children'] = array();
@@ -311,12 +312,21 @@ class EcomDev_Sphinx_Model_Observer
     public function onLayoutBeforeRender(Varien_Event_Observer $observer)
     {
         if ($this->_layerModel !== null) {
-            if (Mage::registry('sphinx_layer')) {
-                Mage::unregister('sphinx_layer');
-            }
-            
-            Mage::register('sphinx_layer', $this->_layerModel);
+            $this->registerLayer();
         }
+    }
+
+    /**
+     * Registers layer
+     *
+     */
+    private function registerLayer()
+    {
+        if (Mage::registry('sphinx_layer')) {
+            Mage::unregister('sphinx_layer');
+        }
+
+        Mage::register('sphinx_layer', $this->_layerModel);
     }
 
     /**
@@ -331,7 +341,7 @@ class EcomDev_Sphinx_Model_Observer
             return $this;
         }
 
-        $this->_layerModel->fetchData();
+        $this->registerLayer();
         $this->_returnJson = false;
         $controller = $observer->getControllerAction();
         $navigationBlock = $controller->getLayout()->getBlock('sphinx.leftnav');
@@ -347,7 +357,7 @@ class EcomDev_Sphinx_Model_Observer
         if ($controller->getLayout()->getBlock('profiler')) {
             $result['profiler'] = $controller->getLayout()->getBlock('profiler')->toHtml(); 
         }
-        
+
         $controller->getResponse()
             ->setBody(json_encode($result));
         

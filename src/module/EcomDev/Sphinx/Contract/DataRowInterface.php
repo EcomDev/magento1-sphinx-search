@@ -7,15 +7,7 @@ interface EcomDev_Sphinx_Contract_DataRowInterface
      *
      * @return int
      */
-    public function setId($id);
-
-    /**
-     * Sets key which will be used for retrieval of data from index
-     *
-     * @param string $key
-     * @return $this
-     */
-    public function setKey($key);
+    public function getId();
 
     /**
      * Returns value of from supplied sources
@@ -25,4 +17,11 @@ interface EcomDev_Sphinx_Contract_DataRowInterface
      * @return mixed
      */
     public function getValue($field, $default = null);
+
+    /**
+     * Moves cursor to the next identifier
+     *
+     * @return bool
+     */
+    public function next();
 }

@@ -4,6 +4,28 @@ class EcomDev_Sphinx_Model_Catalog_Layer
     extends Mage_Catalog_Model_Layer
     implements EcomDev_Sphinx_Model_LayerInterface
 {
+    private $scope;
+
+    /**
+     * Returns current scope instance
+     *
+     * @return EcomDev_Sphinx_Model_Scope
+     */
+    public function getScope()
+    {
+        if ($this->scope === null) {
+            $scope = null;
+            if ($this->getCurrentCategory()) {
+                $scope = $this->getCurrentCategory()->getSphinxScope();
+            }
+
+            $this->scope = Mage::getSingleton('ecomdev_sphinx/config')->getScope($scope);
+            $this->scope->setLayer($this);
+        }
+
+        return $this->scope;
+    }
+
     /**
      * Applies request object of controller into layer
      *
@@ -11,13 +33,8 @@ class EcomDev_Sphinx_Model_Catalog_Layer
      */
     public function applyRequest(Mage_Core_Controller_Request_Http $request)
     {
-        $scope = null;
-        if ($this->getCurrentCategory()) {
-            $scope = $this->getCurrentCategory()->getSphinxScope();
-        }
-
-        Mage::getSingleton('ecomdev_sphinx/config')->getScope($scope)
-            ->setLayer($this)
+        $this->getScope()
+            ->setCurrentOrder('position')
             ->applyRequest($request);
         return $this;
     }
@@ -29,9 +46,7 @@ class EcomDev_Sphinx_Model_Catalog_Layer
      */
     public function fetchData()
     {
-        Mage::getSingleton('ecomdev_sphinx/config')
-            ->getScope()->fetchData();
-
+        $this->getScope()->fetchData();
         return $this;
     }
 
@@ -45,11 +60,18 @@ class EcomDev_Sphinx_Model_Catalog_Layer
         if (isset($this->_productCollections[$this->getCurrentCategory()->getId()])) {
             $collection = $this->_productCollections[$this->getCurrentCategory()->getId()];
         } else {
+            /** @var EcomDev_Sphinx_Model_Resource_Product_Collection $collection */
             $collection = Mage::getResourceModel('ecomdev_sphinx/product_collection')
-                ->setStoreId($this->getCurrentCategory()->getStoreId())
-                ->addCategoryFilter($this->getCurrentCategory());
-            
+                ->setStoreId($this->getCurrentCategory()->getStoreId());
+
+            $collection->addCategoryFilter($this->getCurrentCategory());
             $collection->setLayer($this);
+
+            $collection->setFlag(
+                EcomDev_Sphinx_Model_Resource_Product_Collection::FLAG_ONLY_DIRECT_CATEGORY,
+                (bool)$this->getScope()->getConfigurationValue('category_filter/only_direct_products')
+            );
+
             $this->prepareProductCollection($collection);
             $this->_productCollections[$this->getCurrentCategory()->getId()] = $collection;
         }

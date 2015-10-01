@@ -7,7 +7,7 @@
     "php": ">=5.4.0",
     "magento-hackathon/magento-composer-installer": ">=2.0",
     "ecomdev/composer_autoload": "*",
-    "foolz/sphinxql-query-builder": "*",
+    "foolz/sphinxql-query-builder": "1.0.0",
     "league/container": "~2.0"
   },
   "require-dev": {

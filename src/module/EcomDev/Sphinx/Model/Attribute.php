@@ -1,5 +1,7 @@
 <?php
 
+use EcomDev_Sphinx_Contract_FieldInterface as FieldInterface;
+
 /**
  * @method EcomDev_Sphinx_Model_Resource_Attribute_Collection getCollection()
  * @method $this setIsSystem(int $flag)
@@ -230,15 +232,7 @@ class EcomDev_Sphinx_Model_Attribute
         return $this;
     }
 
-    /**
-     * Returns index table
-     * 
-     * @return string 
-     */
-    public function getIndexTable()
-    {
-        return $this->_getResource()->getIndexTable($this);
-    }
+
 
     /**
      * Return a sphinx type string
@@ -249,18 +243,18 @@ class EcomDev_Sphinx_Model_Attribute
     {
         if ($this->getFrontendInput() === 'select' 
             && $this->getSourceModel() === 'eav/entity_attribute_source_boolean') {
-            return 'attr_bool';
+            return FieldInterface::TYPE_ATTRIBUTE_BOOL;
         } elseif ($this->getBackendType() === 'int') {
-            return 'attr_uint';
-        } elseif ($this->getBackendType() === 'text') {
-            return ($this->getIsFulltext() && $this->getIsActive() ? 'field_string' : 'attr_string');
+            return FieldInterface::TYPE_ATTRIBUTE_INT;
         } elseif ($this->getBackendType() === 'datetime') {
-            return 'attr_timestamp';
+            return FieldInterface::TYPE_ATTRIBUTE_FLOAT;
         } elseif ($this->getBackendType() === 'decimal') {
             return 'attr_float';
         }
         
-        return ($this->getIsFulltext() && $this->getIsActive() ? 'field_string' : 'attr_string');
+        return ($this->getIsFulltext() && $this->getIsActive()) ?
+                    FieldInterface::TYPE_FIELD_STRING :
+                    FieldInterface::TYPE_ATTRIBUTE_STRING;
     }
 
     /**

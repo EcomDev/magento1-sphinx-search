@@ -30,4 +30,14 @@ class EcomDev_Sphinx_Model_Cron
     {
         $this->_getModel()->controlIndex(true);
     }
+
+    public function validateCategoryChanges()
+    {
+        Mage::getModel('ecomdev_sphinx/update')->notify('category');
+    }
+
+    public function validateProductChanges()
+    {
+        Mage::getModel('ecomdev_sphinx/update')->notify('product');
+    }
 }
