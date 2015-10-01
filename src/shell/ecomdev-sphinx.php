@@ -200,7 +200,7 @@ USAGE;
     protected function runConsole()
     {
         $command = sprintf(
-            'mysql -P%d -h%s',
+            'mysql --prompt="SphinxQL> " -P%d -h%s',
             $this->getConfig()->getConfig('port', 'connection'),
             $this->getConfig()->getConfig('host', 'connection')
         );

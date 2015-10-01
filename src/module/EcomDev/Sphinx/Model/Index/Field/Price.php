@@ -49,7 +49,8 @@ class EcomDev_Sphinx_Model_Index_Field_Price
     {
         $index = $row->getValue('price_index', []);
 
-        if (isset($index[$this->customerGroupIdentifier]) && $index[$this->indexField] !== null) {
+        if (isset($index[$this->customerGroupIdentifier])
+            && $index[$this->customerGroupIdentifier][$this->indexField] !== null) {
             return $index[$this->customerGroupIdentifier][$this->indexField];
         }
 
