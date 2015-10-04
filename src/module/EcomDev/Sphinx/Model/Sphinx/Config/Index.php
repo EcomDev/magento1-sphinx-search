@@ -15,6 +15,12 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
     const INDEX_CATEGORY = 'category';
 
     /**
+     * Indexer code for keyword
+     *
+     */
+    const INDEX_KEYWORD = 'keyword';
+
+    /**
      * Indexer code for product delta
      */
     const INDEX_PRODUCT_DELTA = 'product_delta';
@@ -81,6 +87,8 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
         $config['sources']['product_base'] = $this->getBaseIndexSource('product', $baseType);
         $config['sources']['product_delta_base'] = $this->getBaseIndexSource('product', $deltaType);
 
+        $config['sources']['keyword_base'] = $this->getBaseIndexSource('keyword', $baseType);
+
         $stores = Mage::app()->getStores(false);
 
         foreach ($stores as $store) {
@@ -108,6 +116,10 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
 
             $config['sources'][sprintf('product_search_delta_%s : product_delta_base', $storeId)] = $this->getCommandSource(
                 'product', $deltaType, $storeId, ['--visibility', 'search'], true
+            );
+
+            $config['sources'][sprintf('keyword_%s : keyword_base', $storeId)] = $this->getCommandSource(
+                'keyword', $baseType, $storeId
             );
 
             $config['indexes'][sprintf('category_%s', $storeId)] = array(
@@ -138,6 +150,11 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
             $config['indexes'][sprintf('product_search_delta_%s', $storeId)] = array(
                 sprintf('source = product_search_delta_%s', $storeId),
                 sprintf('path = %s/%s_%s', $indexPath, 'product_search_delta', $storeId)
+            );
+
+            $config['indexes'][sprintf('keyword_%s', $storeId)] = array(
+                sprintf('source = keyword_%s', $storeId),
+                sprintf('path = %s/%s_%s', $indexPath, 'keyword', $storeId)
             );
         }
 

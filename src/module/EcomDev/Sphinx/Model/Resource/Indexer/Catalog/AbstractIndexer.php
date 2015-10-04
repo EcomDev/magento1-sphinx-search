@@ -412,7 +412,7 @@ abstract class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_AbstractIndexer
         $statement = sprintf(
             $statement,
             $targetTable,
-            $adapter->quoteIdentifier($triggerInfo['field']),
+            $adapter->quoteIdentifier('entity_id'),
             $adapter->quoteIdentifier('type'),
             $adapter->quoteIdentifier($dateField),
             $fieldPrefix . '.' . $adapter->quoteIdentifier($triggerInfo['field']),

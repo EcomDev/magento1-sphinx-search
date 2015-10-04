@@ -1,7 +1,7 @@
 <config>
     <modules>
         <EcomDev_Sphinx>
-            <version>2.0.0</version>
+            <version>2.0.1</version>
         </EcomDev_Sphinx>
     </modules>
     <global>
@@ -45,6 +45,12 @@
                     <index_updated>
                         <table>ecomdev_sphinx_index_updated</table>
                     </index_updated>
+                    <index_keyword>
+                        <table>ecomdev_sphinx_index_keyword</table>
+                    </index_keyword>
+                    <word_form>
+                        <table>ecomdev_sphinx_word_form</table>
+                    </word_form>
                 </entities>
             </ecomdev_sphinx_resource>
         </models>
@@ -302,7 +308,7 @@
         <category>
             <collection>
                 <attributes>
-                    <sphinx_scope />
+                    <sphinx_scope/>
                 </attributes>
             </collection>
         </category>
@@ -363,6 +369,15 @@
                 </ecomdev_sphinx>
             </updates>
         </layout>
+        <routers>
+            <sphinx>
+                <use>standard</use>
+                <args>
+                    <module>EcomDev_Sphinx_Frontend</module>
+                    <frontName>sphinx</frontName>
+                </args>
+            </sphinx>
+        </routers>
     </frontend>
     <default>
         <ecomdev_sphinx>

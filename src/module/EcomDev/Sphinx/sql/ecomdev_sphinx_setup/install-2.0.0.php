@@ -141,7 +141,7 @@ $table
     ->addForeignKey(
         $this->getFkName('ecomdev_sphinx/index_product', 'store_id', 'core/store', 'store_id'),
         'store_id', $this->getTable('core/store'), 'store_id',
-        Adapter::FK_ACTION_NO_ACTION,
+        Adapter::FK_ACTION_CASCADE,
         Adapter::FK_ACTION_NO_ACTION
     )
 ;

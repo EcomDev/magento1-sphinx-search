@@ -11,6 +11,11 @@ use Ssh\Configuration as SshConfiguration;
  */
 class EcomDev_Sphinx_Model_Sphinx_Config
 {
+    const TYPE_PRODUCT_CATALOG = 'product_catalog';
+    const TYPE_PRODUCT_SEARCH = 'product_search';
+    const TYPE_CATEGORY = 'category';
+    const TYPE_KEYWORD = 'keyword';
+
     /**
      * Contains an instance of index config model
      * 
@@ -52,7 +57,19 @@ class EcomDev_Sphinx_Model_Sphinx_Config
      * @var string 
      */
     protected $_publicKeyFile;
-    
+
+    /**
+     * Available types
+     *
+     * @var string[]
+     */
+    protected $_types = array(
+        self::TYPE_PRODUCT_CATALOG => ['product', EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT],
+        self::TYPE_PRODUCT_SEARCH => ['product_search', EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT],
+        self::TYPE_CATEGORY => ['category', EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_CATEGORY],
+        self::TYPE_KEYWORD => ['keyword', EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_KEYWORD],
+    );
+
     /**
      * Return an instance of index configuration
      * 
@@ -311,20 +328,15 @@ class EcomDev_Sphinx_Model_Sphinx_Config
             $additionalArgs .= '--rotate';
         }
 
-        $reindexPerType = array(
-            'product_catalog' => ['product', EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT],
-            'product_search' => ['product_search', EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT],
-            'category' => ['category', EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_CATEGORY],
-        );
-
         $collection = Mage::getResourceModel('ecomdev_sphinx/sphinx_config_index_collection');
+        $forceReindexList = [];
 
         foreach ($collection as $item) {
-            if (!isset($reindexPerType[$item->getCode()])) {
+            if (!isset($this->_types[$item->getCode()])) {
                 continue;
             }
 
-            list($indexName, $type) = $reindexPerType[$item->getCode()];
+            list($indexName, $type) = $this->_types[$item->getCode()];
             $configLimit = (int)$this->_getConfig()->getConfig(sprintf('index_%s_merge_limit', $type));
             $indexedRows = $item->getData('indexed_rows');
             $pendingRows = $item->getData('pending_rows');
@@ -334,8 +346,12 @@ class EcomDev_Sphinx_Model_Sphinx_Config
                 $this->reindexIndex($indexName . '_delta', $additionalArgs, $storeId);
                 $this->mergeDeltaIndex($indexName, $additionalArgs, $storeId);
             } elseif ($forceReindex || !$indexedRows || ($configLimit && ($pendingRows > $configLimit))) {
-                $this->reindexIndex($indexName, $additionalArgs, $storeId);
+                $forceReindexList[] = [$indexName, $storeId];
             }
+        }
+
+        if ($forceReindexList) {
+            $this->reindexIndexes($forceReindexList, $additionalArgs);
         }
 
         return $this;
@@ -357,6 +373,94 @@ class EcomDev_Sphinx_Model_Sphinx_Config
 
         return $this;
     }
+
+    /**
+     * Re-index data in index
+     *
+     * @param string[] $indexNames
+     * @param string $additionalArguments
+     * @return $this
+     */
+    protected function reindexIndexes($indexNames, $additionalArguments)
+    {
+        if (strpos($additionalArguments, '--rotate') !== false) {
+            $additionalArguments .= ' --sighup-each';
+        }
+
+        $renderedIndexNames = [];
+
+        foreach ($indexNames as $info) {
+            list($name, $storeId) = $info;
+            $renderedIndexNames[] = sprintf('%s_%s', $name, $storeId);
+        }
+
+        $this->executeIndexerCommand(sprintf(
+            '%s %s', implode(' ', $renderedIndexNames), $additionalArguments
+        ));
+
+        return $this;
+    }
+
+    /**
+     * Dump keywords for index
+     *
+     * @param string $type
+     * @param int $storeId
+     * @param string|resource $filePath
+     * @return bool
+     */
+    public function keywordDump($type, $storeId, $filePath, $limit = 100000)
+    {
+        $indexPrefix = $this->_types[$type][0];
+
+        $indexName = sprintf('%s_%s', $indexPrefix, $storeId);
+
+        $outputFile = $filePath;
+        if (is_resource($filePath)) {
+            $outputFile = tempnam(Mage::getConfig()->getVarDir('sphinx'), 'keyword');
+        }
+
+        $this->executeIndexerCommand(sprintf('--buildstops %s %d --buildfreqs %s', $outputFile, $limit, $indexName));
+
+        if (!file_exists($outputFile)) {
+            new RuntimeException('There was an issue with keyword dump');
+        }
+
+        if (is_resource($filePath)) {
+            $tmpFileHandle = fopen($outputFile, 'r');
+            stream_copy_to_stream($tmpFileHandle, $outputFile);
+            fclose($tmpFileHandle);
+            unlink($outputFile);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Import keywords into database
+     *
+     * @param int $storeId
+     * @param int $limit
+     * @return bool
+     */
+    public function keywordImport($storeId, $limit = 100000)
+    {
+        $type = self::TYPE_PRODUCT_SEARCH;
+
+        $outputFile = tempnam(Mage::getConfig()->getVarDir('sphinx'), 'keyword_import');
+
+        $this->keywordDump($type, $storeId, $outputFile);
+
+        $csv = \League\Csv\Reader::createFromPath($outputFile);
+        $csv->setDelimiter(' ');
+
+        /** @var EcomDev_Sphinx_Model_Index_Keyword $keyword */
+        $keyword = Mage::getModel('ecomdev_sphinx/index_keyword');
+        $keyword->importData($csv, $storeId);
+
+        return $this;
+    }
+
 
     /**
      * Merge delta index
@@ -444,7 +548,8 @@ class EcomDev_Sphinx_Model_Sphinx_Config
     protected function executeIndexerCommand($command)
     {
         $prefix = $this->_getConfig()->getConfig('indexer_command');
-        return trim($this->_exec(sprintf('%s %s', $prefix, $command)));
+        $trim = $this->_exec(sprintf('%s %s', $prefix, $command));
+        return trim($trim);
     }
 
     /**

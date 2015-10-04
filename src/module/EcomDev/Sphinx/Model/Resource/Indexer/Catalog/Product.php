@@ -63,7 +63,7 @@ class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_Product
         } else {
             return $this;
         }
-        
+
         $limit = $this->_getAllPossibleProducts($productIds);
         $this->_reindexProducts($limit);
         return $this;
@@ -114,7 +114,7 @@ class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_Product
     {
         $this->_transactional(function ($limit) {
             $this->_insertMainRows($limit);
-            
+
             foreach ($this->_mainAttributes as $attribute) {
                 $this->_updateProductMainAttribute($attribute, $limit);
             }
@@ -198,7 +198,6 @@ class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_Product
         if ($limit !== null) {
             $select->where('product_index.product_id IN(?)', $limit);
         }
-        
 
         $this->insertFromSelect(
             $select,

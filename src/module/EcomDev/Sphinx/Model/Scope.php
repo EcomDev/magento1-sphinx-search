@@ -296,12 +296,12 @@ class EcomDev_Sphinx_Model_Scope
         $this->_searchableAttributes[] = 'request_path';
 
         foreach ($this->_getConfig()->getActiveAttributes() as $attribute) {
-            if ($attribute->getIsFulltext() && !$attribute->isOption()) {
-                $this->_searchableAttributes[] = $attribute->getAttributeCode();
-            } elseif ($attribute->getIsFulltext()) {
+            if ($attribute->isFulltext() && $attribute->isOption()) {
                 $this->_searchableAttributes[] = sprintf(
                     's_%s_label', $attribute->getAttributeCode()
                 );
+            } elseif ($attribute->isFulltext()) {
+                $this->_searchableAttributes[] = $attribute->getAttributeCode();
             }
         }
 
@@ -333,6 +333,27 @@ class EcomDev_Sphinx_Model_Scope
         return $this->_searchableAttributes;
     }
 
+    /**
+     * Returns query builder instance
+     *
+     * @return EcomDev_Sphinx_Model_Sphinx_Query_Builder
+     */
+    public function getQueryBuilder()
+    {
+        return $this->_getConfig()
+            ->getContainer()
+            ->queryBuilder();
+    }
+
+    /**
+     * Returns container instance
+     *
+     * @return EcomDev_Sphinx_Model_Sphinx_Container
+     */
+    public function getContainer()
+    {
+        return $this->_getConfig()->getContainer();
+    }
 
     /**
      * Applies request values
@@ -344,9 +365,7 @@ class EcomDev_Sphinx_Model_Scope
     {
         Varien_Profiler::start(__METHOD__);
         Varien_Profiler::start(__METHOD__ . '::queryBuilderInit');
-        $this->_baseQuery = $this->_getConfig()
-            ->getContainer()
-            ->queryBuilder();
+        $this->_baseQuery = $this->getQueryBuilder();
         $this->getLayer()
             ->getProductCollection()
             ->initQuery(
@@ -444,8 +463,51 @@ class EcomDev_Sphinx_Model_Scope
         Varien_Profiler::stop(__METHOD__);
         return $result;
     }
-    
-    
+
+    /**
+     * Activates search mode in container
+     *
+     * @return $this
+     */
+    public function activateSearchMode()
+    {
+        $this->_getConfig()->getContainer()->activateSearchMode();
+        return $this;
+    }
+
+    /**
+     * Fetches collection data only
+     *
+     * @param EcomDev_Sphinx_Model_Resource_Product_Collection $collection
+     * @return $this
+     * @throws \Foolz\SphinxQL\Exception\SphinxQLException
+     */
+    public function fetchCollection(EcomDev_Sphinx_Model_Resource_Product_Collection $collection)
+    {
+        Varien_Profiler::start(__METHOD__);
+        $selectQuery = $this->getQueryBuilder();
+
+        $collection->initQuery($selectQuery, $this->_getConfig()->getContainer()->getIndexNames('product'));
+
+        $collection->addFieldsToQuery(
+            $selectQuery,
+            $this->_getConfig()->getContainer()->getIndexColumns('product'),
+            $this
+        );
+
+        $results = $selectQuery->enqueue($this->_getConfig()->getContainer()->getHelper()->showMeta())
+            ->executeBatch()->store()->getStored();
+
+        $collectionResult = array_shift($results);
+        $collectionResultMeta = $this->_getConfig()->getContainer()->getHelper()->pairsToAssoc(
+            array_shift($results)
+        );
+
+        $collection->loadFromSphinx($collectionResult, $collectionResultMeta);
+
+        Varien_Profiler::stop(__METHOD__);
+        return $this;
+    }
 
     /**
      * Fetches data from sphinx
@@ -559,6 +621,16 @@ class EcomDev_Sphinx_Model_Scope
     public function getLayer()
     {
         return $this->_layer;
+    }
+
+    /**
+     * Returns current store id
+     *
+     * @return int
+     */
+    public function getStoreId()
+    {
+        return Mage::app()->getStore()->getId();
     }
 
     /**

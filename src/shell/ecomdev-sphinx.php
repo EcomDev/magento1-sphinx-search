@@ -47,6 +47,11 @@ class EcomDev_Sphinx_Shell extends Mage_Shell_Abstract
             'format' => 'f',
             'output' => 'o'
         ),
+        'export:keyword' => array(
+            'store' => 's',
+            'format' => 'f',
+            'output' => 'o'
+        ),
         'console' => array(),
         'notify:category' => array(),
         'notify:product' => array(),
@@ -54,6 +59,16 @@ class EcomDev_Sphinx_Shell extends Mage_Shell_Abstract
             'output' => 'o'
         ),
         'config:daemon' => array(
+            'output' => 'o'
+        ),
+        'keyword:dump' => array(
+            'store' => 's',
+            'index' => 'i',
+            'output' => 'o'
+        ),
+        'keyword:import' => array(
+            'store' => 's',
+            'index' => 'i',
             'output' => 'o'
         )
     );
@@ -74,21 +89,38 @@ Defined <action>s:
     -s --store          Store identifier for index                      [required]
     -v --visibility     Visibility, possible values: category, search   [required]
     -d --delta          Is it a delta index?
-    -f --format         Format of the output, allowed values: tsv, xml  [required]
+    -f --format         Format of the output, allowed values: csv, tsv, xml  [required]
     -o --output         Output filename, by default outputs to STDOUT
 
   export:category   Exports category index
 
     -s --store          Store identifier for index                      [required]
     -d --delta          Is it a delta index?
-    -f --format         Format of the output, allowed values: tsv, xml  [required]
+    -f --format         Format of the output, allowed values: csv, tsv, xml  [required]
     -o --output         Output file, by default outputs to STDOUT
+
+  export:keyword    Export keyword index
+
+    -s --store          Store identifier for index                      [required]
+    -f --format         Format of the output, allowed values: csv, tsv, xml  [required]
+    -o --output         Output file, by default outputs to STDOUT
+
 
   notify:category   Notifies changes in category entities to indexer
 
   notify:product    Notifies changes in product entities to indexer
 
   config:index      Generates index configuration
+
+  keyword:dump      Dumps keywords for index
+
+     -s --store         Store id
+     -i --index         Index name. Allowed values: product_catalog, product_search, category. Default is product_search
+     -o --output        Output file, by default outputs to STDOUT
+
+  keyword:import    Imports keywords from product_search index
+
+     -s --store         Store
 
   console           Opens sphinx console
 USAGE;
@@ -147,6 +179,7 @@ USAGE;
                 $this->$methodName();
             } catch (Exception $e) {
                 fwrite(STDERR, "Error: \n{$e->getMessage()}\n");
+                fwrite(STDERR, "Trace: \n{$e->getTraceAsString()}\n");
                 exit(1);
             }
         } else {
@@ -193,6 +226,16 @@ USAGE;
     }
 
     /**
+     * Returns sphinx configuration model
+     *
+     * @return EcomDev_Sphinx_Model_Sphinx_Config
+     */
+    private function getSphinxConfig()
+    {
+        return Mage::getSingleton('ecomdev_sphinx/sphinx_config');
+    }
+
+    /**
      * Runs mysql console for sphinx daemon
      *
      * @return $this
@@ -225,7 +268,7 @@ USAGE;
             'format' => 'Format argument is missing'
         ]);
 
-        $output = $this->getOutput();
+        $output = $this->getOutput(false);
 
         $store = Mage::app()->getStore($this->getArg('store'))->getId();
         $reader = $this->getService()->getReader('category');
@@ -239,6 +282,26 @@ USAGE;
         }
 
         $scope = $this->getService()->getCategoryScope($store, $updatedAt);
+        $writer = $this->getService()->getWriter($this->getArg('format'), $output);
+        $writer->process($reader, $scope);
+    }
+
+    protected function runExportKeyword()
+    {
+        $this->validateArgs([
+            'store' => 'Store argument is missing',
+            'format' => 'Format argument is missing'
+        ]);
+
+        $output = $this->getOutput(false);
+
+        $store = Mage::app()->getStore($this->getArg('store'))->getId();
+        // First we import all keywords
+        $this->getSphinxConfig()->keywordImport((int)$store);
+
+        // Then we supply them to sphinx
+        $reader = $this->getService()->getReader('keyword');
+        $scope = $this->getService()->getKeywordScope($store);
         $writer = $this->getService()->getWriter($this->getArg('format'), $output);
         $writer->process($reader, $scope);
     }
@@ -262,7 +325,7 @@ USAGE;
 
         $visibility = $visibilityToCode[$this->getArg('visibility')];
 
-        $output = $this->getOutput();
+        $output = $this->getOutput(false);
 
         $store = Mage::app()->getStore($this->getArg('store'))->getId();
 
@@ -303,16 +366,19 @@ USAGE;
     /**
      * Creates output instance
      *
-     * @return resource
+     * @param bool $stream
+     * @return resource|SplFileObject
      */
-    private function getOutput()
+    private function getOutput($stream = true)
     {
         $output = $this->getArg('output');
 
-        if ($output !== false) {
+        if ($output !== false && $stream) {
             $output = fopen($output, 'w');
-        } else {
+        } elseif ($stream) {
             $output = STDOUT;
+        } elseif ($output === false) {
+            $output = 'php://stdout';
         }
 
         return $output;
@@ -326,6 +392,59 @@ USAGE;
     {
         fwrite($this->getOutput(), $this->getIndexConfig()->render());
     }
+
+    /**
+     * Dumps keywords
+     *
+     *
+     */
+    public function runKeywordDump()
+    {
+        $output = $this->getOutput();
+
+        $this->validateArgs([
+            'store' => 'Store argument is missing'
+        ]);
+
+        $tmpFile = tempnam(Mage::getConfig()->getVarDir('sphinx'), 'keyword');
+
+        $this->getSphinxConfig()->keywordDump(
+            $this->getArg('index', 'product_search'),
+            (int)$this->getArg('store'),
+            $tmpFile
+        );
+
+        if (!file_exists($tmpFile)) {
+            new RuntimeException('There was an issue with keyword dump');
+        }
+
+        $file = fopen($tmpFile, 'r');
+        stream_copy_to_stream($file, $output);
+        fclose($file);
+        unlink($tmpFile);
+    }
+
+    /**
+     * Dumps keywords
+     *
+     *
+     */
+    public function runKeywordImport()
+    {
+        $output = $this->getOutput();
+
+        $this->validateArgs([
+            'store' => 'Store argument is missing'
+        ]);
+
+
+        $this->getSphinxConfig()->keywordImport(
+            (int)$this->getArg('store')
+        );
+
+        fwrite($output, "Keywords are imported\n");
+    }
+
 
     /**
      * Validates arguments

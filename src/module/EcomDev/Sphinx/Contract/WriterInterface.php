@@ -14,7 +14,7 @@ interface EcomDev_Sphinx_Contract_WriterInterface
      *
      * @return resource
      */
-    public function getStream();
+    public function getFileObject();
 
     /**
      * Processes reader within specified scope

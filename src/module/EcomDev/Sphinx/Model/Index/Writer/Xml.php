@@ -56,13 +56,14 @@ class EcomDev_Sphinx_Model_Index_Writer_Xml
             $counter++;
             if ($counter > $this->flushSize) {
                 $counter = 0;
-                fwrite($this->getStream(), $writer->flush());
+                $this->getFileObject()->fwrite($writer->flush());
             }
         }
 
         $killIdentifiers = $reader->getProvider()->getKillRecords($scope);
         if ($killIdentifiers) {
             $writer->startElementNs('sphinx', 'killlist', self::SPHINX_NS);
+
             foreach ($killIdentifiers as $identifier) {
                 if (is_array($identifier)) {
                     $identifier = $identifier['entity_id'];
@@ -75,7 +76,7 @@ class EcomDev_Sphinx_Model_Index_Writer_Xml
         }
 
         $writer->endElement();
-        fwrite($this->getStream(), $writer->flush());
+        $this->getFileObject()->fwrite($writer->flush());
     }
 
 }

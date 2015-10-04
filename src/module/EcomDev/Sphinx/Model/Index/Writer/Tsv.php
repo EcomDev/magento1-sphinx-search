@@ -3,34 +3,40 @@
 use EcomDev_Sphinx_Contract_ReaderInterface as ReaderInterface;
 use EcomDev_Sphinx_Contract_Reader_ScopeInterface as ScopeInterface;
 
+/**
+ * TSV Writer
+ *
+ */
 class EcomDev_Sphinx_Model_Index_Writer_Tsv
-    extends EcomDev_Sphinx_Model_Index_AbstractWriter
+    extends EcomDev_Sphinx_Model_Index_Writer_Csv
 {
     /**
-     * Processes reader within specified scope
+     * Delimiter character of csv
      *
-     * @param ReaderInterface $reader
-     * @param ScopeInterface $scope
-     * @return $this
+     * @var string
      */
-    public function process(ReaderInterface $reader, ScopeInterface $scope)
+    protected $delimiter = "\t";
+
+    /**
+     * @var string
+     */
+    protected $escape = ' ';
+
+    protected $enclosure = ' ';
+
+    /**
+     * Returns a value
+     *
+     * @param string $value
+     * @return string
+     */
+    protected function _translateValue($value)
     {
-        $columns = $scope->getConfiguration()->getFields();
-        $reader->setScope($scope);
-        /** @var EcomDev_Sphinx_Contract_DataRowInterface $dataRow */
-        foreach ($reader as $dataRow) {
-            $row = [$dataRow->getId()];
-            foreach ($columns as $column) {
-                $value = $column->getValue($dataRow, $scope);
-
-                if ($column->isMultiple() && is_array($value)) {
-                    $value = implode(',', $value);
-                }
-
-                $row[] = strtr($value, "\t", "    ");
-            }
-            fputcsv($this->getStream(), $row, "\t");
-        }
+        // We cannot use special characters like multi line in tsv format
+        return strtr(parent::_translateValue($value), [
+            "\t" => ' ',
+            "\n" => ' ',
+            "\r" => ''
+        ]);
     }
-
 }

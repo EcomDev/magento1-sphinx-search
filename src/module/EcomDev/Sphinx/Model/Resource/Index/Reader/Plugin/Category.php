@@ -73,7 +73,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
 
         $select->reset()
             ->from(['url' => $this->getTable('core/url_rewrite')], ['product_id', 'category_id', 'request_path'])
-            ->where('url.category_id IN(?)', array_keys($categoryMap))
+            ->where('url.category_id IN(?)', $categoryIds)
             ->where('url.product_id IN(?)', $identifiers)
             ->where('url.is_system = ?', 1);
 

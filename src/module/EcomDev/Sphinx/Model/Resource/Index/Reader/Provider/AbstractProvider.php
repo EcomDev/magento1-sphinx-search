@@ -183,10 +183,10 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_AbstractProvi
 
         $statement = $this->_getReadAdapter()->query($union);
 
-        if ($statement->rowCount() > 1000) {
-            return $statement;
+        if ($statement->rowCount() === 0) {
+            return [];
         }
 
-        return $statement->fetchColumn();
+        return $statement;
     }
 }

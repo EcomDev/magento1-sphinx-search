@@ -17,6 +17,12 @@
                             <sort_order>200</sort_order>
                             <action>adminhtml/sphinx_scope/index</action>
                         </scope>
+                        <keyword translate="title">
+                            <title>View Keywords</title>
+                            <sort_order>500</sort_order>
+                            <action>adminhtml/sphinx_keyword/index</action>
+                        </keyword>
+
                         <configure translate="title">
                             <title>Configure Sphinx</title>
                             <sort_order>300</sort_order>
@@ -49,6 +55,10 @@
                                         <title>Configure Sphinx</title>
                                         <sort_order>300</sort_order>
                                     </configure>
+                                    <keyword translate="title">
+                                        <title>View Keywords</title>
+                                        <sort_order>500</sort_order>
+                                    </keyword>
                                 </children>
                             </sphinx>
                         </children>

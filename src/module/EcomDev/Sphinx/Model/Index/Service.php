@@ -14,12 +14,16 @@ class EcomDev_Sphinx_Model_Index_Service
         ],
         'category' => [
             'ecomdev_sphinx/index_field_provider_category'
+        ],
+        'keyword' => [
+            'ecomdev_sphinx/index_field_provider_keyword'
         ]
     ];
 
     protected $readerProviders = [
         'product' => 'ecomdev_sphinx/index_reader_provider_product',
-        'category' => 'ecomdev_sphinx/index_reader_provider_category'
+        'category' => 'ecomdev_sphinx/index_reader_provider_category',
+        'keyword' => 'ecomdev_sphinx/index_reader_provider_keyword'
     ];
 
     protected $readerPlugins = [
@@ -43,7 +47,8 @@ class EcomDev_Sphinx_Model_Index_Service
             [50, 'ecomdev_sphinx/index_reader_plugin_attribute_eav', [Category::ENTITY, 'decimal']],
             [60, 'ecomdev_sphinx/index_reader_plugin_attribute_eav', [Category::ENTITY, 'datetime']],
             [70, 'ecomdev_sphinx/index_reader_plugin_url', ['category/%d']]
-        ]
+        ],
+        'keyword' => []
     ];
 
     protected $writers = [
@@ -142,7 +147,7 @@ class EcomDev_Sphinx_Model_Index_Service
      * Returns instance of data writer
      *
      * @param string $format
-     * @param resource $output
+     * @param string|resource $output
      * @return EcomDev_Sphinx_Contract_WriterInterface
      */
     public function getWriter($format, $output)
@@ -211,6 +216,29 @@ class EcomDev_Sphinx_Model_Index_Service
         $scope = $this->createModel(
             'ecomdev_sphinx/index_reader_scope',
             [$filters, $this->getConfiguration('category')]
+        );
+
+        return $scope;
+    }
+
+    /**
+     * Scope of the category
+     *
+     * @param int $storeId
+     * @return EcomDev_Sphinx_Model_Index_Reader_Scope
+     */
+    public function getKeywordScope($storeId)
+    {
+        $filters = [];
+
+        $filters[] = $this->createResourceModel(
+            'ecomdev_sphinx/index_reader_filter',
+            ['store_id', $storeId]
+        );
+
+        $scope = $this->createModel(
+            'ecomdev_sphinx/index_reader_scope',
+            [$filters, $this->getConfiguration('keyword')]
         );
 
         return $scope;

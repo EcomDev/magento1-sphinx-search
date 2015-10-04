@@ -8,7 +8,7 @@
     "magento-hackathon/magento-composer-installer": ">=2.0",
     "ecomdev/composer_autoload": "*",
     "foolz/sphinxql-query-builder": "1.0.0",
-    "league/container": "~2.0"
+    "league/csv": "~7.0"
   },
   "require-dev": {
     "magento/core": "1.9.1.0",

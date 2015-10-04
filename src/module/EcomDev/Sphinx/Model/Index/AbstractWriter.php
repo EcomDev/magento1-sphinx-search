@@ -11,33 +11,37 @@ abstract class EcomDev_Sphinx_Model_Index_AbstractWriter
     /**
      * Stream for having data output
      *
-     * @var resource
+     * @var string
      */
-    private $stream;
+    private $path;
 
     /**
      * Assigns stream
      *
-     * @param resource $stream
+     * @param string $path
      */
-    public function __construct($stream)
+    public function __construct($path)
     {
-        if (!is_resource($stream)) {
-            throw new InvalidArgumentException('Stream should be a resource');
-        }
-
-        $this->stream = $stream;
+        $this->path = $path;
     }
 
     /**
      * Stream where data gets written
      *
-     * @return resource
+     * @return SplFileObject
      */
-    public function getStream()
+    public function getFileObject()
     {
-        return $this->stream;
+        return new SplFileObject($this->path, 'w');
     }
 
-
+    /**
+     * Returns path
+     *
+     * @return string
+     */
+    protected function getPath()
+    {
+        return $this->path;
+    }
 }

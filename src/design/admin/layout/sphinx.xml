@@ -75,4 +75,18 @@
                type="ecomdev_sphinx/adminhtml_configure_action"
                template="ecomdev/sphinx/configure/action.phtml" />
     </adminhtml_sphinx_configure_index>
+
+    <adminhtml_sphinx_keyword_index>
+        <block name="sphinx.keyword"
+               parent="content"
+               type="ecomdev_sphinx/adminhtml_keyword">
+            <block name="sphinx.keyword.grid" as="grid"
+                   type="ecomdev_sphinx/adminhtml_keyword_grid" />
+        </block>
+    </adminhtml_sphinx_keyword_index>
+
+    <adminhtml_sphinx_keyword_grid>
+        <block name="sphinx.keyword.grid" as="grid"
+               type="ecomdev_sphinx/adminhtml_keyword_grid" output="toHtml" />
+    </adminhtml_sphinx_keyword_grid>
 </layout>

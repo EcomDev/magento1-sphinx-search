@@ -247,14 +247,34 @@ class EcomDev_Sphinx_Model_Attribute
         } elseif ($this->getBackendType() === 'int') {
             return FieldInterface::TYPE_ATTRIBUTE_INT;
         } elseif ($this->getBackendType() === 'datetime') {
-            return FieldInterface::TYPE_ATTRIBUTE_FLOAT;
+            return FieldInterface::TYPE_ATTRIBUTE_TIMESTAMP;
         } elseif ($this->getBackendType() === 'decimal') {
-            return 'attr_float';
+            return FieldInterface::TYPE_ATTRIBUTE_FLOAT;
         }
         
         return ($this->getIsFulltext() && $this->getIsActive()) ?
                     FieldInterface::TYPE_FIELD_STRING :
                     FieldInterface::TYPE_ATTRIBUTE_STRING;
+    }
+
+    /**
+     * Check if field is allowed for full text search
+     *
+     * @return bool
+     */
+    public function isFulltext()
+    {
+        if (!$this->getIsFulltext()) {
+            return false;
+        }
+
+        if (!$this->isOption() && !in_array($this->getSphinxType(), [
+                FieldInterface::TYPE_FIELD_STRING, FieldInterface::TYPE_FIELD
+            ])) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
