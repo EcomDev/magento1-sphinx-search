@@ -11,13 +11,12 @@ class EcomDev_Sphinx_Model_Sphinx_Query_Builder
      * 
      * @return $this
      */
-    public function select()
+    public function select($columns = null)
     {
         $select = func_get_args();
         
         if ($this->type !== 'select' || empty($select)) {
-            parent::select();
-            $this->select = $select;
+            parent::select($select);
         } else {
             foreach ($select as $item) {
                 $this->select[] = $item;
