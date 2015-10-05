@@ -203,6 +203,11 @@ class EcomDev_Sphinx_Model_Observer
             $categoryModel->unsetData()
                 ->setData($data);
 
+
+            if (!$categoryModel->getIncludeInMenu()) {
+                continue;
+            }
+
             $nodeId = 'category-node-' . $categoryModel->getId();
             $categoryData = array(
                 'name' => $categoryModel->getName(),
@@ -211,7 +216,7 @@ class EcomDev_Sphinx_Model_Observer
                 'is_active' => $this->_isActiveMenuCategory($categoryModel),
                 'include_in_menu' => $categoryModel->getIncludeInMenu()
             );
-            
+
             $categoryNode = new Varien_Data_Tree_Node($categoryData, 'id', $parentCategoryNode->getTree(), $parentCategoryNode);
             $parentCategoryNode->addChild($categoryNode);
 
