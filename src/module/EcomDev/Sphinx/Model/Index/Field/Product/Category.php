@@ -51,7 +51,7 @@ class EcomDev_Sphinx_Model_Index_Field_Product_Category
 
         if (is_array($categories)) {
             foreach ($categories as $row) {
-                if ($this->isDirect && !empty($row['is_parent'])) {
+                if ($this->isDirect && empty($row['is_parent'])) {
                     continue;
                 }
 

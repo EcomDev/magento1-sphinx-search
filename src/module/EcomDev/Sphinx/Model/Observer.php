@@ -293,12 +293,6 @@ class EcomDev_Sphinx_Model_Observer
             $layout = $observer->getLayout();
             $applyHandles = array_intersect($this->_availableHandles, $layout->getUpdate()->getHandles());
             
-            foreach ($layout->getUpdate()->getHandles() as $handle) {
-                if (strpos($handle, 'CATEGORY_') === 0) {
-                    $layout->getUpdate()->removeHandle($handle);
-                }
-            }
-            
             foreach ($applyHandles as $handle) {
                 $layout->getUpdate()->addHandle($handle . '_ecomdev_sphinx');
                 

@@ -34,6 +34,11 @@ class EcomDev_Sphinx_Model_Index_Field_Provider_Product_Attribute_Price
         $groupedFieldNames = $this->sphinxConfig->getPriceColumns(true);
 
         foreach ($groupedFieldNames as $customerGroupId => $fields) {
+            $fields[sprintf(
+                EcomDev_Sphinx_Model_Config::PRICE_PATTERN,
+                'minimal_price', $customerGroupId
+            )] = 'minimal_price';
+
             foreach ($fields as $fieldName => $column) {
                 $container->fields[] = new PriceField($fieldName, $column, $customerGroupId);
             }

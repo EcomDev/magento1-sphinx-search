@@ -23,13 +23,17 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Price
             return [];
         }
 
+        $least       = $this->_getReadAdapter()->getLeastSql(array('index.min_price', 'index.tier_price'));
+        $minimalExpr = $this->_getReadAdapter()->getCheckSql('index.tier_price IS NOT NULL',
+            $least, 'index.min_price');
+
         $select = $this->_getReadAdapter()->select();
         $select
             ->from(
                 ['index' => $this->getTable('catalog/product_index_price')],
                 ['entity_id', 'customer_group_id', 'tax_class_id',
                  'price', 'final_price', 'min_price',
-                 'max_price', 'tier_price', 'group_price'])
+                 'max_price', 'tier_price', 'group_price', 'minimal_price' => $minimalExpr])
             ->join(
                 ['store' => $this->getTable('core/store')],
                 'store.website_id = index.website_id',

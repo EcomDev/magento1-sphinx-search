@@ -240,14 +240,14 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
             'final_price',
             $customerGroupId
         );
-        $this->_fieldsToSelect['minimal_price'] = sprintf(
+        $this->_fieldsToSelect['min_price'] = sprintf(
             'price_index_%s_%d',
             'min_price',
             $customerGroupId
         );
-        $this->_fieldsToSelect['min_price'] = sprintf(
+        $this->_fieldsToSelect['minimal_price'] = sprintf(
             'price_index_%s_%d',
-            'min_price',
+            'minimal_price',
             $customerGroupId
         );
         $this->_fieldsToSelect['max_price'] = sprintf(
@@ -255,6 +255,13 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
             'max_price',
             $customerGroupId
         );
+
+        $this->_fieldsToSelect['tier_price'] = sprintf(
+            'price_index_%s_%d',
+            'tier_price',
+            $customerGroupId
+        );
+
         return $this;
     }
 

@@ -24,7 +24,7 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Attribute_Price
     {
         parent::__construct($attribute, $rangeStep, $rangeCount);
         $this->_customerGroupId = $customerGroupId;
-        $this->_columnName = sprintf('price_index_min_price_%d', $this->_customerGroupId);
+        $this->_columnName = sprintf('price_index_minimal_price_%d', $this->_customerGroupId);
     }
 
     /**
