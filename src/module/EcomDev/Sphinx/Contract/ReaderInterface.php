@@ -13,7 +13,7 @@ use EcomDev_Sphinx_Contract_Reader_ProviderInterface as ProviderInterface;
  */
 interface EcomDev_Sphinx_Contract_ReaderInterface extends Iterator
 {
-    const DEFAULT_BATCH_SIZE = 5000;
+    const DEFAULT_BATCH_SIZE = 1000;
 
     /**
      * Returns plugin container

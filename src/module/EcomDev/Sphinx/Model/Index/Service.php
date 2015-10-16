@@ -74,7 +74,7 @@ class EcomDev_Sphinx_Model_Index_Service
     {
         if (!isset($this->configuration[$type])) {
             $this->configuration[$type] = $this->createModel('ecomdev_sphinx/index_configuration');
-            foreach ($this->configurationProviders[$type] as $provider) {
+            foreach ($this->getConfigurationProviders($type) as $provider) {
                 /** @var EcomDev_Sphinx_Contract_FieldProviderInterface $provider */
                 $provider = $this->createModel($provider, [Mage::getSingleton('ecomdev_sphinx/config')]);
                 $this->configuration[$type]->addFieldProvider($provider);
@@ -82,6 +82,26 @@ class EcomDev_Sphinx_Model_Index_Service
         }
 
         return $this->configuration[$type];
+    }
+
+    /**
+     * List of configuration providers
+     *
+     * @param string $type
+     * @return string[]
+     */
+    private function getConfigurationProviders($type)
+    {
+        $container = new stdClass();
+        $container->providers = $this->configurationProviders[$type];
+        $container->type = $type;
+
+        Mage::dispatchEvent(
+            'ecomdev_sphinx_index_service_configuration_providers',
+            ['container' => $container, 'type' => $type]
+        );
+
+        return $container->providers;
     }
 
     /**
@@ -140,6 +160,7 @@ class EcomDev_Sphinx_Model_Index_Service
             }
         }
 
+        Mage::dispatchEvent('ecomdev_sphinx_index_service_reader', ['reader' => $reader, 'type' => $type]);
         return $reader;
     }
 

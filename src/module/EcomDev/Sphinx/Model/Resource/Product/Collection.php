@@ -13,6 +13,11 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
     protected $_layer;
     
     protected $_fieldsToSelect;
+
+    /**
+     * @var QueryBuilder
+     */
+    protected $_currentQuery;
     
     public function setLayer(EcomDev_Sphinx_Model_LayerInterface $layer)
     {
@@ -59,7 +64,9 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
             $fields = $this->getScope()->getSearchableAttributes();
             $query->match($fields, $this->_productLimitationFilters['search_query']);
         }
-        
+
+        $this->_currentQuery = $query;
+
         return $this;
     }
 

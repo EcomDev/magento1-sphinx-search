@@ -6,6 +6,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Keyword_Collection
     protected function _construct()
     {
         $this->_init('ecomdev_sphinx/index_keyword');
+        $this->_setIdFieldName('id');
     }
 
     /**

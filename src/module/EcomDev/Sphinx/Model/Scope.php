@@ -479,15 +479,20 @@ class EcomDev_Sphinx_Model_Scope
      * Fetches collection data only
      *
      * @param EcomDev_Sphinx_Model_Resource_Product_Collection $collection
+     * @param Closure $customCallback
      * @return $this
      * @throws \Foolz\SphinxQL\Exception\SphinxQLException
      */
-    public function fetchCollection(EcomDev_Sphinx_Model_Resource_Product_Collection $collection)
+    public function fetchCollection(EcomDev_Sphinx_Model_Resource_Product_Collection $collection, $customCallback = null)
     {
         Varien_Profiler::start(__METHOD__);
         $selectQuery = $this->getQueryBuilder();
 
         $collection->initQuery($selectQuery, $this->_getConfig()->getContainer()->getIndexNames('product'));
+
+        if (is_callable($customCallback)) {
+            call_user_func($customCallback, $collection, $selectQuery);
+        }
 
         $collection->addFieldsToQuery(
             $selectQuery,
