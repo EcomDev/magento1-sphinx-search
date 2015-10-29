@@ -101,6 +101,10 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
         $this->_fieldsToSelect['sku'] = 'sku';
         $this->_fieldsToSelect['is_salable'] = 'stock_status';
         $this->_fieldsToSelect['is_in_stock'] = 'stock_status';
+
+        Mage::dispatchEvent(
+            'ecomdev_sphinx_product_collection_add_fields_to_query', ['query' => $query, 'collection' => $this]
+        );
         
         if (!empty($this->_productLimitationFilters['use_price_index'])) {
             $customerGroupId = $this->_productLimitationFilters['customer_group_id'];
@@ -128,13 +132,13 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
         if ($order === 'price') {
             $order = 'price_index_min_price_' . $this->getCustomerGroupId(); 
         }
-        
-        if ($order && in_array($order, $indexFields)) {
+
+        if ($order === 'position') {
+            $query->orderBy('i_category_position', $direction);
+        } elseif ($order && in_array($order, $indexFields)) {
             $query->orderBy($order, $direction);
         } elseif ($order === 'relevance') {
             $query->orderBy($query->expr('weight()'), $direction);
-        } elseif ($order === 'position') {
-            $query->orderBy('_category_position', $direction);
         }
         
         if ($scope->getPageSize() && $scope->getCurrentPage()) {
@@ -145,7 +149,10 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
                 ($this->getCurPage() - 1) * $this->getPageSize(), $this->getPageSize()
             );
         }
-        
+
+
+
+
         return $this;
     }
 

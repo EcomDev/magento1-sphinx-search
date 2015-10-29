@@ -38,7 +38,7 @@ class EcomDev_Sphinx_Model_Index_Field_Provider_Product_Attribute_System
             new CategoryField(FieldInterface::TYPE_FIELD, 's_anchor_category_ids', false, true),
             new CategoryField(FieldInterface::TYPE_FIELD, 's_direct_category_names', true, false),
             new CategoryField(FieldInterface::TYPE_FIELD, 's_anchor_category_names', true, false),
-            new CategoryField(FieldInterface::TYPE_ATTRIBUTE_INT, '_category_position', true, false),
+            new CategoryField(FieldInterface::TYPE_ATTRIBUTE_INT, 'i_category_position', true, false),
         ];
 
         Mage::dispatchEvent('ecomdev_sphinx_provider_product_system_fields', ['container' => $container]);
