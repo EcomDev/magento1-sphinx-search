@@ -23,9 +23,10 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Option
      * Option url for a filter
      *
      * @param OptionInterface $option
+     * @param string[] $without
      * @return string
      */
-    public function getOptionUrl(OptionInterface $option)
+    public function getOptionUrl(OptionInterface $option, $without = [])
     {
         $baseUrl = $this->getLayer()->getCurrentUrl();
         $activeFilters = $this->getLayer()->getActiveFilters()
@@ -35,6 +36,14 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Option
             unset($activeFilters[$option->getFacet()->getFilterField()]);
         } else {
             $activeFilters[$option->getFacet()->getFilterField()] = $filter;
+        }
+
+        if ($without) {
+            foreach ($without as $name) {
+                if (isset($activeFilters[$name])) {
+                    unset($activeFilters[$name]);
+                }
+            }
         }
 
         return $baseUrl . ($activeFilters ? '?' . http_build_query($activeFilters, '', '&amp;') : '');
