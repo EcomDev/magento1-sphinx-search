@@ -83,6 +83,11 @@ class EcomDev_Sphinx_Adminhtml_Sphinx_ConfigureController
         $this->_manageAction(['validateData', 'controlIndexData'], $this->__('Delta update operation has been successfully executed'));
     }
 
+    public function indexAllAction()
+    {
+        $this->_manageAction(['controlIndex', 'reindexAll'], $this->__('All indexes has been re-indexed'));
+    }
+
 
     protected function _manageAction($method, $successText)
     {

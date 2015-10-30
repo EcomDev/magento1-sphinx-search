@@ -68,9 +68,6 @@
         </resources>
         <index>
             <indexer>
-                <catalogsearch_fulltext>
-                    <model>ecomdev_sphinx/indexer_dummy</model>
-                </catalogsearch_fulltext>
                 <sphinx_category>
                     <model>ecomdev_sphinx/indexer_catalog_category</model>
                 </sphinx_category>

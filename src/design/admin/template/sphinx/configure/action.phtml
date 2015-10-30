@@ -35,5 +35,13 @@
                 <?php echo $this->__('Updates Sphinx delta index changes, if there are any data out of sync')?>
             </td>
         </tr>
+        <tr>
+            <td class="scope-label">
+                <button onclick="setLocation('<?php echo $this->getIndexAllUrl(); ?>')" type="button" class="scalable" style="width: 300px;"><span><span><span><?php echo $this->__('Reindex All')?></span></span></span></button>
+            </td>
+            <td class="scope-label">
+                <?php echo $this->__('Re-Indexes all Sphinx Data. Use only if you do not have any other option.')?>
+            </td>
+        </tr>
     </table>
 </div>

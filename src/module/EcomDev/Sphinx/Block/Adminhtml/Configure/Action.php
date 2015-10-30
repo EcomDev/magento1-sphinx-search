@@ -39,4 +39,14 @@ class EcomDev_Sphinx_Block_Adminhtml_Configure_Action
     {
         return $this->getUrl('*/*/indexDelta');
     }
+
+    /**
+     * Url to update and merge delta index
+     *
+     * @return string
+     */
+    public function getIndexAllUrl()
+    {
+        return $this->getUrl('*/*/indexAll');
+    }
 }

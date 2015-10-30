@@ -316,6 +316,14 @@ class EcomDev_Sphinx_Model_Sphinx_Config
     }
 
     /**
+     * @return EcomDev_Sphinx_Model_Sphinx_Config
+     */
+    public function reindexAll()
+    {
+        return $this->controlIndexData(true);
+    }
+
+    /**
      * Check if index data is up to date
      * If it is not, it will automatically reindex delta or main index
      * 
@@ -428,7 +436,7 @@ class EcomDev_Sphinx_Model_Sphinx_Config
 
         if (is_resource($filePath)) {
             $tmpFileHandle = fopen($outputFile, 'r');
-            stream_copy_to_stream($tmpFileHandle, $outputFile);
+            stream_copy_to_stream($tmpFileHandle, $filePath);
             fclose($tmpFileHandle);
             unlink($outputFile);
         }
@@ -457,6 +465,10 @@ class EcomDev_Sphinx_Model_Sphinx_Config
         /** @var EcomDev_Sphinx_Model_Index_Keyword $keyword */
         $keyword = Mage::getModel('ecomdev_sphinx/index_keyword');
         $keyword->importData($csv, $storeId);
+
+        if (file_exists($outputFile)) {
+            unlink($outputFile);
+        }
 
         return $this;
     }
