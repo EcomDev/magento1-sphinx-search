@@ -112,9 +112,10 @@ abstract class EcomDev_Sphinx_Block_Layer_Facet_AbstractRenderer
      * Clear url for a filter
      *
      * @param FacetInterface $facet
+     * @param string[] $without
      * @return string
      */
-    public function getClearUrl(FacetInterface $facet)
+    public function getClearUrl(FacetInterface $facet, $without = [])
     {
         $baseUrl = $this->getLayer()->getCurrentUrl();
 
@@ -123,6 +124,14 @@ abstract class EcomDev_Sphinx_Block_Layer_Facet_AbstractRenderer
 
         if (isset($activeFilters[$facet->getFilterField()])) {
             unset($activeFilters[$facet->getFilterField()]);
+        }
+
+        if ($without) {
+            foreach ($without as $name) {
+                if (isset($activeFilters[$name])) {
+                    unset($activeFilters[$name]);
+                }
+            }
         }
 
         return $baseUrl . ($activeFilters ? '?' . http_build_query($activeFilters, '', '&amp;') : '');
