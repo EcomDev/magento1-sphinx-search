@@ -17,6 +17,12 @@ class EcomDev_Sphinx_Model_Update extends Mage_Core_Model_Abstract
      */
     public function notify($type)
     {
+        $indexProcessor = Mage::getSingleton('index/indexer')->getProcessByCode('catalog_category_product');
+        if ($type === 'product'
+            && $indexProcessor && $indexProcessor->isLocked()) {
+            return $this;
+        }
+
         $updatedAfter = $this->_getResource()->getLatestUpdatedAt($type);
 
         $this->getResource()->walkUpdatedEntityIds(

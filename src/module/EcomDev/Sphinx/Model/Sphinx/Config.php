@@ -326,7 +326,8 @@ class EcomDev_Sphinx_Model_Sphinx_Config
     /**
      * Check if index data is up to date
      * If it is not, it will automatically reindex delta or main index
-     * 
+     *
+     * @param bool $forceReindex
      * @return $this
      */
     public function controlIndexData($forceReindex = false)
@@ -339,8 +340,22 @@ class EcomDev_Sphinx_Model_Sphinx_Config
         $collection = Mage::getResourceModel('ecomdev_sphinx/sphinx_config_index_collection');
         $forceReindexList = [];
 
+        // Keywords are enabled only when sphinx search is used
+        if ($forceReindex && $this->_getConfig()->getConfig('search_active', 'general')) {
+            foreach ($collection as $item) {
+                if ($item->getCode() === self::TYPE_KEYWORD) {
+                    $forceReindexList[] = [$this->_types[$item->getCode()][0], (int)$item->getStoreId()];
+                }
+                $this->keywordImport((int)$item->getStoreId());
+            }
+        }
+
         foreach ($collection as $item) {
             if (!isset($this->_types[$item->getCode()])) {
+                continue;
+            }
+
+            if ($item->getCode() === self::TYPE_KEYWORD) {
                 continue;
             }
 
@@ -350,10 +365,11 @@ class EcomDev_Sphinx_Model_Sphinx_Config
             $pendingRows = $item->getData('pending_rows');
             $storeId = (int)$item->getStoreId();
 
-            if (!$forceReindex && $configLimit && $pendingRows && $configLimit && $pendingRows < $configLimit) {
+            if (!$forceReindex && $configLimit && $pendingRows && $pendingRows < $configLimit
+                && $pendingRows < ($indexedRows / 2)) {
                 $this->reindexIndex($indexName . '_delta', $additionalArgs, $storeId);
                 $this->mergeDeltaIndex($indexName, $additionalArgs, $storeId);
-            } elseif ($forceReindex || !$indexedRows || ($configLimit && ($pendingRows > $configLimit))) {
+            } elseif ($forceReindex || !$indexedRows || ($configLimit && ($pendingRows > $configLimit)) || $pendingRows > ($indexedRows / 2)) {
                 $forceReindexList[] = [$indexName, $storeId];
             }
         }
@@ -560,6 +576,19 @@ class EcomDev_Sphinx_Model_Sphinx_Config
     protected function executeIndexerCommand($command)
     {
         $prefix = $this->_getConfig()->getConfig('indexer_command');
+        $trim = $this->_exec(sprintf('%s %s', $prefix, $command));
+        return trim($trim);
+    }
+
+    /**
+     * Execute service command
+     *
+     * @param string $command
+     * @return string
+     */
+    protected function executeIndexToolCommand($command)
+    {
+        $prefix = $this->_getConfig()->getConfig('indextool_command');
         $trim = $this->_exec(sprintf('%s %s', $prefix, $command));
         return trim($trim);
     }

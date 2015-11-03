@@ -295,10 +295,6 @@ USAGE;
 
         $output = $this->getOutput(false);
 
-        $store = Mage::app()->getStore($this->getArg('store'))->getId();
-        // First we import all keywords
-        $this->getSphinxConfig()->keywordImport((int)$store);
-
         // Then we supply them to sphinx
         $reader = $this->getService()->getReader('keyword');
         $scope = $this->getService()->getKeywordScope($store);
@@ -328,7 +324,6 @@ USAGE;
         $output = $this->getOutput(false);
 
         $store = Mage::app()->getStore($this->getArg('store'))->getId();
-
 
         $reader = $this->getService()->getReader('product');
 
