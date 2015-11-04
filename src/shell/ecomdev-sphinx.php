@@ -295,6 +295,7 @@ USAGE;
 
         $output = $this->getOutput(false);
 
+        $store = (int)$this->getArg('store');
         // Then we supply them to sphinx
         $reader = $this->getService()->getReader('keyword');
         $scope = $this->getService()->getKeywordScope($store);

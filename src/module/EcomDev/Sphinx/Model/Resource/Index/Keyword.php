@@ -5,7 +5,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Keyword
 {
     protected function _construct()
     {
-        $this->_init('ecomdev_sphinx/index_keyword', 'keyword');
+        $this->_init('ecomdev_sphinx/index_keyword', 'keyword_id');
     }
 
     /**
