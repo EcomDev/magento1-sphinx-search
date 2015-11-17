@@ -63,6 +63,73 @@
         </block>
     </adminhtml_sphinx_scope_edit>
 
+    <adminhtml_sphinx_sort_index>
+        <block name="sphinx.sort"
+               parent="content"
+               type="ecomdev_sphinx/adminhtml_sort">
+            <block name="sphinx.sort.grid" as="grid"
+                   type="ecomdev_sphinx/adminhtml_sort_grid" />
+        </block>
+    </adminhtml_sphinx_sort_index>
+
+    <adminhtml_sphinx_sort_grid>
+        <block name="sphinx.keyword.grid" as="grid"
+               type="ecomdev_sphinx/adminhtml_sort_grid" output="toHtml" />
+    </adminhtml_sphinx_sort_grid>
+
+    <adminhtml_sphinx_sort_edit>
+        <reference name="head">
+            <action method="addItem"><type>skin_js</type><file>js/ecomdev/sphinx/sort.js</file></action>
+        </reference>
+        <block name="sphinx.sort.edit"
+               parent="content"
+               type="ecomdev_sphinx/adminhtml_sort_edit">
+            <block name="sphinx.sort.edit.form" as="form"
+                   type="ecomdev_sphinx/adminhtml_sort_edit_form">
+                <block name="sphinx.sort.edit.form.sort.row" type="adminhtml/template" template="ecomdev/sphinx/form/sort/row.phtml" as="row" />
+                <block name="sphinx.sort.edit.form.sort.container" type="adminhtml/template" template="ecomdev/sphinx/form/sort/container.phtml" as="container" />
+            </block>
+        </block>
+    </adminhtml_sphinx_sort_edit>
+
+    <adminhtml_sphinx_field_index>
+        <block name="sphinx.field"
+               parent="content"
+               type="ecomdev_sphinx/adminhtml_field">
+            <block name="sphinx.field.grid" as="grid"
+                   type="ecomdev_sphinx/adminhtml_field_grid" />
+        </block>
+    </adminhtml_sphinx_field_index>
+
+    <adminhtml_sphinx_field_grid>
+        <block name="sphinx.field.grid" as="grid"
+               type="ecomdev_sphinx/adminhtml_field_grid" output="toHtml" />
+    </adminhtml_sphinx_field_grid>
+
+    <adminhtml_sphinx_field_edit>
+        <reference name="head">
+            <action method="addItem"><type>skin_js</type><file>js/ecomdev/sphinx/field.js</file></action>
+        </reference>
+        <block name="sphinx.field.edit"
+               parent="content"
+               type="ecomdev_sphinx/adminhtml_field_edit">
+            <block name="sphinx.field.edit.form" as="form"
+                   type="ecomdev_sphinx/adminhtml_field_edit_form">
+                <block name="sphinx.field.edit.form.field.row" type="adminhtml/template" template="ecomdev/sphinx/form/field/row.phtml" as="row" />
+                <block name="sphinx.field.edit.form.field.container" type="adminhtml/template" template="ecomdev/sphinx/form/field/container.phtml" as="container" />
+            </block>
+        </block>
+    </adminhtml_sphinx_field_edit>
+
+    <adminhtml_sphinx_field_new>
+        <block name="sphinx.field.edit"
+               parent="content"
+               type="ecomdev_sphinx/adminhtml_field_edit">
+            <block name="sphinx.field.new.form" as="form"
+                   type="ecomdev_sphinx/adminhtml_field_edit_create_form" />
+        </block>
+    </adminhtml_sphinx_field_new>
+
     <adminhtml_sphinx_configure_index>
         <block name="sphinx.configure"
                parent="content"

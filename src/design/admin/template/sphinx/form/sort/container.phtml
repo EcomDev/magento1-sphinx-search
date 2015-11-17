@@ -1,0 +1,27 @@
+<div class="grid">
+    <table cellpadding="0" cellspacing="0" class="border">
+        <thead>
+            <tr class="headings" id="#{id}-header">
+                <th><?php echo $this->__('Field');?></th>
+                <th><?php echo $this->__('Low to High Map');?></th>
+                <th><?php echo $this->__('High to Low Map');?></th>
+                <th><?php echo $this->__('Priority');?></th>
+                <th>&nbsp;</th>
+            </tr>
+        </thead>
+        <tbody class="body">
+
+        </tbody>
+        <tfoot>
+            <tr class="footer">
+                <td colspan="2" class="a-right"><label for="#{id}-select"><?php echo $this->__('Field');?></label></td>
+                <td><select id="#{id}-select" class="select"></select></td>
+                <td>
+                    <button class="scalable add" type="button">
+                        <span><span><span><?php echo $this->__('Add Order');?></span></span></span>
+                    </button>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>

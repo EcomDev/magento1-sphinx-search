@@ -1,4 +1,15 @@
 <?php /* @var $this EcomDev_Sphinx_Block_Layer */ ?>
+<?php if (!$this->getRequest()->isXmlHttpRequest()): ?>
+<script type="text/javascript">
+window.ecomdevSphinxDelayed = function (callback) {
+    if (window.EcomDev && window.EcomDev.Sphinx) {
+        callback();
+    } else {
+        setTimeout(function () { ecomdevSphinxDelayed(callback); }, 2);
+    }
+};
+</script>
+<?php endif;?>
 <?php if ($this->getFacets()): ?>
 <div class="block block-layered-nav">
     <div class="block-title">
@@ -20,40 +31,13 @@
 <?php endif;?>
 <?php if (!$this->getRequest()->isXmlHttpRequest()): ?>
 <script type="text/javascript">
-    bindAjaxProductUrl = function () { 
-        var links = $$('.product-ajax-link');
-        for (var i = 0, l = links.length; i < l; i ++) {
-            links[i].observe('click', function (evt) {
-                Event.stop(evt);
-                var link = Event.findElement(evt, 'a');
-                updateFromUrl(link.href, false);
-            });
-        }
-    };
-    bindAjaxProductUrl();
-    updateFromUrl = function (href, noClick) {
-        if (window.history && history.pushState && !noClick) {
-            history.pushState({page:href}, null, href);
-        }
-        
-        return new Ajax.Request(href, {method: 'get', onComplete: function (response) {
-            if (response.responseText.isJSON()) {
-                data = response.responseText.evalJSON();
-                $$('div.block-layered-nav').first().replace(data.filters);
-                $$('div.category-products').first().replace(data.products);
-                data.filters.evalScripts();
-                data.products.evalScripts();
-                bindAjaxProductUrl();
-            }
-        }});
-    };
-    Event.observe(window, 'popstate', function(evt){
-        var state = evt.state;
-        if (state !== null) {
-            if (state.page !== undefined && state.page !== '') {
-                updateFromUrl(state.page, true);
-            }
-        }
+    ecomdevSphinxDelayed(function () {
+        window.sphinxLayer = new EcomDev.Sphinx.Layer(
+            '.product-ajax-link',
+            'div.block-layered-nav',
+            'div.category-products',
+            true
+        );
     });
 </script>
 <?php endif; ?>

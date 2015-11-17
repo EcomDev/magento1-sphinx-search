@@ -17,9 +17,11 @@ abstract class EcomDev_Sphinx_Model_Sphinx_Facet_AbstractAttribute
      * Configuration for an attribute
      * 
      * @param EcomDev_Sphinx_Model_Attribute $attribute
-     * @param null $filterName
+     * @param null|string $filterName
+     * @param null|string $columnName
+     * @param null|string $label
      */
-    public function __construct(Attribute $attribute, $filterName = null)
+    public function __construct(Attribute $attribute, $filterName = null, $columnName = null, $label = null)
     {
         if ($filterName === null) {
             $filterName = $attribute->getAttributeCode();
@@ -28,9 +30,9 @@ abstract class EcomDev_Sphinx_Model_Sphinx_Facet_AbstractAttribute
         $this->_attribute = $attribute;
         
         parent::__construct(
-            $attribute->getAttributeCode(),
+            $columnName ?: $attribute->getAttributeCode(),
             $filterName,
-            $attribute->getAttribute()->getStoreLabel()
+            $label ?: $attribute->getAttribute()->getStoreLabel()
         );
     }
 

@@ -1,0 +1,102 @@
+<?php /** @var Mage_Adminhtml_Block_Template $this */ ?>
+<?php $field = $this->getField(); ?>
+<?php $options = $field->getAvailableOptions(); ?>
+<?php switch ($field->getType()):?>
+<?php case EcomDev_Sphinx_Model_Source_Field_Type::TYPE_ALIAS:?>
+<div class="grid">
+    <table cellpadding="0" cellspacing="0" class="border">
+        <thead>
+            <tr class="headings" id="#{id}-header">
+                <th><?php echo $this->__('Alias');?></th>
+                <th><?php echo $this->__('Target');?></th>
+                <th>&nbsp;</th>
+            </tr>
+        </thead>
+        <tbody class="body">
+
+        </tbody>
+        <tfoot>
+            <tr class="footer">
+                <td class="a-right"><label for="#{id}-option"><?php echo $this->__('Alias');?></label></td>
+                <td>
+                    <?php if ($options === false):?>
+                        <input id="#{id}-option" type="text" class="option" value="" />
+                    <?php else:?>
+                        <select id="#{id}-option" class="option "></select>
+                    <?php endif;?>
+                </td>
+                <td>
+                    <button class="scalable add" type="button">
+                        <span><span><span><?php echo $this->__('Add Option');?></span></span></span>
+                    </button>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+<?php break;?>
+<?php case EcomDev_Sphinx_Model_Source_Field_Type::TYPE_GROUPED:?>
+<div class="grid">
+    <table cellpadding="0" cellspacing="0" class="border">
+        <thead>
+        <tr class="headings" id="#{id}-header">
+            <th><?php echo $this->__('Code');?></th>
+            <th><?php echo $this->__('Label');?></th>
+            <th><?php echo $this->__('Target');?></th>
+            <th><?php echo $this->__('Position');?></th>
+            <th>&nbsp;</th>
+        </tr>
+        </thead>
+        <tbody class="body">
+        </tbody>
+        <tfoot>
+        <tr class="footer">
+            <td colspan="2" class="a-right"><label for="#{id}-option"><?php echo $this->__('Option');?></label></td>
+            <td colspan="2">
+                <?php if ($options === false):?>
+                    <input id="#{id}-option" type="text" class="option" value="" />
+                <?php else:?>
+                    <select id="#{id}-option" class="option"></select>
+                <?php endif;?>
+            </td>
+            <td>
+                <button class="scalable add" type="button">
+                    <span><span><span><?php echo $this->__('Add Option');?></span></span></span>
+                </button>
+            </td>
+        </tr>
+        </tfoot>
+    </table>
+</div>
+<?php break;?>
+<?php case EcomDev_Sphinx_Model_Source_Field_Type::TYPE_RANGE:?>
+<div class="grid">
+    <table cellpadding="0" cellspacing="0" class="border">
+        <thead>
+        <tr class="headings" id="#{id}-header">
+            <th><?php echo $this->__('Code');?></th>
+            <th><?php echo $this->__('Label');?></th>
+            <th><?php echo $this->__('From');?></th>
+            <th><?php echo $this->__('To');?></th>
+            <th><?php echo $this->__('Position');?></th>
+            <th>&nbsp;</th>
+        </tr>
+        </thead>
+        <tbody class="body">
+
+        </tbody>
+        <tfoot>
+        <tr class="footer">
+            <td colspan="2" class="a-right"><label for="#{id}-option"><?php echo $this->__('Option');?></label></td>
+            <td colspan="3"><input id="#{id}-option" type="text" class="option" value="" /></td>
+            <td>
+                <button class="scalable add" type="button">
+                    <span><span><span><?php echo $this->__('Add Option');?></span></span></span>
+                </button>
+            </td>
+        </tr>
+        </tfoot>
+    </table>
+</div>
+<?php break;?>
+<?php endswitch; ?>

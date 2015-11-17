@@ -8,12 +8,22 @@
                     <sort_order>200</sort_order>
                     <children>
                         <attribute translate="title">
-                            <title>Manage Sphinx Attributes</title>
+                            <title>Manage Attributes</title>
                             <sort_order>100</sort_order>
                             <action>adminhtml/sphinx_attribute/index</action>
                         </attribute>
+                        <sort translate="title">
+                            <title>Manage Sort Orders</title>
+                            <sort_order>110</sort_order>
+                            <action>adminhtml/sphinx_sort/index</action>
+                        </sort>
+                        <field translate="title">
+                            <title>Manage Virtual Fields</title>
+                            <sort_order>110</sort_order>
+                            <action>adminhtml/sphinx_field/index</action>
+                        </field>
                         <scope translate="title">
-                            <title>Manage Sphinx Scopes</title>
+                            <title>Manage Scopes</title>
                             <sort_order>200</sort_order>
                             <action>adminhtml/sphinx_scope/index</action>
                         </scope>
@@ -44,11 +54,19 @@
                                 <sort_order>200</sort_order>
                                 <children>
                                     <attribute translate="title">
-                                        <title>Manage Sphinx Attributes</title>
+                                        <title>Manage Attributes</title>
                                         <sort_order>100</sort_order>
                                     </attribute>
+                                    <sort translate="title">
+                                        <title>Manage Sort Orders</title>
+                                        <sort_order>110</sort_order>
+                                    </sort>
+                                    <field translate="title">
+                                        <title>Manage Virtual Fields</title>
+                                        <sort_order>120</sort_order>
+                                    </field>
                                     <scope translate="title">
-                                        <title>Manage Sphinx Scopes</title>
+                                        <title>Manage Scopes</title>
                                         <sort_order>200</sort_order>
                                     </scope>
                                     <configure translate="title">

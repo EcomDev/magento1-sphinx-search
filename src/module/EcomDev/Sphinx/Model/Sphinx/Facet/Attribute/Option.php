@@ -17,10 +17,12 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Attribute_Option
      * 
      * @param EcomDev_Sphinx_Model_Attribute $attribute
      * @param null|string $filterName
+     * @param null|string $columnName
+     * @param null|string $label
      */
-    public function __construct(Attribute $attribute, $filterName = null)
+    public function __construct(Attribute $attribute, $filterName = null, $columnName = null, $label = null)
     {
-        parent::__construct($attribute, $filterName);
+        parent::__construct($attribute, $filterName, $columnName, $label);
         $this->_isSelfFilterable = $this->_attribute->getFilterType() !== FilterType::TYPE_MULTIPLE;
     }
 

@@ -71,14 +71,14 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Slider
      *
      * @return string
      */
-    public function getValueUrl()
+    public function getValueUrl($separator = '&amp;')
     {
         $baseUrl = $this->getLayer()->getCurrentUrl();
         $activeFilters = $this->getLayer()->getActiveFilters()
             + $this->getLayer()->getAdditionalQuery();
 
         $activeFilters[$this->getFacet()->getFilterField()] = '^';
-        $url = $baseUrl . ($activeFilters ? '?' . http_build_query($activeFilters, '', '&amp;') : '');
+        $url = $baseUrl . ($activeFilters ? '?' . http_build_query($activeFilters, '', $separator) : '');
         return str_replace('=%5E', '={start}%2B{end}', $url);
     }
 
@@ -95,8 +95,9 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Slider
 
         if (strpos($currentValue, '+') !== false) {
             $explodedValue = explode('+', $currentValue, 2);
-            if ((float)$explodedValue[0] > 0.001
-                && (float)$explodedValue[1] > 0.001) {
+            if ($explodedValue[0] !== '' && is_numeric($explodedValue[0])
+                && $explodedValue[1] !== '' && is_numeric($explodedValue[1])
+                && (float)$explodedValue[0] < (float)$explodedValue[1]) {
                 $pair = array((float)$explodedValue[0], (float)$explodedValue[1]);
             }
         }
@@ -106,5 +107,47 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Slider
         }
 
         return $pair;
+    }
+
+    /**
+     * Returns json options for sliders
+     *
+     * @return string
+     */
+    public function getOptionJson()
+    {
+        $facet = $this->getFacet();
+
+        $currentValue = [
+            'min' => floor($this->getMinimumValue()),
+            'max' => ceil($this->getMaximumValue())
+        ];
+
+        if ($this->isSelected($this->getFacet())) {
+            $currentValue['min'] = floor($this->getCurrentStartValue());
+            $currentValue['max'] = ceil($this->getCurrentEndValue());
+        }
+
+        $options = [
+            'url' => $this->getValueUrl('&'),
+            'currency' => false,
+            'available' => [
+                'min' => floor($this->getMinimumValue()),
+                'max' => ceil($this->getMaximumValue())
+            ],
+            'step' => 1,
+            'current' => $currentValue
+        ];
+
+        if ($facet instanceof EcomDev_Sphinx_Model_Sphinx_Facet_Attribute_Price) {
+            $options['currency'] = $facet->getCurrencyFormat();
+            $zeroPriceFormatted = $facet->getCurrency()->formatTxt(
+                0.00, ['display' => Zend_Currency::NO_SYMBOL]
+            );
+            // Terrible hack, that I am not proud of, but it does a thing
+            $options['decimal_separator'] = trim(strtr($zeroPriceFormatted, ['0' => '']));
+        }
+
+        return json_encode($options);
     }
 }

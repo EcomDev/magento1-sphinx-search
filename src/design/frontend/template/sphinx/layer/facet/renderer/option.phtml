@@ -1,14 +1,21 @@
 <?php /* @var $this EcomDev_Sphinx_Block_Layer_Facet_Renderer_Option */ ?>
-<dt><?php echo $this->getLabel() ?></dt>
-<dd>
+<dt><?php echo $this->getLabel() ?> <?php if ($this->isSelected($this->getFacet())):?><a class="product-ajax-link col-right" href="<?php echo $this->getClearUrl($this->getFacet());?>"><?php echo $this->__('Clear');?></a><?php endif; ?></dt>
+<dd id="<?php echo $this->getHtmlId();?>">
     <ul>
         <?php foreach ($this->getOptions() as $_option):?>
-            <li>
-                <a class="product-ajax-link" href="<?php echo $this->getOptionUrl($_option) ?>" <?php if($_option->isActive()):?> style="font-weight: bold" <?php endif;?>>
+            <li class="facet-option <?php if($_option->isActive()):?>active<?php endif; ?>" data-option-count="<?php echo $_option->getCount();?>">
+                <a class="product-ajax-link" href="<?php echo $this->getOptionUrl($_option) ?>" <?php if($_option->isActive()):?> style="font-weight: bold" <?php endif;?> rel="nofollow">
                     <?php echo $_option->getLabel() ?>
                     <span class="count">(<?php echo $_option->getCount() ?>)</span>
                 </a>
             </li>
         <?php endforeach; ?>
-    </ul>
+    </ul><a href="#" class="button small facet-expand no-display"><?php echo $this->__('Show more');?></a><a href="#" class="button small facet-collapse no-display"><?php echo $this->__('Show less');?></a>
 </dd>
+<script type="text/javascript">
+    ecomdevSphinxDelayed(function () {
+        new EcomDev.Sphinx.Options('<?php echo $this->getHtmlId();?>', <?php echo $this->getOptionJson(
+            '.facet-option', 'no-display', 'active', '.facet-collapse', '.facet-expand'
+        );?>);
+    });
+</script>

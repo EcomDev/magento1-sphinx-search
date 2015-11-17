@@ -80,9 +80,9 @@ class EcomDev_Sphinx_Model_Index_Field_Map
             if (is_array($mapValue) && is_array($value)
                 && array_intersect($mapValue, $value) !== $mapValue) {
                 return false;
-            } elseif (is_array($mapValue) && !in_array($value, $mapValue)) {
+            } elseif (is_array($mapValue) && !is_array($value) && !in_array($value, $mapValue)) {
                 return false;
-            } elseif (is_array($value) && !in_array($mapValue, $value)) {
+            } elseif (is_array($value) && !is_array($mapValue) && !in_array($mapValue, $value)) {
                 return false;
             } elseif ($value != $mapValue) {
                 return false;

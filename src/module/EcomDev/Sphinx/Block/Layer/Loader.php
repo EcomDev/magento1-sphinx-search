@@ -45,7 +45,16 @@ class EcomDev_Sphinx_Block_Layer_Loader
                 $this->getLayer()->getScope()->getSortOrders()
             );
 
+
             $this->getListBlock()->setSortBy(
+                $this->getLayer()->getScope()->getCurrentOrder()
+            );
+
+            $this->getListBlock()->getToolbarBlock()->setAvailableOrders(
+                $this->getLayer()->getScope()->getSortOrders()
+            );
+
+            $this->getListBlock()->getToolbarBlock()->setSortBy(
                 $this->getLayer()->getScope()->getCurrentOrder()
             );
         }

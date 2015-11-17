@@ -27,7 +27,7 @@ class EcomDev_Sphinx_Block_Adminhtml_Attribute_Grid
 
         $this->_addOptionsColumn('is_layered', $this->__('Is Layered View'), 'ecomdev_sphinx/source_yesno', '100px');
         $this->_addOptionsColumn('filter_type', $this->__('Filter Type'), 'ecomdev_sphinx/source_attribute_filter_type', '100px');
-        $this->_addOptionsColumn('is_custom_value_allowed', $this->__('Is Active'), 'ecomdev_sphinx/source_yesno', '100px');
+        $this->_addOptionsColumn('is_sort', $this->__('Is Sort Order'), 'ecomdev_sphinx/source_yesno', '100px');
         $this->_addOptionsColumn('is_fulltext', $this->__('Is Fulltext Search'), 'ecomdev_sphinx/source_yesno', '100px');
         $this->_addOptionsColumn('is_system', $this->__('Is System'), 'ecomdev_sphinx/source_yesno', '100px');
         $this->_addOptionsColumn('is_active', $this->__('Is Active'), 'ecomdev_sphinx/source_yesno', '100px');

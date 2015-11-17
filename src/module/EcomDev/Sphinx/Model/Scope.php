@@ -203,23 +203,63 @@ class EcomDev_Sphinx_Model_Scope
     public function getSortOrders()
     {
         if ($this->_sortOptions === null) {
-            $this->_sortOptions = array();
+            $this->_sortOptions = [];
 
-            if ($this->getLayer() instanceof EcomDev_Sphinx_Model_Search_Layer) {
-                $this->_sortOptions['relevance'] = Mage::helper('ecomdev_sphinx')->__('Relevance');
+            if ($this->getConfigurationValue('sort_order/is_active')) {
+                $include = $this->getConfigurationValue('sort_order/include_order');
+                $exclude = $this->getConfigurationValue('sort_order/exclude_order');
+
+                foreach ($this->_getConfig()->getSortOrders() as $sortOrder) {
+                    if (is_array($include) && !in_array($sortOrder->getCode(), $include)) {
+                        continue;
+                    } elseif (is_array($exclude) && in_array($sortOrder->getCode(), $exclude)) {
+                        continue;
+                    }
+
+                    $this->_sortOptions[$sortOrder->getCode()] = $sortOrder->getStoreLabel();
+                }
             } else {
-                $this->_sortOptions['position'] = Mage::helper('ecomdev_sphinx')->__('Best Value');
-            }
-            
-            foreach ($this->_getConfig()->getActiveAttributes() as $attribute) {
-                if ($attribute->getIsSort()) {
-                    $this->_sortOptions[$attribute->getAttributeCode()] = $attribute->getAttribute()->getFrontendLabel();
+                if ($this->getLayer() instanceof EcomDev_Sphinx_Model_Search_Layer) {
+                    $this->_sortOptions['relevance'] = Mage::helper('ecomdev_sphinx')->__('Relevance');
+                } else {
+                    $this->_sortOptions['position'] = Mage::helper('ecomdev_sphinx')->__('Best Value');
+                }
+
+                foreach ($this->_getConfig()->getActiveAttributes() as $attribute) {
+                    if ($attribute->getIsSort()) {
+                        $this->_sortOptions[$attribute->getAttributeCode()] = $attribute->getAttribute()->getFrontendLabel();
+                    }
                 }
             }
-            
+
         }
+
         
         return $this->_sortOptions;
+    }
+
+    /**
+     * Return list of order fields for search
+     *
+     * @return EcomDev_Sphinx_Model_Sort[]
+     */
+    public function getComplexSortOrder()
+    {
+        if (!$this->getConfigurationValue('sort_order/is_active')) {
+            return false;
+        }
+
+        $orders = $this->_getConfig()->getSortOrders();
+        $complexSortOrders = [];
+        foreach ($this->getSortOrders() as $sortOrder) {
+            if (!isset($orders[$sortOrder])) {
+                 continue;
+            }
+
+            $complexSortOrders[$sortOrder] = $orders[$sortOrder];
+        }
+
+        return $complexSortOrders;
     }
 
     /**

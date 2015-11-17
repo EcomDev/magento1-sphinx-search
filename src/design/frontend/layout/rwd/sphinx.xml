@@ -1,4 +1,5 @@
 <layout>
+
     <catalog_category_layered_ecomdev_sphinx>
         <remove name="catalog.leftnav"/>
         <block name="sphinx.loader" type="ecomdev_sphinx/layer_loader">
@@ -11,25 +12,32 @@
             <action method="insert"><block>sphinx.loader</block></action>
             <block name="sphinx.leftnav"
                    type="ecomdev_sphinx/layer"
-                   template="ecomdev/sphinx/layer.phtml">
-                <action method="setListBlock"><block>product_list</block></action>
-                <block type="ecomdev_sphinx/layer_facet_renderer_option"
-                       name="sphinx.facet.option" as="renderer_option"
-                       template="ecomdev/sphinx/layer/facet/renderer/option.phtml" />
-                <block type="ecomdev_sphinx/layer_facet_renderer_slider"
-                       name="sphinx.facet.slider" as="renderer_slider"
-                       template="ecomdev/sphinx/layer/facet/renderer/slider.phtml" />
-                <block type="ecomdev_sphinx/layer_facet_renderer_link"
-                       name="sphinx.facet.link" as="renderer_link"
-                       template="ecomdev/sphinx/layer/facet/renderer/link.phtml" />
-                <action method="addRenderer"><type>option</type><block>renderer_option</block></action>
-                <action method="addRenderer"><type>range</type><block>renderer_option</block></action>
-                <action method="addRenderer"><type>limit</type><block>renderer_slider</block></action>
-                <action method="addRenderer"><type>link</type><block>renderer_link</block></action>
-            </block>
+                   template="ecomdev/sphinx/layer.phtml" />
         </reference>
         <remove name="product_list.swatches" />
+        <update handle="sphinx_renderer_add" />
+        <update handle="sphinx_script_add" />
     </catalog_category_layered_ecomdev_sphinx>
+
+    <sphinx_script_add>
+        <reference name="head">
+            <action method="addItem"><type>skin_js</type><file>js/ecomdev/sphinx/filters.js</file><param><![CDATA[data-group="sphinx"]]></param></action>
+            <action method="addItem"><type>skin_js</type><file>js/ecomdev/sphinx/slider/nouislider.min.js</file><param><![CDATA[data-group="sphinx"]]></param></action>
+            <action method="addItem"><type>skin_css</type><file>js/ecomdev/sphinx/slider/nouislider.min.css</file><param><![CDATA[data-group="sphinx"]]></param></action>
+            <action method="addItem"><type>skin_css</type><file>js/ecomdev/sphinx/filters.css</file><param><![CDATA[data-group="sphinx"]]></param></action>
+        </reference>
+    </sphinx_script_add>
+
+    <catalog_category_default_ecomdev_sphinx>
+        <remove name="catalog.leftnav"/>
+        <block name="sphinx.loader" type="ecomdev_sphinx/layer_loader">
+            <action method="setListBlock"><block>product_list</block></action>
+        </block>
+        <reference name="content">
+            <action method="insert"><block>sphinx.loader</block></action>
+        </reference>
+        <remove name="product_list.swatches" />
+    </catalog_category_default_ecomdev_sphinx>
     
     <catalogsearch_result_index_ecomdev_sphinx>
         <remove name="catalogsearch.leftnav"/>
@@ -43,29 +51,45 @@
             <action method="insert"><block>sphinx.loader</block></action>
             <block name="sphinx.leftnav"
                    type="ecomdev_sphinx/layer"
-                   template="ecomdev/sphinx/layer.phtml">
-                <action method="setListBlock"><block>product_list</block></action>
-                <block type="ecomdev_sphinx/layer_facet_renderer_option"
-                       name="sphinx.facet.option" as="renderer_option"
-                       template="ecomdev/sphinx/layer/facet/renderer/option.phtml" />
-                <block type="ecomdev_sphinx/layer_facet_renderer_slider"
-                       name="sphinx.facet.slider" as="renderer_slider"
-                       template="ecomdev/sphinx/layer/facet/renderer/slider.phtml" />
-                <block type="ecomdev_sphinx/layer_facet_renderer_link"
-                       name="sphinx.facet.link" as="renderer_link"
-                       template="ecomdev/sphinx/layer/facet/renderer/link.phtml" />
-                <action method="addRenderer"><type>option</type><block>renderer_option</block></action>
-                <action method="addRenderer"><type>range</type><block>renderer_option</block></action>
-                <action method="addRenderer"><type>limit</type><block>renderer_slider</block></action>
-                <action method="addRenderer"><type>link</type><block>renderer_link</block></action>
-            </block>
+                   template="ecomdev/sphinx/layer.phtml" />
         </reference>
         <remove name="product_list.swatches" />
+        <update handle="sphinx_renderer_add" />
+        <update handle="sphinx_script_add" />
     </catalogsearch_result_index_ecomdev_sphinx>
+
+    <sphinx_renderer_add>
+        <reference name="sphinx.leftnav">
+            <block type="ecomdev_sphinx/layer_facet_renderer_option"
+                   name="sphinx.facet.option" as="renderer_option"
+                   template="ecomdev/sphinx/layer/facet/renderer/option.phtml" />
+            <block type="ecomdev_sphinx/layer_facet_renderer_option"
+                   name="sphinx.facet.range" as="renderer_range"
+                   template="ecomdev/sphinx/layer/facet/renderer/option.phtml">
+                <!-- show all range options by default -->
+                <action method="setTopOptionLimit"><count>0</count></action>
+            </block>
+            <block type="ecomdev_sphinx/layer_facet_renderer_slider"
+                   name="sphinx.facet.slider" as="renderer_slider"
+                   template="ecomdev/sphinx/layer/facet/renderer/slider.phtml" />
+            <block type="ecomdev_sphinx/layer_facet_renderer_link"
+                   name="sphinx.facet.link" as="renderer_link"
+                   template="ecomdev/sphinx/layer/facet/renderer/link.phtml" />
+            <action method="addRenderer"><type>option</type><block>renderer_option</block></action>
+            <action method="addRenderer"><type>range</type><block>renderer_range</block></action>
+            <action method="addRenderer"><type>limit</type><block>renderer_slider</block></action>
+            <action method="addRenderer"><type>link</type><block>renderer_link</block></action>
+        </reference>
+    </sphinx_renderer_add>
 
     <catalog_category_layered_ecomdev_sphinx_json>
         <update handle="remove_all_elements" />
     </catalog_category_layered_ecomdev_sphinx_json>
+
+    <catalog_category_default_ecomdev_sphinx_json>
+        <update handle="remove_all_elements" />
+    </catalog_category_default_ecomdev_sphinx_json>
+
 
     <catalogsearch_result_index_ecomdev_sphinx_json>
         <update handle="remove_all_elements" />

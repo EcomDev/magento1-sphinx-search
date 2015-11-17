@@ -328,9 +328,10 @@ class EcomDev_Sphinx_Model_Sphinx_Config
      * If it is not, it will automatically reindex delta or main index
      *
      * @param bool $forceReindex
+     * @param null|resource $output
      * @return $this
      */
-    public function controlIndexData($forceReindex = false)
+    public function controlIndexData($forceReindex = false, $output = null, $indexKeywords = true)
     {
         $additionalArgs = '';
         if ($this->isRunning()) {
@@ -339,9 +340,12 @@ class EcomDev_Sphinx_Model_Sphinx_Config
 
         $collection = Mage::getResourceModel('ecomdev_sphinx/sphinx_config_index_collection');
         $forceReindexList = [];
+        $deltaList = [];
 
         // Keywords are enabled only when sphinx search is used
-        if ($forceReindex && $this->_getConfig()->getConfig('search_active', 'general')) {
+        if ($forceReindex
+            && $indexKeywords
+            && $this->_getConfig()->getConfig('search_active', 'general')) {
             foreach ($collection as $item) {
                 if ($item->getCode() === self::TYPE_KEYWORD) {
                     $forceReindexList[] = [$this->_types[$item->getCode()][0], (int)$item->getStoreId()];
@@ -367,18 +371,58 @@ class EcomDev_Sphinx_Model_Sphinx_Config
 
             if (!$forceReindex && $configLimit && $pendingRows && $pendingRows < $configLimit
                 && $pendingRows < ($indexedRows / 2)) {
-                $this->reindexIndex($indexName . '_delta', $additionalArgs, $storeId);
-                $this->mergeDeltaIndex($indexName, $additionalArgs, $storeId);
+                $deltaList[] = [$indexName . '_delta', $indexName, $storeId];
             } elseif ($forceReindex || !$indexedRows || ($configLimit && ($pendingRows > $configLimit)) || $pendingRows > ($indexedRows / 2)) {
                 $forceReindexList[] = [$indexName, $storeId];
             }
         }
 
+        if ($deltaList) {
+            $additionalFullReindex = $this->mergeIndexes(
+                $deltaList, $additionalArgs, $output
+            );
+
+            if ($additionalFullReindex) {
+                $forceReindexList = array_merge($forceReindexList, $additionalFullReindex);
+            }
+        }
+
         if ($forceReindexList) {
-            $this->reindexIndexes($forceReindexList, $additionalArgs);
+            $this->reindexIndexes($forceReindexList, $additionalArgs, $output);
         }
 
         return $this;
+    }
+
+    /**
+     * @param string[][] $deltaList
+     * @param string $additionalArgs
+     * @param null|resource $output
+     * @return string[]
+     */
+    public function mergeIndexes($deltaList, $additionalArgs, $output = null)
+    {
+        $toFullReindex = [];
+
+        foreach ($deltaList as $info) {
+            list($deltaIndex, $mainIndex, $storeId) = $info;
+            if (!$this->checkIndex($mainIndex, $storeId, $output)) {
+                $toFullReindex[] = [$mainIndex, $storeId];
+                continue;
+            }
+
+            $result = $this->reindexIndex($deltaIndex, $storeId, $additionalArgs, $output);
+            if (!$result || !$this->checkIndex($deltaIndex, $storeId, $output)) {
+                $toFullReindex[] = [$mainIndex, $storeId];
+                continue;
+            }
+
+            if (!$this->mergeIndex($deltaIndex, $mainIndex, $storeId, $additionalArgs, $output)) {
+                $toFullReindex[] = [$mainIndex, $storeId];
+            }
+        }
+
+        return $toFullReindex;
     }
 
     /**
@@ -387,15 +431,20 @@ class EcomDev_Sphinx_Model_Sphinx_Config
      * @param string $indexName
      * @param string $additionalArguments
      * @param int $storeId
-     * @return $this
+     * @param null|resource $output
+     * @return bool
      */
-    protected function reindexIndex($indexName, $additionalArguments, $storeId)
+    protected function reindexIndex($indexName, $storeId, $additionalArguments, $output = null)
     {
-        $this->executeIndexerCommand(sprintf(
+        $result = $this->executeIndexerCommand(sprintf(
             '%s_%s %s', $indexName, $storeId, $additionalArguments
-        ));
+        ), true);
 
-        return $this;
+        if (is_resource($output)) {
+            fwrite($output, $result[0]);
+        }
+
+        return $result[1] == 0;
     }
 
     /**
@@ -403,9 +452,10 @@ class EcomDev_Sphinx_Model_Sphinx_Config
      *
      * @param string[] $indexNames
      * @param string $additionalArguments
+     * @param null|resource $output
      * @return $this
      */
-    protected function reindexIndexes($indexNames, $additionalArguments)
+    public function reindexIndexes($indexNames, $additionalArguments, $output = null)
     {
         if (strpos($additionalArguments, '--rotate') !== false) {
             $additionalArguments .= ' --sighup-each';
@@ -418,9 +468,13 @@ class EcomDev_Sphinx_Model_Sphinx_Config
             $renderedIndexNames[] = sprintf('%s_%s', $name, $storeId);
         }
 
-        $this->executeIndexerCommand(sprintf(
+        $response = $this->executeIndexerCommand(sprintf(
             '%s %s', implode(' ', $renderedIndexNames), $additionalArguments
         ));
+
+        if (is_resource($output)) {
+            fwrite($output, $response);
+        }
 
         return $this;
     }
@@ -473,7 +527,7 @@ class EcomDev_Sphinx_Model_Sphinx_Config
 
         $outputFile = tempnam(Mage::getConfig()->getVarDir('sphinx'), 'keyword_import');
 
-        $this->keywordDump($type, $storeId, $outputFile);
+        $this->keywordDump($type, $storeId, $outputFile, $limit);
 
         $csv = \League\Csv\Reader::createFromPath($outputFile);
         $csv->setDelimiter(' ');
@@ -493,19 +547,50 @@ class EcomDev_Sphinx_Model_Sphinx_Config
     /**
      * Merge delta index
      *
-     * @param string $indexName
-     * @param string $additionalArguments
+     * @param string $sourceIndex
+     * @param string $targetIndex
      * @param int $storeId
-     * @return $this
+     * @param string $additionalArguments
+     * @param null|resource $output
+     * @return bool
      */
-    protected function mergeDeltaIndex($indexName, $additionalArguments, $storeId)
+    protected function mergeIndex($sourceIndex, $targetIndex, $storeId, $additionalArguments, $output = null)
     {
-        $this->executeIndexerCommand(sprintf(
-            '--merge %1$s_%2$s %1$s_delta_%2$s %3$s',
-            $indexName, $storeId, $additionalArguments
-        ));
+        $result = $this->executeIndexerCommand(sprintf(
+            '--merge %1$s_%3$s %2$s_%3$s %4$s',
+            $targetIndex, $sourceIndex, $storeId, $additionalArguments
+        ), true);
 
-        return $this;
+        if (is_resource($output)) {
+            fwrite($output, $result[0]);
+        }
+
+        return $result[1] == 0;
+    }
+
+    /**
+     * Checks index data consistency
+     *
+     * @param string $indexName
+     * @param int $storeId
+     * @param null|resource $output
+     * @return bool
+     */
+    protected function checkIndex($indexName, $storeId, $output = null)
+    {
+        $result = $this->executeIndexToolCommand(
+            sprintf(
+                '--check %1$s_%2$s',
+                $indexName, $storeId
+            ),
+            true
+        );
+
+        if (is_resource($output)) {
+            fwrite($output, $result[0]);
+        }
+
+        return $result[1] == 0;
     }
 
     /**
@@ -557,40 +642,82 @@ class EcomDev_Sphinx_Model_Sphinx_Config
     {
         if ($this->_getConfig()->getConfig('is_remote')) {
             $exec = $this->_getSshSession()->getExec();
-            $result = $exec->run(
-                $command
-            );
+            try {
+                $result = $exec->run(
+                    $command
+                );
+            } catch (RuntimeException $e) {
+                $result = $e->getMessage();
+            }
         } else {
             $result = shell_exec($command);
         }
         
         return $result;
     }
-    
+
+    /**
+     * Executes a command
+     *
+     * @param string $command
+     * @return string
+     */
+    public function _execWithExitCode($command)
+    {
+        if ($this->_getConfig()->getConfig('is_remote')) {
+            $exec = $this->_getSshSession()->getExec();
+            try {
+                $result = $exec->run(
+                    $command
+                );
+
+                return [$result, 0];
+            } catch (RuntimeException $e) {
+                return [$e->getMesssage(), $e->getCode()];
+            }
+        }
+
+        $output = [];
+        $exitCode = 0;
+        exec($command, $output, $exitCode);
+        return [implode(PHP_EOL, $output), $exitCode];
+    }
+
+
     /**
      * Execute service command
      * 
      * @param string $command
-     * @return string
+     * @param bool $returnExitCode
+     * @return string|string[]
      */
-    protected function executeIndexerCommand($command)
+    protected function executeIndexerCommand($command, $returnExitCode = false)
     {
         $prefix = $this->_getConfig()->getConfig('indexer_command');
-        $trim = $this->_exec(sprintf('%s %s', $prefix, $command));
-        return trim($trim);
+
+        if ($returnExitCode) {
+            return $this->_execWithExitCode(sprintf('%s %s', $prefix, $command));
+        }
+
+        return $this->_exec(sprintf('%s %s', $prefix, $command));
     }
 
     /**
      * Execute service command
      *
      * @param string $command
-     * @return string
+     * @param bool $returnExitCode
+     * @return string|string[]
      */
-    protected function executeIndexToolCommand($command)
+    protected function executeIndexToolCommand($command, $returnExitCode = false)
     {
         $prefix = $this->_getConfig()->getConfig('indextool_command');
-        $trim = $this->_exec(sprintf('%s %s', $prefix, $command));
-        return trim($trim);
+
+        if ($returnExitCode) {
+            return $this->_execWithExitCode(sprintf('%s %s', $prefix, $command));
+        }
+
+        return $this->_exec(sprintf('%s %s', $prefix, $command));
     }
 
     /**

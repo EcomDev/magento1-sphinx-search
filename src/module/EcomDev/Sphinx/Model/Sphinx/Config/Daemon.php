@@ -81,9 +81,36 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Daemon
 
         $config['searchd']['pid_file'] = $this->_getConfig()->getConfig('pid');
         $config['searchd']['log'] = $this->_getConfig()->getConfig('log');
-        $config['searchd']['read_timeout'] = $this->_getConfig()->getConfig('read_timeout');
-        $config['searchd']['max_children'] = $this->_getConfig()->getConfig('max_children');
         $config['searchd']['binlog_path'] = '';
+
+        $possibleEmptyConfigOptions = [
+            'query_log',
+            'read_buffer',
+            'max_batch_queries',
+            'subtree_docs_cache',
+            'subtree_hits_cache',
+            'collation_server',
+            'workers',
+            'read_timeout',
+            'max_children'
+        ];
+
+        $configModel = $this->_getConfig();
+
+        if ($configModel->getConfig('workers') === 'prefork') {
+            $possibleEmptyConfigOptions[] = 'prefork_rotation_throttle';
+        }
+
+        foreach ($possibleEmptyConfigOptions as $option) {
+            $value = $configModel->getConfig($option);
+            if ($value !== null && $value !== '') {
+                $config['searchd'][$option] = $value;
+            }
+        }
+
+        if (isset($config['searchd']['query_log'])) {
+            $config['searchd']['query_log_format'] = 'sphinxql';
+        }
 
         $config['indexer']['mem_limit'] = $this->_getConfig()->getConfig('indexer_memory_limit');
         $config['indexer']['write_buffer'] = $this->_getConfig()->getConfig('indexer_write_buffer');

@@ -8,6 +8,15 @@ abstract class EcomDev_Sphinx_Block_Layer_Facet_AbstractRenderer
     implements EcomDev_Sphinx_Block_Layer_Facet_RendererInterface
 {
     /**
+     * Returns html identifier for container
+     *
+     */
+    public function getHtmlId()
+    {
+        return sprintf('%s.%s', $this->getNameInLayout(), $this->getFacet()->getFilterField());
+    }
+
+    /**
      * Returns a facet instance
      *
      * @return FacetInterface

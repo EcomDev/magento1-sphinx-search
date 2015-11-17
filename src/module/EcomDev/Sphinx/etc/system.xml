@@ -44,32 +44,57 @@
                             <sort_order>32</sort_order>
                             <show_in_default>1</show_in_default>
                         </index_category_merge_limit>
-                        
+
+                        <indexer_memory_limit>
+                            <label>Indexer memory limit</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>33</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </indexer_memory_limit>
+
+                        <indexer_write_buffer>
+                            <label>Indexer write buffer</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>33</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </indexer_write_buffer>
+
+                        <indexer_file_buffer>
+                            <label>Indexer file buffer</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>33</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </indexer_file_buffer>
+
                         <indexer_command>
                             <label>Indexer script command</label>
                             <frontend_type>text</frontend_type>
                             <sort_order>35</sort_order>
                             <show_in_default>1</show_in_default>
                         </indexer_command>
+
+                        <indextool_command>
+                            <label>Indextool script command</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>35</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </indextool_command>
                         
                         <manage translate="label comment">
                             <label>Manage Daemon Configuration</label>
                             <frontend_type>select</frontend_type>
                             <source_model>ecomdev_sphinx/source_yesno</source_model>
                             <comment>If you choose yes, then sphinx daemon configuration will be managed by Magento</comment>
-                            <sort_order>30</sort_order>
+                            <sort_order>39</sort_order>
                             <show_in_default>1</show_in_default>
                         </manage>
 
                         <daemon_config_path translate="label comment">
-                            <label>Index Configuration File Save Path</label>
+                            <label>Daemon Configuration File Save Path</label>
                             <frontend_type>text</frontend_type>
                             <comment>Configuration file path where to save daemon information</comment>
-                            <sort_order>30</sort_order>
+                            <sort_order>39</sort_order>
                             <show_in_default>1</show_in_default>
-                            <depends>
-                                <manage>1</manage>
-                            </depends>
                         </daemon_config_path>
 
                         <listen translate="label comment">
@@ -78,9 +103,6 @@
                             <comment>If you need a new statement added as a newline</comment>
                             <sort_order>40</sort_order>
                             <show_in_default>1</show_in_default>
-                            <depends>
-                                <manage>1</manage>
-                            </depends>
                         </listen>
 
                         <pid translate="label comment">
@@ -89,9 +111,6 @@
                             <comment>Location of pid file in system</comment>
                             <sort_order>50</sort_order>
                             <show_in_default>1</show_in_default>
-                            <depends>
-                                <manage>1</manage>
-                            </depends>
                         </pid>
 
                         <log translate="label comment">
@@ -100,10 +119,15 @@
                             <comment>Location of log file in system</comment>
                             <sort_order>55</sort_order>
                             <show_in_default>1</show_in_default>
-                            <depends>
-                                <manage>1</manage>
-                            </depends>
                         </log>
+
+                        <query_log translate="label comment">
+                            <label>Query Log File</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Location of query log file in system, leave empty on production!</comment>
+                            <sort_order>56</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </query_log>
 
                         <read_timeout translate="label comment">
                             <label>Read timeout</label>
@@ -111,9 +135,6 @@
                             <comment>Timeout in seconds for client to read data</comment>
                             <sort_order>60</sort_order>
                             <show_in_default>1</show_in_default>
-                            <depends>
-                                <manage>1</manage>
-                            </depends>
                         </read_timeout>
 
                         <max_children translate="label comment">
@@ -122,10 +143,66 @@
                             <comment>Number of maximum concurrent search processes</comment>
                             <sort_order>70</sort_order>
                             <show_in_default>1</show_in_default>
-                            <depends>
-                                <manage>1</manage>
-                            </depends>
                         </max_children>
+
+                        <read_buffer translate="label comment">
+                            <label>Read Buffer</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Size of read buffer for searchd</comment>
+                            <sort_order>71</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </read_buffer>
+
+                        <max_batch_queries>
+                            <label>Max Batch Queries</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Number of maximum concurrent search processes</comment>
+                            <sort_order>72</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </max_batch_queries>
+
+                        <subtree_docs_cache>
+                            <label>Subtree Docs Cache</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Max common subtree document cache size, per-query. 0 to Disable</comment>
+                            <sort_order>73</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </subtree_docs_cache>
+
+                        <subtree_hits_cache>
+                            <label>Subtree Hits Cache</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Max common subtree hit cache size, per-query. 0 to Disable.</comment>
+                            <sort_order>74</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </subtree_hits_cache>
+
+                        <collation_server>
+                            <label>Character Set Collation</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Set to communicate in UTF-8 by default</comment>
+                            <sort_order>75</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </collation_server>
+
+                        <workers>
+                            <label>Daemon Workers Mode</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Allowed values are: none, fork, prefork, threads</comment>
+                            <sort_order>76</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </workers>
+
+                        <prefork_rotation_throttle>
+                            <label>Prefork Throttle (ms)</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Number of milliseconds when forks are going to be restarted after main process</comment>
+                            <sort_order>77</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <workers>prefork</workers>
+                            </depends>
+                        </prefork_rotation_throttle>
 
                         <daemon_command  translate="label comment">
                             <label>Daemon script command</label>

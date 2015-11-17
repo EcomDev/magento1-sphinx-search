@@ -70,7 +70,11 @@ class EcomDev_Sphinx_Shell extends Mage_Shell_Abstract
             'store' => 's',
             'index' => 'i',
             'output' => 'o'
-        )
+        ),
+        'index:all' => array(
+            'ignore-keyword' => 'i'
+        ),
+        'index:delta' => array()
     );
 
     /**
@@ -111,6 +115,14 @@ Defined <action>s:
   notify:product    Notifies changes in product entities to indexer
 
   config:index      Generates index configuration
+
+  config:daemon     Generates daemon configuration
+
+  index:all         Indexes all sphinx data
+
+     -i --ignore-keyword No keywords flag
+
+  index:delta       Indexes changes to sphinx data
 
   keyword:dump      Dumps keywords for index
 
@@ -224,6 +236,18 @@ USAGE;
     {
         return Mage::getSingleton('ecomdev_sphinx/sphinx_config_index');
     }
+
+
+    /**
+     * Returns daemon configuration model
+     *
+     * @return EcomDev_Sphinx_Model_Sphinx_Config_Daemon
+     */
+    private function getDaemonConfig()
+    {
+        return Mage::getSingleton('ecomdev_sphinx/sphinx_config_daemon');
+    }
+
 
     /**
      * Returns sphinx configuration model
@@ -388,6 +412,34 @@ USAGE;
     {
         fwrite($this->getOutput(), $this->getIndexConfig()->render());
     }
+
+    /**
+     * Generates daemon configuration
+     *
+     */
+    public function runConfigDaemon()
+    {
+        fwrite($this->getOutput(), $this->getDaemonConfig()->render());
+    }
+
+
+    /**
+     * Reindex all sphinx data
+     */
+    public function runIndexAll()
+    {
+        $withKeywords = !$this->getArg('ignore-keyword', false);
+        $this->getSphinxConfig()->controlIndexData(true, $this->getOutput(), $withKeywords);
+    }
+
+    /**
+     * Reindex all sphinx data
+     */
+    public function runIndexDelta()
+    {
+        $this->getSphinxConfig()->controlIndexData(false, $this->getOutput());
+    }
+
 
     /**
      * Dumps keywords

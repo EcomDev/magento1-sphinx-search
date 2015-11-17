@@ -128,18 +128,47 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
         }
         $order = $scope->getCurrentOrder();
         $direction = (strtolower($scope->getCurrentDirection()) == 'desc' ? 'desc' : 'asc');
-        
-        if ($order === 'price') {
-            $order = 'price_index_min_price_' . $this->getCustomerGroupId(); 
+
+        $complexOrders = $scope->getComplexSortOrder();
+
+        if ($complexOrders !== false) {
+            if ($complexOrders && !isset($complexOrders[$order])) {
+                $order = key($complexOrders);
+            }
+
+            if (isset($complexOrders[$order])) {
+                foreach ($complexOrders[$order]->getSortInfo($direction) as $column => $direction) {
+                    if ($column === 'price') {
+                        $column = 'price_index_min_price_' . $this->getCustomerGroupId();
+                    }
+
+                    if ($column === '@position') {
+                        $query->orderBy('i_category_position', $direction);
+                    } elseif ($column === '@stock_status') {
+                        $query->orderBy('stock_status', $direction);
+                    }  elseif ($column === '@relevance') {
+                        $query->orderBy($query->expr('weight()'), $direction);
+                    } elseif ($column && in_array($column, $indexFields)) {
+                        $query->orderBy($column, $direction);
+                    }
+                }
+            }
+
+        } else {
+            if ($order === 'price') {
+                $order = 'price_index_min_price_' . $this->getCustomerGroupId();
+            }
+
+            if ($order === 'position') {
+                $query->orderBy('i_category_position', $direction);
+            } elseif ($order && in_array($order, $indexFields)) {
+                $query->orderBy($order, $direction);
+            } elseif ($order === 'relevance') {
+                $query->orderBy($query->expr('weight()'), $direction);
+            }
         }
 
-        if ($order === 'position') {
-            $query->orderBy('i_category_position', $direction);
-        } elseif ($order && in_array($order, $indexFields)) {
-            $query->orderBy($order, $direction);
-        } elseif ($order === 'relevance') {
-            $query->orderBy($query->expr('weight()'), $direction);
-        }
+
         
         if ($scope->getPageSize() && $scope->getCurrentPage()) {
             $this->setPageSize((int)$scope->getPageSize());

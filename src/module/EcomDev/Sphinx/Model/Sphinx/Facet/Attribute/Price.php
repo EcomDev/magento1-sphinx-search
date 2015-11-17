@@ -64,4 +64,24 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Attribute_Price
 
         return $this->_currency;
     }
+
+    /**
+     * Returns currency output format
+     *
+     * @return string
+     */
+    public function getCurrencyFormat()
+    {
+        return $this->_getCurrency()->getOutputFormat();
+    }
+
+    /**
+     * Currency model
+     *
+     * @return Mage_Directory_Model_Currency
+     */
+    public function getCurrency()
+    {
+        return $this->_getCurrency();
+    }
 }

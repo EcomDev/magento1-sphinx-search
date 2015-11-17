@@ -1,7 +1,7 @@
 <config>
     <modules>
         <EcomDev_Sphinx>
-            <version>2.0.2</version>
+            <version>2.0.3</version>
         </EcomDev_Sphinx>
     </modules>
     <global>
@@ -382,24 +382,32 @@
     <default>
         <ecomdev_sphinx>
             <daemon>
-                <index_config_path>/etc/sphinx/conf.d/magento.txt</index_config_path>
-                <daemon_config_path>/etc/sphinx/sphinx.conf</daemon_config_path>
-                <index_path>/etc/sphinx/data</index_path>
-                <manage>1</manage>
+                <index_config_path>$HOME/sphinx/magento.txt</index_config_path>
+                <daemon_config_path>$HOME/sphinx/sphinx.conf</daemon_config_path>
+                <index_path>$HOME/sphinx/data</index_path>
+                <manage>0</manage>
                 <listen>127.0.0.1:9306:mysql41</listen>
-                <pid>/tmp/sphinx.pid</pid>
-                <log>/var/log/sphinx/sphinx.log</log>
+                <pid>$HOME/sphinx/sphinx.pid</pid>
+                <log>$HOME/sphinx/sphinx.log</log>
+                <query_log></query_log>
                 <read_timeout>5</read_timeout>
                 <max_children>30</max_children>
+                <read_buffer>1M</read_buffer>
+                <max_batch_queries>256</max_batch_queries>
+                <subtree_docs_cache>0</subtree_docs_cache>
+                <subtree_hits_cache>0</subtree_hits_cache>
+                <collation_server>utf8_general_ci</collation_server>
+                <workers>prefork</workers>
+                <prefork_rotation_throttle>50</prefork_rotation_throttle>
                 <indexer_memory_limit>32M</indexer_memory_limit>
                 <indexer_write_buffer>1M</indexer_write_buffer>
                 <indexer_file_buffer>8M</indexer_file_buffer>
                 <index_product_merge_limit>5000</index_product_merge_limit>
                 <index_category_merge_limit>300</index_category_merge_limit>
-                <indexer_command>sudo sudo -u sphinx /usr/bin/indexer</indexer_command>
-                <indextool_command>sudo sudo -u sphinx /usr/bin/indexer</indextool_command>
+                <indexer_command>indexer -c $HOME/sphinx/sphinx.conf</indexer_command>
+                <indextool_command>indextool -c $HOME/sphinx/sphinx.conf</indextool_command>
                 <daemon_command>sudo service searchd</daemon_command>
-                <before_start_command>sudo chown sphinx:sphinx /etc/sphinx/data</before_start_command>
+                <before_start_command>mkdir -p $HOME/sphinx/data</before_start_command>
                 <ssh_host>127.0.0.1</ssh_host>
                 <ssh_port>22</ssh_port>
                 <ssh_user>vagrant</ssh_user>

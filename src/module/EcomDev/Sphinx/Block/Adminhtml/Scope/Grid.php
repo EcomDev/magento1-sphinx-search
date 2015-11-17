@@ -11,8 +11,7 @@ class EcomDev_Sphinx_Block_Adminhtml_Scope_Grid
     
     protected function _getCollectionInstance()
     {
-        return Mage::getModel('ecomdev_sphinx/scope')->getCollection()
-            ->joinParentName();
+        return Mage::getModel('ecomdev_sphinx/scope')->getCollection();
     }
 
     /**
@@ -23,10 +22,7 @@ class EcomDev_Sphinx_Block_Adminhtml_Scope_Grid
     protected function _prepareColumns()
     {
         $this->_addNumberColumn('scope_id', $this->__('ID'), '50px');
-        //$this->_addNumberColumn('parent_id', $this->__('Parent ID'), '50px');
         $this->_addTextColumn('name', $this->__('Name'));
-        //$this->_addTextColumn('parent_name', $this->__('Parent Name'));
-
         $this->_addActionColumn($this->__('Action'), array('edit' => $this->__('Edit')));
 
         return parent::_prepareColumns();

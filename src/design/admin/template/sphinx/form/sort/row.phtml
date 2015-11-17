@@ -1,0 +1,22 @@
+<?php /** @var Mage_Adminhtml_Block_Template $this */ ?>
+<tr id="#{id}">
+    <td>#{name}</td>
+    <td>
+        <select name="#{fieldPrefix}[#{code}][asc]" class="asc required-entry">
+            <?php foreach (Mage::getSingleton('ecomdev_sphinx/source_sort_direction')->getOptions() as $value => $label): ?>
+                <option value="<?php echo $this->escapeHtml($value);?>"><?php echo $this->escapeHtml($label);?></option>
+            <?php endforeach;?>
+        </select>
+    </td>
+    <td>
+        <select name="#{fieldPrefix}[#{code}][desc]" class="desc required-entry">
+            <?php foreach (Mage::getSingleton('ecomdev_sphinx/source_sort_direction')->getOptions() as $value => $label): ?>
+                <option value="<?php echo $this->escapeHtml($value);?>"><?php echo $this->escapeHtml($label);?></option>
+            <?php endforeach;?>
+        </select>
+    </td>
+    <td>
+        <input name="#{fieldPrefix}[#{code}][position]" class="required-entry" style="widows: 20px;" value="#{position}" />
+    </td>
+    <td><button class="delete scalable" type="button"><span><span><span><?php echo $this->__('Delete');?></span></span></span></button></td>
+</tr>

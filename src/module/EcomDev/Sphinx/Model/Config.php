@@ -75,6 +75,20 @@ class EcomDev_Sphinx_Model_Config
     protected $_usedAttributeCodes;
 
     /**
+     * Returns list of active virtual fields
+     *
+     * @var EcomDev_Sphinx_Model_Field[]
+     */
+    protected $_virtualFields;
+
+    /**
+     * Returns list of sort orders
+     *
+     * @var EcomDev_Sphinx_Model_Sort[]
+     */
+    protected $_sortOrders;
+
+    /**
      * Classes for product indexer
      * 
      * @var string[]
@@ -116,6 +130,13 @@ class EcomDev_Sphinx_Model_Config
      * @var EcomDev_Sphinx_Model_Scope
      */
     protected $_scope;
+
+    /**
+     * Environment vars
+     *
+     * @var string[]
+     */
+    protected $_envVars;
     
     /**
      * Returns an instance of EAV config model
@@ -157,6 +178,8 @@ class EcomDev_Sphinx_Model_Config
         $this->_attributeByCode = array();
         $this->_activeAttributes = array();
         $this->_plainAttributes = array();
+        $this->_virtualFields = array();
+        $this->_sortOrders = array();
         
         if ($this->_initAttributesFromCache()) {
             return $this;
@@ -175,8 +198,6 @@ class EcomDev_Sphinx_Model_Config
                 ->preloadAttributes(Mage_Catalog_Model_Product::ENTITY, $codes);
         }
         Varien_Profiler::stop(__FUNCTION__ . '::preloadAttributes');
-        
-        
         
         $systemAttributes = $this->getResource()
             ->getSystemAttributes();
@@ -197,7 +218,19 @@ class EcomDev_Sphinx_Model_Config
                 $this->_attributeByType[$attribute->getBackendType()][$code] = $attribute;
             }
         }
-        
+
+        foreach (Mage::getModel('ecomdev_sphinx/field')->getCollection()
+                     ->addFieldToFilter('is_active', 1)
+                     ->getItems() as $field) {
+            $this->_virtualFields[$field->getCode()] = $field;
+        }
+
+        foreach (Mage::getModel('ecomdev_sphinx/sort')->getCollection()
+                     ->getItems() as $sort) {
+            $this->_sortOrders[$sort->getCode()] = $sort;
+        }
+
+
         $this->_saveAttributesToCache();
         Varien_Profiler::stop(__FUNCTION__);
         return $this;
@@ -232,7 +265,26 @@ class EcomDev_Sphinx_Model_Config
                     $this->_attributeByType[$data['by_type'][$code]][$code] = $attribute;
                 }
             }
-                
+
+            if (isset($data['virtual'])) {
+                $fieldModel = Mage::getModel('ecomdev_sphinx/field');
+                foreach ($data['virtual'] as $code => $item) {
+                    $field = clone $fieldModel;
+                    $field->setData($item);
+                    $this->_virtualFields[$code] = $field;
+                }
+            }
+
+            if (isset($data['sort'])) {
+                $sortModel = Mage::getModel('ecomdev_sphinx/sort');
+                foreach ($data['sort'] as $code => $item) {
+                    $sort = clone $sortModel;
+                    $sort->setData($item);
+                    $this->_sortOrders[$code] = $sort;
+                }
+            }
+
+
             if ($this->_attributeByCode) {
                 Mage::getSingleton('eav/config')->preloadAttributes(
                     Mage_Catalog_Model_Product::ENTITY, 
@@ -269,6 +321,18 @@ class EcomDev_Sphinx_Model_Config
                 if (isset($this->_attributeByType[$attribute->getBackendType()][$code])) {
                     $data['by_type'][$code] = $attribute->getBackendType();
                 }
+            }
+
+            $data['virtual'] = [];
+
+            foreach ($this->_virtualFields as $code => $field) {
+                $data['virtual'][$code] = $field->getData();
+            }
+
+            $data['sort'] = [];
+
+            foreach ($this->_sortOrders as $code => $sort) {
+                $data['sort'][$code] = $sort->getData();
             }
             
             Mage::app()->saveCache(json_encode($data), $cacheKey, array(
@@ -319,7 +383,35 @@ class EcomDev_Sphinx_Model_Config
         
         return $this->_plainAttributes;
     }
-    
+
+    /**
+     * Returns all active virtual fields
+     *
+     * @return EcomDev_Sphinx_Model_Field[]
+     */
+    public function getVirtualFields()
+    {
+        if ($this->_virtualFields === null) {
+            $this->_initAttributes();
+        }
+
+        return $this->_virtualFields;
+    }
+
+    /**
+     * Returns all active virtual fields
+     *
+     * @return EcomDev_Sphinx_Model_Sort[]
+     */
+    public function getSortOrders()
+    {
+        if ($this->_sortOrders === null) {
+            $this->_initAttributes();
+        }
+
+        return $this->_sortOrders;
+    }
+
     /**
      * Returns an attribute by code
      * 
@@ -474,10 +566,35 @@ class EcomDev_Sphinx_Model_Config
         if (!isset($this->_config[$group][$field])) {
             return null;
         }
+
+        $value = $this->_config[$group][$field];
+
+        if (strpos($value, '$') !== false) {
+            foreach ($this->getEnvVars() as $name => $varVal) {
+                if (strpos($value, '$' . $name) !== false) {
+                    $value = str_replace('$'. $name, $varVal, $value);
+                }
+            }
+        }
         
-        return $this->_config[$group][$field];
+        return $value;
     }
-    
+
+    protected function getEnvVars()
+    {
+        if ($this->_envVars === null) {
+            $this->_envVars = array_intersect_key($_SERVER, ['HOME' => true, 'PWD' => true]);
+            $basePath = isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : BP;
+
+            if (empty($this->_envVars) && is_writable(dirname($basePath))) {
+                $this->_envVars['HOME'] = dirname($basePath);
+                $this->_envVars['PWD'] = $basePath;
+            }
+        }
+
+        return $this->_envVars;
+    }
+
     /**
      * Returns a resource  for a model
      * 

@@ -27,12 +27,37 @@ class EcomDev_Sphinx_Block_Adminhtml_Scope_Edit_Form
         $this
 
             ->_setUpFieldset('general', $this->__('General Filters Configuration'))
+                ->_addField('include_facet', 'multiselect', $this->__('Include Specified Facets'), array(
+                        'option_model' => 'ecomdev_sphinx/source_attribute_layered',
+                        'note' => $this->__('Specifing value in Including rule, overrides excluding rule')
+                    ) + $nonRequired)
                 ->_addField('limit_facet', 'multiselect', $this->__('Exclude Specified Facets'), array(
                         'option_model' => 'ecomdev_sphinx/source_attribute_layered'
                     ) + $nonRequired)
+                ->_addField('virtual_field', 'multiselect', $this->__('Include Virtual Facets'), array(
+                        'option_model' => 'ecomdev_sphinx/source_field'
+                    ) + $nonRequired)
                 ->_fieldComment('limit_facet', $this->__('Leave empty to use all facets for layered navigation'))
 
+            ->_setUpFieldset('sort_order', $this->__('Custom Sort Options'))
+                ->_addField('is_active', 'select', $this->__('Is Active'), array(
+                        'option_model' => 'ecomdev_sphinx/source_yesno'
+                    ) + $nonRequired)
+                ->_addField('include_order', 'multiselect', $this->__('Include Sort Order'), array(
+                        'option_model' => 'ecomdev_sphinx/source_sort_order'
+                    ) + $nonRequired)
+                ->_addField('exclude_order', 'multiselect', $this->__('Exclude Sort Order'), array(
+                        'option_model' => 'ecomdev_sphinx/source_sort_order'
+                    ) + $nonRequired)
+                ->_fieldComment('is_active', $this->__('Enabling this feature, allows to use custom sort orders'))
+                ->_fieldComment('include_order', $this->__('Specifing value in Including rule, overrides excluding rule'))
+                ->_fieldComment('exclude_order', $this->__('Leave empty to use all sort order for layered navigation'))
+                ->_fieldDependence('exclude_order', 'is_active', '1')
+                ->_fieldDependence('include_order', 'is_active', '1')
             ->_setUpFieldset('category_filter', $this->__('Category Filter Options'))
+                ->_addField('is_active', 'select', $this->__('Is Active'), array(
+                        'option_model' => 'ecomdev_sphinx/source_yesno'
+                    ) + $nonRequired)
                 ->_addField('label', 'text', $this->__('Category Filter Label'), $nonRequired)
                 ->_addField('max_level_deep', 'text', $this->__('Number of categories to fetch'), $nonRequired)
                 ->_addField('include_same_level', 'select', $this->__('Use Same Level Categories'), array(

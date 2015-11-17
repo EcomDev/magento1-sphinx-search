@@ -182,7 +182,7 @@ abstract class EcomDev_Sphinx_Block_Adminhtml_Edit_Form
      */
     protected function _modifyField($name, array $values)
     {
-        if (isset($this->_fieldIdPattern)) {
+        if ($this->_fieldIdPattern) {
             $name = sprintf($this->_fieldIdPattern, $name);
         }
 
@@ -217,6 +217,11 @@ abstract class EcomDev_Sphinx_Block_Adminhtml_Edit_Form
      */
     protected function _fieldDependence($field, $parent, $parentValue)
     {
+        if ($this->_fieldIdPattern) {
+            $field = sprintf($this->_fieldIdPattern, $field);
+            $parent = sprintf($this->_fieldIdPattern, $parent);
+        }
+
         $this->_getDependence()
             ->addFieldMap($field, $field)
             ->addFieldMap($parent, $parent)
@@ -264,7 +269,7 @@ abstract class EcomDev_Sphinx_Block_Adminhtml_Edit_Form
     protected function _getAdditionalElementTypes()
     {
         return array(
-            'image' => Mage::getConfig()->getBlockClassName('ecomdev_productassortment/adminhtml_form_element_image')
+            'js' => Mage::getConfig()->getBlockClassName('ecomdev_sphinx/adminhtml_edit_form_element_js'),
         );
     }
 

@@ -1,0 +1,73 @@
+<?php /** @var Mage_Adminhtml_Block_Template $this */ ?>
+<?php $field = $this->getField(); ?>
+<?php $options = $field->getAvailableOptions(); ?>
+<?php switch ($field->getType()):?>
+<?php case EcomDev_Sphinx_Model_Source_Field_Type::TYPE_ALIAS:?>
+<tr id="#{id}">
+    <td>#{label}</td>
+    <td>
+        <?php if ($options === false):?>
+        <input name="#{fieldPrefix}[#{code}][target]" type="text" class="required-entry target" />
+        <?php else:?>
+        <select name="#{fieldPrefix}[#{code}][target]" class="required-entry target"></select>
+        <?php endif;?>
+    </td>
+    <td><button class="delete scalable" type="button"><span><span><span><?php echo $this->__('Delete');?></span></span></span></button></td>
+</tr>
+<?php break;?>
+<?php case EcomDev_Sphinx_Model_Source_Field_Type::TYPE_GROUPED:?>
+<tr id="#{id}">
+    <td>#{label}</td>
+    <td>
+        <div>
+            <label for="#{id}-#{code}-label"><?php echo $this->__('Default Label');?></label>
+            <input id="#{id}-#{code}-label" name="#{fieldPrefix}[#{code}][label]" type="text" class="required-entry default-label" />
+        </div>
+        <?php foreach (Mage::app()->getStores(false) as $_store):?>
+            <div>
+                <label for="#{id}-#{code}-label-<?php echo $_store->getCode();?>"><?php echo $this->escapeHtml($_store->getName());?></label>
+                <input id="#{id}-#{code}-label-<?php echo $_store->getCode();?>" name="#{fieldPrefix}[#{code}][store_label][<?php echo $_store->getCode();?>]" type="text" class="store-label-<?php echo $_store->getCode();?>" />
+            </div>
+        <?php endforeach;?>
+    </td>
+    <td>
+        <?php if ($options === false):?>
+            <input type="text" name="#{fieldPrefix}[#{code}][target]" class="required-entry target" />
+        <?php else:?>
+            <select name="#{fieldPrefix}[#{code}][target][]" multiple="multiple" class="required-entry target"></select>
+        <?php endif;?>
+    </td>
+    <td>
+        <input name="#{fieldPrefix}[#{code}][position]" class="required-entry" style="widows: 20px;" value="#{position}" />
+    </td>
+    <td><button class="delete scalable" type="button"><span><span><span><?php echo $this->__('Delete');?></span></span></span></button></td>
+</tr>
+<?php break;?>
+<?php case EcomDev_Sphinx_Model_Source_Field_Type::TYPE_RANGE:?>
+    <tr id="#{id}">
+        <td>#{label}</td>
+        <td>
+            <div>
+                <label for="#{id}-#{code}-label"><?php echo $this->__('Default Label');?></label>
+                <input id="#{id}-#{code}-label" name="#{fieldPrefix}[#{code}][label]" type="text" class="required-entry default-label" />
+            </div>
+            <?php foreach (Mage::app()->getStores(false) as $_store):?>
+                <div>
+                    <label for="#{id}-#{code}-label-<?php echo $_store->getCode();?>"><?php echo $this->escapeHtml($_store->getName());?></label>
+                    <input id="#{id}-#{code}-label-<?php echo $_store->getCode();?>" name="#{fieldPrefix}[#{code}][store_label][<?php echo $_store->getCode();?>]" type="text" class="store-label-<?php echo $_store->getCode();?>" />
+                </div>
+            <?php endforeach;?>
+        </td>
+        <td>
+            <input type="text" name="#{fieldPrefix}[#{code}][from]" class="from" />
+        </td>
+        <td>
+            <input type="text" name="#{fieldPrefix}[#{code}][to]" class="to" />
+        </td>
+        <td>
+            <input name="#{fieldPrefix}[#{code}][position]" class="required-entry" style="widows: 20px;" value="#{position}" />
+        </td>
+        <td><button class="delete scalable" type="button"><span><span><span><?php echo $this->__('Delete');?></span></span></span></button></td>
+    </tr>
+    <?php break;?>
+<?php endswitch; ?>

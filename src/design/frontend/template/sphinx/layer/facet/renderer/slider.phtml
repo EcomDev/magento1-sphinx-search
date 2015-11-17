@@ -1,13 +1,14 @@
-я<?php /* @var $this EcomDev_Sphinx_Block_Layer_Facet_Renderer_Slider */ ?>
-<dt><?php echo $this->getLabel() ?></dt>
-<dd>
+<?php /* @var $this EcomDev_Sphinx_Block_Layer_Facet_Renderer_Slider */ ?>
+<dt><?php echo $this->getLabel() ?><?php if ($this->isSelected($this->getFacet())):?><a class="product-ajax-link col-right" href="<?php echo $this->getClearUrl($this->getFacet());?>"><?php echo $this->__('Clear');?></a><?php endif; ?></dt>
+<dd id="<?php echo $this->getHtmlId();?>">
     <ul>
-        <li>Slider Min Value: <?php echo $this->getMinimumValue();?> </li>
-        <li>Slider Max Value: <?php echo $this->getMaximumValue();?> </li>
-        <?php if ($this->isSelected($this->getFacet())): ?>
-        <li>Slider Current Start Value: <?php echo $this->getCurrentStartValue();?> </li>
-        <li>Slider Current End Value: <?php echo $this->getCurrentEndValue();?> </li>
-        <?php endif; ?>
-        <li>Slider Url: <?php echo $this->getValueUrl();?> </li>
+        <li class="slider-container">
+            <div id="<?php echo $this->getHtmlId();?>-slider"></div>
+        </li>
     </ul>
+    <script type="text/javascript">
+        ecomdevSphinxDelayed(function () {
+            new EcomDev.Sphinx.Slider('<?php echo $this->getHtmlId();?>-slider', <?php echo $this->getOptionJson();?>);
+        });
+    </script>
 </dd>

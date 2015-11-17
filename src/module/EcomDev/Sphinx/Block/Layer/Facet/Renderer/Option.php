@@ -48,4 +48,31 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Option
 
         return $baseUrl . ($activeFilters ? '?' . http_build_query($activeFilters, '', '&amp;') : '');
     }
+
+    /**
+     * Options JSON
+     *
+     * @param string $itemCssRule
+     * @param string $hiddenClass
+     * @param string $activeClass
+     * @param string $collapseCssRule
+     * @param string $expandCssRule
+     * @return string
+     */
+    public function getOptionJson($itemCssRule, $hiddenClass, $activeClass, $collapseCssRule, $expandCssRule)
+    {
+        $options = [
+            'id' => $this->getFacet()->getFilterField(),
+            'optionLimit' => $this->getDataSetDefault('top_option_limit', 5),
+            'optionByCount' => (bool)$this->getDataSetDefault('top_option_by_count', 1),
+            'hiddenClass' => $hiddenClass,
+            'itemCssRule' => $itemCssRule,
+            'expandCssRule' => $expandCssRule,
+            'collapseCssRule' => $collapseCssRule,
+            'activeClass' => $activeClass,
+            'animation' => (bool)$this->getDataSetDefault('animation', 1)
+        ];
+
+        return json_encode($options);
+    }
 }

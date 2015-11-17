@@ -3,11 +3,6 @@
 class EcomDev_Sphinx_Model_Source_Attribute_Layered
     extends EcomDev_Sphinx_Model_Source_AbstractOption
 {
-    const TYPE_SINGLE = 'select';
-    const TYPE_MULTIPLE = 'multiple';
-    const TYPE_SLIDER = 'slider';
-    const TYPE_RANGE = 'range';
-
     protected function _initOptions()
     {
         $collection = Mage::getResourceSingleton('ecomdev_sphinx/attribute_collection')
