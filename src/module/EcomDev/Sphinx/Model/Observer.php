@@ -156,7 +156,7 @@ class EcomDev_Sphinx_Model_Observer
                 'level'
             )
             ->from($indexNames)
-            ->where('is_active', 1)
+            ->where('is_active','=', 1)
             ->orderBy('level', 'asc')
             ->orderBy('position', 'asc')
             ->match('path', $query->expr(

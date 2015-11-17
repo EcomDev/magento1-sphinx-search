@@ -17,7 +17,7 @@ class EcomDev_Sphinx_Model_Category
                 )
                 ->from($container->getIndexNames('category'))
                 ->where('category_id', 'IN', $pathIds)
-                ->where('is_active', 1)
+                ->where('is_active','=', 1)
                 ->execute();
             
             $result = array();

@@ -485,7 +485,7 @@ class EcomDev_Sphinx_Model_Scope
         $query
             ->select('category_id', 'name', 'path', 'request_path', 'include_in_menu')
             ->from($this->_getConfig()->getContainer()->getIndexNames('category'))
-            ->where('is_active', 1)
+            ->where('is_active','=', 1)
             ->where('level', '<=', (int)$maxLevel)
             ->where('level', '>', (int)$minLevel)
             ->orderBy('level', 'asc')

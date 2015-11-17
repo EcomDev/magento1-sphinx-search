@@ -184,7 +184,8 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
         $select
             ->from(['default_value' => $entityValueTable],[])
             ->joinLeft(['store_value' => $entityValueTable], implode(' AND ', $conditions), [])
-            ->where('default_value.attribute_id IN(?)', $attributeIds);
+            ->where('default_value.attribute_id IN(?)', $attributeIds)
+            ->where('default_value.store_id = ?', 0);
 
         return $select;
     }

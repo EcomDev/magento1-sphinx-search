@@ -6,7 +6,6 @@
             <li class="facet-option <?php if($_option->isActive()):?>active<?php endif; ?>" data-option-count="<?php echo $_option->getCount();?>">
                 <a class="product-ajax-link" href="<?php echo $this->getOptionUrl($_option) ?>" <?php if($_option->isActive()):?> style="font-weight: bold" <?php endif;?> rel="nofollow">
                     <?php echo $_option->getLabel() ?>
-                    <span class="count">(<?php echo $_option->getCount() ?>)</span>
                 </a>
             </li>
         <?php endforeach; ?>
