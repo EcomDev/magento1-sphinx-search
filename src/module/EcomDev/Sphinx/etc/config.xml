@@ -399,10 +399,10 @@
                 <collation_server>utf8_general_ci</collation_server>
                 <workers>prefork</workers>
                 <prefork_rotation_throttle>50</prefork_rotation_throttle>
-                <indexer_memory_limit>32M</indexer_memory_limit>
-                <indexer_write_buffer>1M</indexer_write_buffer>
+                <indexer_memory_limit>256M</indexer_memory_limit>
+                <indexer_write_buffer>8M</indexer_write_buffer>
                 <indexer_file_buffer>8M</indexer_file_buffer>
-                <index_product_merge_limit>5000</index_product_merge_limit>
+                <index_product_merge_limit>300</index_product_merge_limit>
                 <index_category_merge_limit>300</index_category_merge_limit>
                 <indexer_command>indexer -c $HOME/sphinx/sphinx.conf</indexer_command>
                 <indextool_command>indextool -c $HOME/sphinx/sphinx.conf</indextool_command>
@@ -416,6 +416,9 @@
                 <host>127.0.0.1</host>
                 <port>9306</port>
             </connection>
+            <export>
+                <reader_batch_size>1000</reader_batch_size>
+            </export>
             <general>
                 <active>0</active>
                 <search_active>1</search_active>

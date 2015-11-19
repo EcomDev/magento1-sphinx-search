@@ -50,34 +50,32 @@ class EcomDev_Sphinx_Model_Index_Field_Option
     {
         $value = $row->getValue($this->attributeCode, []);
 
+        if ($this->cachedScope !== $scope) {
+            $this->cachedScope = $scope;
+            $this->cachedScopeValue = 0;
+            if ($scope->hasFilter('store_id')) {
+                $this->cachedScopeValue = $scope->getFilter('store_id')->getValue();
+            }
+        }
+
+
         if (!is_array($value)) {
-            $value = (array)$value;
+            return (string)$this->getSingleValue($value, $this->cachedScopeValue);
         }
 
         $result = [];
 
-        $storeId = 0;
-        if ($scope->hasFilter('store_id')) {
-            $storeId = $scope->getFilter('store_id')->getValue();
-        }
-
         foreach ($value as $optionId) {
-            if (!isset($this->options[$optionId])) {
+            $singleValue = $this->getSingleValue($optionId, $this->cachedScopeValue);
+
+            if ($singleValue === false) {
                 continue;
             }
 
-            if ($this->getType() === self::TYPE_FIELD && isset($this->options[$optionId][0])) {
-                $result[] = (
-                    isset($this->options[$optionId][$storeId]) ?
-                    $this->options[$optionId][$storeId] :
-                    $this->options[$optionId][0]
-                );
-            } elseif ($this->getType() !== self::TYPE_FIELD) {
-                $result[] = $optionId;
-            }
+            $result[] = $singleValue;
         }
 
-        if ($this->getType() === self::TYPE_FIELD) {
+        if ($this->isText()) {
             // Just string output for a field
             return implode(' ', $result);
         }
@@ -85,5 +83,22 @@ class EcomDev_Sphinx_Model_Index_Field_Option
         return $result;
     }
 
+    private function getSingleValue($optionId, $storeId)
+    {
+        if (!isset($this->options[$optionId])) {
+            return false;
+        }
 
+        if ($this->isText() && isset($this->options[$optionId][0])) {
+            return (
+                isset($this->options[$optionId][$storeId]) ?
+                    $this->options[$optionId][$storeId] :
+                    $this->options[$optionId][0]
+            );
+        } elseif (!$this->isText()) {
+            return $optionId;
+        }
+
+        return false;
+    }
 }

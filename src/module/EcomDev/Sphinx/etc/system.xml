@@ -305,6 +305,19 @@
                         </port>
                     </fields>
                 </connection>
+                <export translate="label comment">
+                    <label>Export Options</label>
+                    <show_in_default>1</show_in_default>
+                    <sort_order>110</sort_order>
+                    <fields>
+                        <reader_batch_size>
+                            <label>Reader Batch Size</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>120</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </reader_batch_size>
+                    </fields>
+                </export>
                 <general translate="label comment">
                     <label>Search Options</label>
                     <show_in_default>1</show_in_default>

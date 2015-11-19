@@ -4,6 +4,7 @@ use EcomDev_Sphinx_Contract_FieldInterface as FieldInterface;
 use EcomDev_Sphinx_Model_Index_Field as RegularField;
 use EcomDev_Sphinx_Model_Index_Field_Integer as IntegerField;
 use EcomDev_Sphinx_Model_Index_Field_Product_Category as CategoryField;
+use EcomDev_Sphinx_Model_Index_Field_Json as JsonField;
 
 
 class EcomDev_Sphinx_Model_Index_Field_Provider_Product_Attribute_System
@@ -32,13 +33,16 @@ class EcomDev_Sphinx_Model_Index_Field_Provider_Product_Attribute_System
             new IntegerField('stock_status', 4),
             new RegularField(FieldInterface::TYPE_ATTRIBUTE_BOOL, 'has_options'),
             new RegularField(FieldInterface::TYPE_ATTRIBUTE_BOOL, 'required_options'),
-            new CategoryField(FieldInterface::TYPE_ATTRIBUTE_MULTI, 'direct_category_ids', true, true),
-            new CategoryField(FieldInterface::TYPE_ATTRIBUTE_MULTI, 'anchor_category_ids', false, true),
-            new CategoryField(FieldInterface::TYPE_FIELD, 's_direct_category_ids', true, true),
-            new CategoryField(FieldInterface::TYPE_FIELD, 's_anchor_category_ids', false, true),
-            new CategoryField(FieldInterface::TYPE_FIELD, 's_direct_category_names', true, false),
-            new CategoryField(FieldInterface::TYPE_FIELD, 's_anchor_category_names', true, false),
-            new CategoryField(FieldInterface::TYPE_ATTRIBUTE_INT, 'i_category_position', true, false),
+            new CategoryField(FieldInterface::TYPE_ATTRIBUTE_MULTI, 'direct_category_ids', '_direct_category_ids'),
+            new CategoryField(FieldInterface::TYPE_ATTRIBUTE_MULTI, 'anchor_category_ids', '_anchor_category_ids'),
+            new CategoryField(FieldInterface::TYPE_FIELD, 's_direct_category_ids', '_direct_category_ids', true),
+            new CategoryField(FieldInterface::TYPE_FIELD, 's_anchor_category_ids', '_anchor_category_ids', true),
+            new CategoryField(FieldInterface::TYPE_FIELD, 's_direct_category_names', '_direct_category_names', false),
+            new CategoryField(FieldInterface::TYPE_FIELD, 's_anchor_category_names', '_anchor_category_names', false),
+            new CategoryField(FieldInterface::TYPE_ATTRIBUTE_INT, 'i_best_direct_position', '_best_direct_position', false),
+            new CategoryField(FieldInterface::TYPE_ATTRIBUTE_INT, 'i_best_anchor_position', '_best_anchor_position', false),
+            new JsonField('j_category_position', '_category_position'),
+            new JsonField('j_category_url', '_category_url'),
         ];
 
         Mage::dispatchEvent('ecomdev_sphinx_provider_product_system_fields', ['container' => $container]);

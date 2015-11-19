@@ -188,6 +188,8 @@ USAGE;
         if ($reflection->hasMethod($methodName)) {
             try {
                 Mage::app('admin');
+                ini_set('memory_limit', '-1');
+                ob_implicit_flush(1);
                 $this->$methodName();
             } catch (Exception $e) {
                 fwrite(STDERR, "Error: \n{$e->getMessage()}\n");

@@ -102,6 +102,15 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
         $this->_fieldsToSelect['is_salable'] = 'stock_status';
         $this->_fieldsToSelect['is_in_stock'] = 'stock_status';
 
+        if (isset($this->_productLimitationFilters['category_id'])) {
+            $this->_fieldsToSelect['request_path'] = $query->exprFormat(
+                'IF(s_category_url.cat_%1$s <> NULL, s_category_url.cat_%1$s, request_path)', $this->_productLimitationFilters['category_id']
+            );
+        } else {
+            $this->_fieldsToSelect['request_path'] = 'request_path';
+        }
+
+
         Mage::dispatchEvent(
             'ecomdev_sphinx_product_collection_add_fields_to_query', ['query' => $query, 'collection' => $this]
         );
@@ -118,6 +127,8 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
             
             if ($field === $source) {
                 $query->select($source);
+            } elseif ($source instanceof \Foolz\SphinxQL\Expression) {
+                $query->select($query->exprFormat('%s as %s', $source, $field));
             } else {
                 $query->select($query->exprFormat(
                     '%s as %s',
@@ -142,12 +153,12 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
                         $column = 'price_index_min_price_' . $this->getCustomerGroupId();
                     }
 
-                    if ($column === '@position') {
-                        $query->orderBy('i_category_position', $direction);
-                    } elseif ($column === '@stock_status') {
-                        $query->orderBy('stock_status', $direction);
-                    }  elseif ($column === '@relevance') {
+                    if ($column === '@position' && in_array('j_category_position', $indexFields) && isset($this->_productLimitationFilters['category_id'])) {
+                        $query->orderBy($query->expr('j_category_position.cat_' . $this->_productLimitationFilters['category_id']), $direction);
+                    } elseif ($column === '@relevance') {
                         $query->orderBy($query->expr('weight()'), $direction);
+                    } elseif (strpos($column, '@') === 0 && in_array(substr($column, 1), $indexFields)) {
+                        $query->orderBy(substr($column, 1), $direction);
                     } elseif ($column && in_array($column, $indexFields)) {
                         $query->orderBy($column, $direction);
                     }
@@ -159,8 +170,8 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
                 $order = 'price_index_min_price_' . $this->getCustomerGroupId();
             }
 
-            if ($order === 'position') {
-                $query->orderBy('i_category_position', $direction);
+            if ($order === 'position' && in_array('j_category_position', $indexFields) && isset($this->_productLimitationFilters['category_id'])) {
+                $query->orderBy($query->expr('j_category_position.cat_' . $this->_productLimitationFilters['category_id']), $direction);
             } elseif ($order && in_array($order, $indexFields)) {
                 $query->orderBy($order, $direction);
             } elseif ($order === 'relevance') {

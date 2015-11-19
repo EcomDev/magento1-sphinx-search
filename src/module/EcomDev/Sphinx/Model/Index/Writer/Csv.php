@@ -54,39 +54,46 @@ class EcomDev_Sphinx_Model_Index_Writer_Csv
         $reader->setScope($scope);
         $writer = $this->getCsvWriter();
 
-        /** @var EcomDev_Sphinx_Contract_DataRowInterface $dataRow */
-        foreach ($reader as $dataRow) {
-            $row = [$dataRow->getId()];
-            foreach ($columns as $column) {
-                $value = $column->getValue($dataRow, $scope);
+        $columnCalls = [
+            '<?php $lambda = function ($dataRow, $scope, $columns, $valueCallback) {',
+            '$row = [$dataRow->getId()];'
+        ];
 
-                if ($column->isMultiple() && is_array($value)) {
-                    $value = implode(',', $value);
-                }
-
-                $row[] = $this->_translateValue($value);
+        foreach ($columns as $index => $column) {
+            $columnCalls[] = '$value = $columns[' . var_export($index, true) . ']->getValue($dataRow, $scope);';
+            if ($column->isMultiple()) {
+                $columnCalls[] = 'if (is_array($value)) {';
+                $columnCalls[] = '  $value = implode(\',\', $value);';
+                $columnCalls[] = '}';
+            } elseif (method_exists($this, '_translateValue')) {
+                $columnCalls[] = '$value = $this->_translateValue($value);';
             }
 
+            $columnCalls[] = '$row[] = $value;';
+        }
+
+        $columnCalls[] = 'return $row;';
+        $columnCalls[] = '}; return $lambda;';
+
+        $tmpDirectory = Mage::getConfig()->getVarDir('ecomdev_sphinx/lambda');
+
+        $lambdaName = uniqid('lambda') . '.php';
+
+        file_put_contents($tmpDirectory . DS . $lambdaName, implode("\n", $columnCalls));
+        $rowLambda = (include $tmpDirectory . DS . $lambdaName);
+        unlink($tmpDirectory . DS . $lambdaName);
+
+        /** @var EcomDev_Sphinx_Contract_DataRowInterface $dataRow */
+        foreach ($reader as $dataRow) {
+            $row = $rowLambda($dataRow, $scope, $columns);
             $writer->insertOne($row);
         }
 
         if (!isset($row)) {
             // If no rows are added, we need to add an empty one to create index
-            $writer->insertOne(array_fill(0, count($columns) + 1, ''));
+            $writer->insertOne([0 => 0] + array_fill(1, count($columns), ''));
         }
 
         return $this;
     }
-
-    /**
-     * Returns a value
-     *
-     * @param string $value
-     * @return string
-     */
-    protected function _translateValue($value)
-    {
-        return $value;
-    }
-
 }

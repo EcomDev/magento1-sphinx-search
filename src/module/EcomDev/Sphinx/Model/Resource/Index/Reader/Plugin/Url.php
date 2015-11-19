@@ -26,6 +26,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Url
     {
         parent::__construct();
         $this->idPathFormat = $idPathFormat;
+        $this->memoryTableIsString = true;
     }
 
     /**
@@ -50,17 +51,24 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Url
 
         $idPathMap = array_combine($idPathList, $identifiers);
 
+        $this->fillMemoryTable('entity_id', $idPathList);
+
         $select = $this->_getReadAdapter()->select();
         $select
             ->from(
                 ['index' => $this->getTable('core/url_rewrite')],
                 ['id_path', 'request_path']
-            );
+            )
+            ->join(
+                ['entity_id' => $this->getMemoryTableName('entity_id')],
+                'entity_id.id = index.id_path',
+                []
+            )
+        ;
 
         $scope->getFilter('store_id')->render('index', $select);
 
         $select->where('index.is_system = ?', 1);
-        $select->where('index.id_path IN(?)', $idPathList);
 
         $data = [];
         foreach ($this->_getReadAdapter()->query($select) as $row) {

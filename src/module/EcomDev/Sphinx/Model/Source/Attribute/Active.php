@@ -8,9 +8,21 @@ class EcomDev_Sphinx_Model_Source_Attribute_Active
     {
         $attributes = Mage::getSingleton('ecomdev_sphinx/config')->getActiveAttributes();
 
-        $this->_options = array();
+        $proxy = new stdClass();
+        $proxy->additionalAttributes = [];
+
+        Mage::dispatchEvent(
+            'ecomdev_sphinx_source_attribute_active_options',
+            ['proxy' => $proxy, 'attributes' => $attributes]
+        );
+
+        $this->_options = [];
         foreach ($attributes as $code => $attribute) {
-            $this->_options[$code] = $attribute->getAttributeName();
+            $this->_options[$code] = sprintf('%s (%s)', $attribute->getCode(), $attribute->getAttributeName());
+        }
+
+        if ($proxy->additionalAttributes) {
+            $this->_options += $proxy->additionalAttributes;
         }
 
         return $this;

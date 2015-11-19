@@ -23,6 +23,10 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Price
             return [];
         }
 
+        if (!$this->entityMemoryTable) {
+            $this->fillMemoryTable('entity_id', $identifiers);
+        }
+
         $least       = $this->_getReadAdapter()->getLeastSql(array('index.min_price', 'index.tier_price'));
         $minimalExpr = $this->_getReadAdapter()->getCheckSql('index.tier_price IS NOT NULL',
             $least, 'index.min_price');
@@ -35,13 +39,17 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Price
                  'price', 'final_price', 'min_price',
                  'max_price', 'tier_price', 'group_price', 'minimal_price' => $minimalExpr])
             ->join(
+                ['entity_id' => $this->getMainMemoryTable('entity_id')],
+                'entity_id.id = index.entity_id',
+                []
+            )
+            ->join(
                 ['store' => $this->getTable('core/store')],
                 'store.website_id = index.website_id',
                 []
             );
 
         $scope->getFilter('store_id')->render('store', $select);
-        $select->where('index.entity_id IN(?)', $identifiers);
 
         $data = [];
         foreach ($this->_getReadAdapter()->query($select) as $row) {
