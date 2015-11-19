@@ -31,7 +31,7 @@ class EcomDev_Sphinx_Model_Index_Field_Provider_Product_Attribute_System
             new IntegerField('visibility', 4),
             new IntegerField('status', 4),
             new IntegerField('stock_status', 4),
-            new RegularField(FieldInterface::TYPE_ATTRIBUTE_FLOAT, 'f_stock_qty', 0),
+            new RegularField(FieldInterface::TYPE_ATTRIBUTE_FLOAT, 'f_stock_qty', 0, 'stock_qty'),
             new RegularField(FieldInterface::TYPE_ATTRIBUTE_BOOL, 'has_options'),
             new RegularField(FieldInterface::TYPE_ATTRIBUTE_BOOL, 'required_options'),
             new CategoryField(FieldInterface::TYPE_ATTRIBUTE_MULTI, 'direct_category_ids', '_direct_category_ids'),
