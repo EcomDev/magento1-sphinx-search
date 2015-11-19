@@ -48,7 +48,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Stock
         $select = $this->_getReadAdapter()->select();
         $select
             ->from(
-                ['index' => $this->getTable('cataloginventory/stock_status')],
+                ['index' => $this->getTable('cataloginventory/stock_item')],
                 ['product_id', 'qty', 'stock_status']
             )
             ->join(
