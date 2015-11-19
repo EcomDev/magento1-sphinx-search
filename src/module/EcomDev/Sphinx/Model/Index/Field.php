@@ -6,6 +6,8 @@ use EcomDev_Sphinx_Contract_Reader_ScopeInterface as ScopeInterface;
 class EcomDev_Sphinx_Model_Index_Field
     extends EcomDev_Sphinx_Model_Index_AbstractField
 {
+
+
     /**
      * Default field value
      *

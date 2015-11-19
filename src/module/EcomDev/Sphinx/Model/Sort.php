@@ -12,12 +12,14 @@ use EcomDev_Sphinx_Contract_FieldInterface as FieldInterface;
 class EcomDev_Sphinx_Model_Sort
     extends EcomDev_Sphinx_Model_AbstractModel
 {
+    const CACHE_TAG = 'SPHINX_SORT';
+
     /**
      * Cache tag for cleaning it up on the frontend
      *
      * @var string
      */
-    protected $_cacheTag = EcomDev_Sphinx_Model_Scope::CACHE_TAG;
+    protected $_cacheTag = self::CACHE_TAG;
 
     /**
      * Initialization of resource
@@ -77,8 +79,11 @@ class EcomDev_Sphinx_Model_Sort
     {
         if (!$this->hasData('_available_sort_options')) {
             $options = [
-                '@position' => Mage::helper('ecomdev_sphinx')->__('Min Category Position'),
+                '@position' => Mage::helper('ecomdev_sphinx')->__('Category Position'),
+                '@i_best_anchor_position' => Mage::helper('ecomdev_sphinx')->__('Best Category Position (Anchor)'),
+                '@i_best_direct_position' => Mage::helper('ecomdev_sphinx')->__('Best Category Position (Direct)'),
                 '@stock_status' => Mage::helper('ecomdev_sphinx')->__('Stock Status'),
+                '@f_stock_qty' => Mage::helper('ecomdev_sphinx')->__('Available Stock Qty'),
                 '@relevance' => Mage::helper('ecomdev_sphinx')->__('Search Relevance (Search Only)')
             ];
 
@@ -103,7 +108,7 @@ class EcomDev_Sphinx_Model_Sort
 
         $options = $this->getConfigurationValue('sort/order');
 
-        usort($options, function ($a, $b) {
+        uasort($options, function ($a, $b) {
             return $a['position'] > $b['position'] ? 1 : ($a['position'] == $b['position'] ? 0 : -1);
         });
 

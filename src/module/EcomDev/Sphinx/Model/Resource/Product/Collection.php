@@ -148,6 +148,7 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
             }
 
             if (isset($complexOrders[$order])) {
+
                 foreach ($complexOrders[$order]->getSortInfo($direction) as $column => $direction) {
                     if ($column === 'price') {
                         $column = 'price_index_min_price_' . $this->getCustomerGroupId();
@@ -162,9 +163,9 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
                     } elseif ($column && in_array($column, $indexFields)) {
                         $query->orderBy($column, $direction);
                     }
+
                 }
             }
-
         } else {
             if ($order === 'price') {
                 $order = 'price_index_min_price_' . $this->getCustomerGroupId();
@@ -189,9 +190,6 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
                 ($this->getCurPage() - 1) * $this->getPageSize(), $this->getPageSize()
             );
         }
-
-
-
 
         return $this;
     }

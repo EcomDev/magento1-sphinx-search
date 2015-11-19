@@ -251,12 +251,12 @@ class EcomDev_Sphinx_Model_Scope
 
         $orders = $this->_getConfig()->getSortOrders();
         $complexSortOrders = [];
-        foreach ($this->getSortOrders() as $sortOrder) {
-            if (!isset($orders[$sortOrder])) {
-                 continue;
+        foreach ($this->getSortOrders() as $code => $label) {
+            if (!isset($orders[$code])) {
+                continue;
             }
 
-            $complexSortOrders[$sortOrder] = $orders[$sortOrder];
+            $complexSortOrders[$code] = $orders[$code];
         }
 
         return $complexSortOrders;

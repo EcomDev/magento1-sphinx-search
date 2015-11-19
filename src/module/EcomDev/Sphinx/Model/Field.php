@@ -12,12 +12,15 @@ use EcomDev_Sphinx_Contract_FieldInterface as FieldInterface;
 class EcomDev_Sphinx_Model_Field
     extends EcomDev_Sphinx_Model_AbstractModel
 {
+
+    const CACHE_TAG = 'SPHINX_FIELD';
+
     /**
      * Cache tag for cleaning it up on the frontend
      *
      * @var string
      */
-    protected $_cacheTag = EcomDev_Sphinx_Model_Scope::CACHE_TAG;
+    protected $_cacheTag = self::CACHE_TAG;
     
     /**
      * Initialization of resource

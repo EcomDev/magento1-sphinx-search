@@ -336,7 +336,9 @@ class EcomDev_Sphinx_Model_Config
             }
             
             Mage::app()->saveCache(json_encode($data), $cacheKey, array(
-                EcomDev_Sphinx_Model_Attribute::CACHE_TAG
+                EcomDev_Sphinx_Model_Attribute::CACHE_TAG,
+                EcomDev_Sphinx_Model_Sort::CACHE_TAG,
+                EcomDev_Sphinx_Model_Field::CACHE_TAG
             ));
         }
         return $this;
