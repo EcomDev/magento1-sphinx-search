@@ -40,8 +40,8 @@ class EcomDev_Sphinx_Model_Index_Field_Provider_Product_Attribute_System
             new CategoryField(FieldInterface::TYPE_FIELD, 's_anchor_category_ids', '_anchor_category_ids', true),
             new CategoryField(FieldInterface::TYPE_FIELD, 's_direct_category_names', '_direct_category_names', false),
             new CategoryField(FieldInterface::TYPE_FIELD, 's_anchor_category_names', '_anchor_category_names', false),
-            new CategoryField(FieldInterface::TYPE_ATTRIBUTE_INT, 'i_best_direct_position', '_best_direct_position', false),
-            new CategoryField(FieldInterface::TYPE_ATTRIBUTE_INT, 'i_best_anchor_position', '_best_anchor_position', false),
+            new RegularField(FieldInterface::TYPE_ATTRIBUTE_INT, 'i_best_direct_position', 999999,'_best_direct_position'),
+            new RegularField(FieldInterface::TYPE_ATTRIBUTE_INT, 'i_best_anchor_position', 999999, '_best_anchor_position'),
             new JsonField('j_category_position', '_category_position'),
             new JsonField('j_category_url', '_category_url'),
         ];

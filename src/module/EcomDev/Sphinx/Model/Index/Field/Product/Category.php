@@ -49,7 +49,6 @@ class EcomDev_Sphinx_Model_Index_Field_Product_Category
             $categories = [];
         }
 
-
         if ($this->key) {
             $result = array_keys($categories);
         } else {

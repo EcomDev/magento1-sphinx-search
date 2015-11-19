@@ -38,14 +38,16 @@ class EcomDev_Sphinx_Shell extends Mage_Shell_Abstract
             'visibility' => 'v',
             'delta' => 'd',
             'format' => 'f',
-            'output' => 'o'
+            'output' => 'o',
+            'header' => 't'
         ),
         'export:category' => array(
             'store' => 's',
             'visibility' => 'v',
             'delta' => 'd',
             'format' => 'f',
-            'output' => 'o'
+            'output' => 'o',
+            'header' => 't'
         ),
         'export:keyword' => array(
             'store' => 's',
@@ -95,6 +97,7 @@ Defined <action>s:
     -d --delta          Is it a delta index?
     -f --format         Format of the output, allowed values: csv, tsv, xml  [required]
     -o --output         Output filename, by default outputs to STDOUT
+    -t --header         Output header of CSV or TSV file
 
   export:category   Exports category index
 
@@ -102,6 +105,7 @@ Defined <action>s:
     -d --delta          Is it a delta index?
     -f --format         Format of the output, allowed values: csv, tsv, xml  [required]
     -o --output         Output file, by default outputs to STDOUT
+    -t --header         Output header of CSV or TSV file
 
   export:keyword    Export keyword index
 
@@ -364,6 +368,9 @@ USAGE;
 
         $scope = $this->getService()->getProductScope($store, $visibility, $updatedAt);
         $writer = $this->getService()->getWriter($this->getArg('format'), $output);
+        if ($writer instanceof EcomDev_Sphinx_Contract_Writer_HeaderAwareInterface && $this->getArg('header')) {
+            $writer->setOutputHeaders(true);
+        }
         $writer->process($reader, $scope);
     }
 

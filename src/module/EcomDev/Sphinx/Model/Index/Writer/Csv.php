@@ -5,6 +5,7 @@ use EcomDev_Sphinx_Contract_Reader_ScopeInterface as ScopeInterface;
 
 class EcomDev_Sphinx_Model_Index_Writer_Csv
     extends EcomDev_Sphinx_Model_Index_AbstractWriter
+    implements EcomDev_Sphinx_Contract_Writer_HeaderAwareInterface
 {
     /**
      * Delimiter character of csv
@@ -26,6 +27,13 @@ class EcomDev_Sphinx_Model_Index_Writer_Csv
      * @var string
      */
     protected $escape = "\\";
+
+    /**
+     * Output headers flag
+     *
+     * @var bool
+     */
+    protected $outputHeaders = false;
 
     /**
      * Instance of writer
@@ -55,7 +63,7 @@ class EcomDev_Sphinx_Model_Index_Writer_Csv
         $writer = $this->getCsvWriter();
 
         $columnCalls = [
-            '<?php $lambda = function ($dataRow, $scope, $columns, $valueCallback) {',
+            '<?php $lambda = function ($dataRow, $scope, $columns) {',
             '$row = [$dataRow->getId()];'
         ];
 
@@ -72,6 +80,7 @@ class EcomDev_Sphinx_Model_Index_Writer_Csv
             $columnCalls[] = '$row[] = $value;';
         }
 
+
         $columnCalls[] = 'return $row;';
         $columnCalls[] = '}; return $lambda;';
 
@@ -82,6 +91,13 @@ class EcomDev_Sphinx_Model_Index_Writer_Csv
         file_put_contents($tmpDirectory . DS . $lambdaName, implode("\n", $columnCalls));
         $rowLambda = (include $tmpDirectory . DS . $lambdaName);
         unlink($tmpDirectory . DS . $lambdaName);
+
+
+        if ($this->outputHeaders) {
+            $header = array_keys($columns);
+            array_unshift($header, 'id');
+            $writer->insertOne($header);
+        }
 
         /** @var EcomDev_Sphinx_Contract_DataRowInterface $dataRow */
         foreach ($reader as $dataRow) {
@@ -94,6 +110,18 @@ class EcomDev_Sphinx_Model_Index_Writer_Csv
             $writer->insertOne([0 => 0] + array_fill(1, count($columns), ''));
         }
 
+        return $this;
+    }
+
+    /**
+     * Flag for output headers for exported file
+     *
+     * @param bool $flag
+     * @return $this
+     */
+    public function setOutputHeaders($flag)
+    {
+        $this->outputHeaders = (bool)$flag;
         return $this;
     }
 }

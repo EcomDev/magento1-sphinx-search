@@ -20,7 +20,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
     protected function _construct()
     {
          parent::_construct();
-         $this->nameAttributeId = Mage::getSingleton('eav/config')->getAttribute(Mage_Catalog_Model_Category::ENTITY, 'name');
+         $this->nameAttributeId = Mage::getSingleton('eav/config')->getAttribute(Mage_Catalog_Model_Category::ENTITY, 'name')->getId();
     }
 
 
@@ -51,6 +51,11 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
                 'entity_id.id = index.product_id',
                 []
             )
+            ->join(
+                ['category' => $this->getTable('catalog/category')],
+                'category.entity_id = index.category_id',
+                ['level']
+            )
         ;
 
         $scope->getFilter('store_id')->render('index', $select);
@@ -58,11 +63,12 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
 
         $names = [];
         foreach ($this->_getReadAdapter()->query($select) as $row) {
-            if (!isset($names[$row['category_id']])) {
+            if (!isset($names[$row['category_id']]) && $row['level'] > 1) {
                 $names[$row['category_id']] = new CategoryName();
             }
 
             $data[$row['product_id']]['_category_position']['cat_' . $row['category_id']] = $row['position'];
+
 
             if ($row['position'] !== '0' && $row['is_parent']) {
                 $data[$row['product_id']]['_direct_position']['cat_' . $row['category_id']] = $row['position'];
@@ -82,11 +88,17 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
 
             if ($row['is_parent']) {
                 $data[$row['product_id']]['_direct_category_ids']['cat_' . $row['category_id']] = $row['category_id'];
-                $data[$row['product_id']]['_direct_category_names']['cat_' . $row['category_id']] = $names[$row['category_id']];
             }
 
             $data[$row['product_id']]['_anchor_category_ids']['cat_' . $row['category_id']] = $row['category_id'];
-            $data[$row['product_id']]['_anchor_category_names']['cat_' . $row['category_id']] = $names[$row['category_id']];
+
+            if ($row['level'] > 1) {
+                if ($row['is_parent']) {
+                    $data[$row['product_id']]['_direct_category_names']['cat_' . $row['category_id']] = $names[$row['category_id']];
+                }
+
+                $data[$row['product_id']]['_anchor_category_names']['cat_' . $row['category_id']] = $names[$row['category_id']];
+            }
         }
 
         if ($names) {
@@ -99,11 +111,11 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
                 )
                 ->join(['entity_id' => $this->getMemoryTableName('category_id')], 'entity_id.id = name.entity_id', [])
                 ->where('name.store_id = :store_id')
-                ->where('name.attribute_id = ?', $this->nameAttributeId);
+                ->where('name.attribute_id = :attribute_id');
 
             $nameData = [];
             foreach ([$scope->getFilter('store_id')->getValue(), 0] as $storeId) {
-                $nameData += $this->_getReadAdapter()->fetchPairs($select, ['store_id' => $storeId]);
+                $nameData += $this->_getReadAdapter()->fetchPairs($select, ['store_id' => $storeId, 'attribute_id' => $this->nameAttributeId]);
             }
 
             foreach ($nameData as $categoryId => $name) {

@@ -10,13 +10,6 @@ class EcomDev_Sphinx_Model_Index_Field_Option
     extends EcomDev_Sphinx_Model_Index_AbstractField
 {
     /**
-     * List of options per store view
-     *
-     * @var string[][]
-     */
-    private $options;
-
-    /**
      * Attribute code
      *
      * @var string
@@ -26,16 +19,14 @@ class EcomDev_Sphinx_Model_Index_Field_Option
     /**
      * @param string $type
      * @param string $name
-     * @param string[][] $options
      * @param string|null $attributeCode
      */
-    public function __construct($type, $name, $options, $attributeCode = null)
+    public function __construct($type, $name, $attributeCode = null)
     {
         if ($attributeCode === null) {
             $attributeCode = $name;
         }
         parent::__construct($type, $name);
-        $this->options = $options;
         $this->attributeCode = $attributeCode;
     }
 
@@ -50,29 +41,33 @@ class EcomDev_Sphinx_Model_Index_Field_Option
     {
         $value = $row->getValue($this->attributeCode, []);
 
-        if ($this->cachedScope !== $scope) {
-            $this->cachedScope = $scope;
-            $this->cachedScopeValue = 0;
-            if ($scope->hasFilter('store_id')) {
-                $this->cachedScopeValue = $scope->getFilter('store_id')->getValue();
-            }
+        /** @var EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav_Option_Hash $options */
+        $options = $row->getValue('_' . $this->attributeCode . '_label', false);
+
+        if (!$options) {
+            return '';
         }
 
-
-        if (!is_array($value)) {
-            return (string)$this->getSingleValue($value, $this->cachedScopeValue);
+        if (!is_array($value) && $this->isText()) {
+            return (string)$options->getOption($value, $this->attributeCode);
+        } elseif (!is_array($value)) {
+            return ($options->getOption($value, $this->attributeCode) !== false ? $value : '');
         }
 
         $result = [];
 
         foreach ($value as $optionId) {
-            $singleValue = $this->getSingleValue($optionId, $this->cachedScopeValue);
+            $label = $options->getOption($optionId, $this->attributeCode);
 
-            if ($singleValue === false) {
+            if ($label === false) {
                 continue;
             }
 
-            $result[] = $singleValue;
+            if ($this->isText()) {
+                $result[] = $label;
+            } else {
+                $result[] = $optionId;
+            }
         }
 
         if ($this->isText()) {
@@ -81,24 +76,5 @@ class EcomDev_Sphinx_Model_Index_Field_Option
         }
 
         return $result;
-    }
-
-    private function getSingleValue($optionId, $storeId)
-    {
-        if (!isset($this->options[$optionId])) {
-            return false;
-        }
-
-        if ($this->isText() && isset($this->options[$optionId][0])) {
-            return (
-                isset($this->options[$optionId][$storeId]) ?
-                    $this->options[$optionId][$storeId] :
-                    $this->options[$optionId][0]
-            );
-        } elseif (!$this->isText()) {
-            return $optionId;
-        }
-
-        return false;
     }
 }

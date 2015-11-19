@@ -151,16 +151,28 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
 
         $data = [];
 
+        $options = Mage::getResourceModel('ecomdev_sphinx/index_reader_plugin_attribute_eav_option_hash');
+
         foreach ($this->getMergedAttributeValues('attribute_id', $storeId) as $row) {
             $isMultiple = $this->attributeCache['info'][$row['attribute_id']]['is_multiple'];
             $attributeCode = $this->attributeCache['info'][$row['attribute_id']]['attribute_code'];
 
-            if ($isMultiple && $row['is_multi_value'] !== '0') {
-                $value = explode(',', $row['value']);
-                $data[$row['entity_id']][$attributeCode] = array_combine($value, $value);
+            if ($isMultiple) {
+                if ($row['is_multi_value'] !== '0') {
+                    $value = array_filter(explode(',', $row['value']));
+                    $value = array_combine($value, $value);
+                } else {
+                    $value = $row['value'];
+                }
+
+                $data[$row['entity_id']][$attributeCode] = $value;
+                $data[$row['entity_id']]['_' . $attributeCode . '_label'] = $options;
+                $options->addOptionValues($value, $attributeCode);
             } else {
                 $data[$row['entity_id']][$attributeCode] = $row['value'];
             }
+
+
         }
 
         if (!$this->attributeCache['has_multiple'] || $this->entityType !== Mage_Catalog_Model_Product::ENTITY) {
@@ -171,21 +183,32 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
             $attributeCode = $this->attributeCache['info'][$row['attribute_id']]['attribute_code'];
 
             if ($row['is_multi_value'] !== '0') {
-                $value = explode(',', $row['value']);
+                $value = array_filter(explode(',', $row['value']));
                 $value = array_combine($value, $value);
             } else {
                 $value = $row['value'];
             }
 
+            $data[$row['entity_id']]['_' . $attributeCode . '_labels'] = $options;
+            $options->addOptionValues($value, $attributeCode);
+
             if (isset($data[$row['entity_id']][$attributeCode])) {
                 $existingValue = $data[$row['entity_id']][$attributeCode];
 
-                if (!is_array($existingValue)) {
+                if (!is_array($existingValue) && empty($existingValue)) {
+                    $existingValue = [];
+                } elseif (!is_array($existingValue)) {
                     $existingValue = [$existingValue => $existingValue];
                 }
 
-                if (!is_array($value)) {
+                if (!is_array($value) && !empty($value)) {
                     $value = [$value => $value];
+                } elseif (!empty($value)) {
+                    $value = [];
+                }
+
+                if (empty($value) && empty($existingValue)) {
+                    $data[$row['entity_id']][$attributeCode] = [];
                 }
 
                 $data[$row['entity_id']][$attributeCode] = $existingValue + $value;
@@ -194,7 +217,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
             }
         }
 
-
+        $options->loadOptions($storeId);
         return $data;
     }
 
@@ -240,6 +263,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
         } else {
             $select->join(['entity_id' => $this->getMainMemoryTable('entity_id')], 'default_value.entity_id = entity_id.id', []);
         }
+
         $select->join(['attribute_id' => $this->getMemoryTableName($attributeTable)], 'default_value.attribute_id = attribute_id.id', [])
             ->columns([
                 'entity_id' => 'entity_id.id',
