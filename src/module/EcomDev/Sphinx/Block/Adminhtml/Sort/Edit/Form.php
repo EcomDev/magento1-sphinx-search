@@ -47,17 +47,7 @@ class EcomDev_Sphinx_Block_Adminhtml_Sort_Edit_Form
                         'required' => false
                     ]
                 )
-            ->_setUpFieldset('store_name', $this->__('Name in Store View'))
-        ;
-
-        foreach (Mage::app()->getStores(false) as $store) {
-            $this->_addField($store->getCode(), 'text', $store->getName(), [
-                'note' => $this->__('Leave empty to use default name'),
-                'required' => false
-            ]);
-        }
-
-        $this->_setUpFieldset('sort', $this->__('Sort Options'))
+            ->_setUpFieldset('sort', $this->__('Sort Options'))
             ->_addField('direction', 'multiselect', $this->__('Available Directions'), [
                 'option_model' => 'ecomdev_sphinx/source_sort_direction',
                 'required' => true
@@ -69,8 +59,16 @@ class EcomDev_Sphinx_Block_Adminhtml_Sort_Edit_Form
                     'orders' => $this->getDataObject()->getAvailableSortOptions(),
                     'row_template' => $this->getChildHtml('row')
                 ]
+            ])
+            ->_setUpFieldset('store_name', $this->__('Name in Store View'));
+
+        foreach (Mage::app()->getStores(false) as $store) {
+            $this->_addField($store->getCode(), 'text', $store->getName(), [
+                'note' => $this->__('Leave empty to use default name'),
+                'required' => false
             ]);
-        ;
+        }
+
 
         $this->getForm()->getElement('sort_direction')->setSize(2);
 

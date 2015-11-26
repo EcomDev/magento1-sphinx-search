@@ -18,7 +18,7 @@ class EcomDev_Sphinx_Model_Source_Attribute_Active
 
         $this->_options = [];
         foreach ($attributes as $code => $attribute) {
-            $this->_options[$code] = sprintf('%s (%s)', $attribute->getCode(), $attribute->getAttributeName());
+            $this->_options[$code] = sprintf('%s (%s)', $attribute->getAttributeCode(), $attribute->getAttributeName());
         }
 
         if ($proxy->additionalAttributes) {

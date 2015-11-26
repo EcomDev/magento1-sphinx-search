@@ -8,6 +8,9 @@ use EcomDev_Sphinx_Contract_FieldInterface as FieldInterface;
  * @method EcomDev_Sphinx_Model_Resource_Field getResource()
  * @method $this setConfiguration(array $configuration)
  * @method array getConfiguration()
+ * @method string getCode()
+ * @method string getType()
+ * @method string getName()
  */
 class EcomDev_Sphinx_Model_Field
     extends EcomDev_Sphinx_Model_AbstractModel
@@ -21,7 +24,7 @@ class EcomDev_Sphinx_Model_Field
      * @var string
      */
     protected $_cacheTag = self::CACHE_TAG;
-    
+
     /**
      * Initialization of resource
      */
@@ -81,11 +84,73 @@ class EcomDev_Sphinx_Model_Field
             },
             self::VALIDATE_FULL
         );
+
         return $this;
     }
 
     /**
-     * Returns available sort options
+     * Validates attribute data
+     *
+     * @return bool|string[]
+     */
+    public function validate()
+    {
+        $result = parent::validate();
+
+        if ($result === true) {
+            $typeModel = $this->getTypeModel();
+            if ($typeModel) {
+                $result = $typeModel->validate($this, $this->_validationMode);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Returns type model
+     *
+     * @return bool|EcomDev_Sphinx_Contract_Field_TypeInterface
+     */
+    public function getTypeModel()
+    {
+        return Mage::getSingleton('ecomdev_sphinx/source_field_type')->getType($this->getType());
+    }
+
+    /**
+     * Returns a facet instance
+     *
+     * @return bool|EcomDev_Sphinx_Model_Sphinx_FacetInterface
+     */
+    public function getFacet()
+    {
+        $typeModel = $this->getTypeModel();
+
+        if ($typeModel) {
+            return $typeModel->getFacet($this);
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns index field
+     *
+     * @return bool|EcomDev_Sphinx_Contract_FieldInterface
+     */
+    public function getIndexField()
+    {
+        $typeModel = $this->getTypeModel();
+
+        if ($typeModel) {
+            return $typeModel->getIndexField($this);
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns available virtual field option
      *
      * @return EcomDev_Sphinx_Model_Attribute[]
      */

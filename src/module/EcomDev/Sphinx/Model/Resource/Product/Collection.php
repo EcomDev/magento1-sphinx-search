@@ -62,7 +62,8 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
         
         if (isset($this->_productLimitationFilters['search_query'])) {
             $fields = $this->getScope()->getSearchableAttributes();
-            $query->match($fields, $this->_productLimitationFilters['search_query']);
+            $query->match(array_keys($fields), $this->_productLimitationFilters['search_query']);
+            $query->option('field_weights', $fields);
         }
 
         $this->_currentQuery = $query;

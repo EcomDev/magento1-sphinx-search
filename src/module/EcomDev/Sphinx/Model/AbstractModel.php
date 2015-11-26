@@ -71,7 +71,7 @@ abstract class EcomDev_Sphinx_Model_AbstractModel
         foreach ($this->_fieldValidation as $field => $validations) {
             $value = $this->getDataUsingMethod($field);
             foreach ($validations as $validator) {
-                if ($validation['mode'] = self::VALIDATE_FULL && $this->_validationMode === self::VALIDATE_LIGHT) {
+                if ($validator['mode'] == self::VALIDATE_FULL && $this->_validationMode === self::VALIDATE_LIGHT) {
                     continue;
                 }
                 

@@ -278,33 +278,80 @@ class EcomDev_Sphinx_Model_Scope
 
         if (Mage::app()->useCache('sphinx') && $data = Mage::app()->loadCache($cacheKey)) {
             $facets = unserialize($data);
-        } else {
-            $excludedFacets = $this->getConfigurationValue('general/limit_facet');
-            $facets = array();
-            foreach ($this->_getConfig()->getActiveAttributes() as $attribute) {
-                if (is_array($excludedFacets) && in_array($attribute->getId(), $excludedFacets)) {
-                    continue;
+            $this->_facets = $facets;
+            return $this;
+        }
+
+        $excludedFacets = $this->getConfigurationValue('general/limit_facet');
+        $includeFacets = $this->getConfigurationValue('general/include_facet');
+        $includeVirtual = $this->getConfigurationValue('general/virtual_field');
+
+        $facets = array();
+        $facetOrder = [];
+        foreach ($this->_getConfig()->getActiveAttributes() as $attribute) {
+            if (is_array($includeFacets) && !in_array($attribute->getId(), $includeFacets)) {
+                continue;
+            }
+
+            if (is_array($excludedFacets) && in_array($attribute->getId(), $excludedFacets)) {
+                continue;
+            }
+
+            if ($attribute->getIsLayered()
+                && ($facet = $attribute->getFacetModel())
+                && $facet->isAvailable()) {
+                $facets[$facet->getFilterField()] = $facet;
+                $facetOrder[$facet->getFilterField()] = $attribute->getPosition();
+                if ($this->getConfigurationValue('facet_sort_order/active')
+                    && $this->getConfigurationValue(
+                        sprintf('facet_sort_order/%s_override', $attribute->getAttributeCode()))) {
+                    $facetOrder[$facet->getFilterField()] = $this->getConfigurationValue(
+                        sprintf('facet_sort_order/%s_value', $attribute->getAttributeCode())
+                    );
                 }
-                if ($attribute->getIsLayered()
-                    && ($facet = $attribute->getFacetModel())
-                    && $facet->isAvailable()) {
-                    $facets[$facet->getFilterField()] = $facet;
+            }
+        }
+
+        foreach ($this->_getConfig()->getVirtualFields() as $virtualField) {
+            if (!is_array($includeVirtual) || !in_array($virtualField->getCode(), $includeVirtual)) {
+                continue;
+            }
+
+            if (($facet = $virtualField->getFacet())
+                && $facet->isAvailable()) {
+                $facets[$facet->getFilterField()] = $facet;
+                $facetOrder[$facet->getFilterField()] = $virtualField->getPosition();
+                if ($this->getConfigurationValue('facet_sort_order/active')
+                    && $this->getConfigurationValue(
+                        sprintf('facet_sort_order/%s_override', $virtualField->getAttributeCode()))) {
+                    $facetOrder[$facet->getFilterField()] = $this->getConfigurationValue(
+                        sprintf('facet_sort_order/%s_value', $virtualField->getAttributeCode())
+                    );
                 }
             }
         }
 
         $this->_facets = array();
-        $categoryFacet = $this->_getCategoryFacet();
-        $this->_facets[$categoryFacet->getFilterField()] = $categoryFacet;
-        $this->_facets += $facets;
+
+        if ($this->getConfigurationValue('category_filter/is_active')) {
+            $categoryFacet = $this->_getCategoryFacet();
+            $this->_facets[$categoryFacet->getFilterField()] = $categoryFacet;
+        }
+
+        asort($facetOrder);
+
+        foreach ($facetOrder as $key => $order) {
+            $this->_facets[$key] = $facets[$key];
+        }
 
         if (Mage::app()->useCache('sphinx')) {
             Mage::app()->saveCache(
-                serialize($facets),
+                serialize($this->_facets),
                 $cacheKey,
                 array(
                     self::CACHE_TAG,
-                    EcomDev_Sphinx_Model_Attribute::CACHE_TAG
+                    EcomDev_Sphinx_Model_Attribute::CACHE_TAG,
+                    EcomDev_Sphinx_Model_Field::CACHE_TAG
                 )
             );
         }
@@ -319,41 +366,37 @@ class EcomDev_Sphinx_Model_Scope
      */
     protected function _initSearchableAttributes()
     {
-        $cacheKey = sprintf(
-            self::CACHE_KEY_SEARCH,
-            $this->getId(),
-            Mage::app()->getStore()->getId(),
-            Mage::app()->getStore()->getRootCategoryId()
-        );
-
-        if (Mage::app()->useCache('sphinx') && $data = Mage::app()->loadCache($cacheKey)) {
-            $this->_searchableAttributes = unserialize($data);
-            return $this;
-        }
-
         $this->_searchableAttributes = array();
-        $this->_searchableAttributes[] = 's_anchor_category_names';
-        $this->_searchableAttributes[] = 'request_path';
 
-        foreach ($this->_getConfig()->getActiveAttributes() as $attribute) {
-            if ($attribute->isFulltext() && $attribute->isOption()) {
-                $this->_searchableAttributes[] = sprintf(
-                    's_%s_label', $attribute->getAttributeCode()
-                );
-            } elseif ($attribute->isFulltext()) {
-                $this->_searchableAttributes[] = $attribute->getAttributeCode();
+        if (!$this->getConfigurationValue('search_attribute/active')) {
+            $this->_searchableAttributes['s_anchor_category_names'] = 5;
+            $this->_searchableAttributes['request_path'] = 5;
+
+            foreach ($this->_getConfig()->getSearchableAttributes() as $attribute) {
+                if ($attribute->isOption()) {
+                    $this->_searchableAttributes[sprintf('s_%s_label', $attribute->getAttributeCode())] = 10;
+                } else {
+                    $this->_searchableAttributes[$attribute->getAttributeCode()] = 10;
+                }
             }
-        }
+        } else {
+            $options = ['s_anchor_category_names', 's_direct_category_names', 'request_path'];
+            $options = array_merge($options, array_keys($this->_getConfig()->getSearchableAttributes()));
 
-        if (Mage::app()->useCache('sphinx')) {
-            Mage::app()->saveCache(
-                serialize($this->_searchableAttributes),
-                $cacheKey,
-                array(
-                    self::CACHE_TAG,
-                    EcomDev_Sphinx_Model_Attribute::CACHE_TAG
-                )
-            );
+            $searchableAttributes = $this->_getConfig()->getSearchableAttributes();
+            foreach ($options as $attributeCode) {
+                $fieldCode = $attributeCode;
+                if (isset($searchableAttributes[$attributeCode])
+                    && $searchableAttributes[$attributeCode]->isOption()) {
+                    $fieldCode = sprintf('s_%s_label', $attributeCode);
+                }
+
+                if ($this->getConfigurationValue(sprintf('search_attribute/%s_active', $attributeCode))) {
+                    $this->_searchableAttributes[$fieldCode] = (int)$this->getConfigurationValue(
+                        sprintf('search_attribute/%s_weight', $attributeCode)
+                    );
+                }
+            }
         }
 
         return $this;

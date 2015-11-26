@@ -12,7 +12,8 @@ class EcomDev_Sphinx_Model_Index_Service
             'ecomdev_sphinx/index_field_provider_product_attribute_system',
             'ecomdev_sphinx/index_field_provider_product_attribute_price',
             'ecomdev_sphinx/index_field_provider_product_attribute_option',
-            'ecomdev_sphinx/index_field_provider_product_attribute_regular'
+            'ecomdev_sphinx/index_field_provider_product_attribute_regular',
+            'ecomdev_sphinx/index_field_provider_product_attribute_virtual'
         ],
         'category' => [
             'ecomdev_sphinx/index_field_provider_category'

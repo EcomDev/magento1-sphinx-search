@@ -35,26 +35,5 @@ abstract class EcomDev_Sphinx_Model_Sphinx_Facet_AbstractAttribute
             $label ?: $attribute->getAttribute()->getStoreLabel()
         );
     }
-
-    /**
-     * Facet SphinxQL for retrieval of data
-     *
-     * @return QueryBuilder
-     */
-    public function getFacetSphinxQL(QueryBuilder $baseQuery)
-    {
-        $query = clone $baseQuery;
-        $query->select(
-            $query->exprFormat('GROUPBY() as %s', $query->quoteIdentifier('value')),
-            $query->exprFormat('COUNT(*) as %s', $query->quoteIdentifier('count'))
-        );
-        
-        $query->from($this->_getIndexNames())
-            ->groupBy($this->getColumnName())
-            ->orderBy('count', 'desc')
-            ->limit(200);
-        
-        return $query;
-    }
 }
 

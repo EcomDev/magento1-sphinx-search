@@ -115,26 +115,6 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Category
     }
 
     /**
-     * Facet SphinxQL for retrieval of data
-     *
-     * @return \EcomDev_Sphinx_Model_Sphinx_Query_Builder
-     */
-    public function getFacetSphinxQL(QueryBuilder $baseQuery)
-    {
-        $query = clone $baseQuery;
-        $query->select(
-            $query->exprFormat('GROUPBY() as %s', $query->quoteIdentifier('value')),
-            $query->exprFormat('COUNT(*) as %s', $query->quoteIdentifier('count'))
-        );
-
-        $query->from($this->_getIndexNames())
-            ->groupBy($this->getColumnName())
-            ->orderBy('count', 'desc')
-            ->limit(200);
-        return $query;
-    }
-
-    /**
      * Filters sphinx response to match available ranges
      *
      * @param array $data

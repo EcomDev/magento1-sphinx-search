@@ -1,22 +1,35 @@
 <?php
-<?php
 
-use EcomDev_Sphinx_Contract_DataRowInterface as DataRowInterface;
-use EcomDev_Sphinx_Contract_Reader_ScopeInterface as ScopeInterface;
 
 class EcomDev_Sphinx_Model_Index_Field_Map_Alias
-    extends EcomDev_Sphinx_Model_Index_AbstractField
+    extends EcomDev_Sphinx_Model_Index_Field_Map_AbstractField
 {
     /**
-     * Source attributes
+     * Flag for allowing only option based functionality
      *
-     * @var string[]
+     * @var bool
      */
-    private $source;
+    protected $onlyOptions = true;
 
-    public function __construct($name, $source, $mapping)
+    /**
+     * Returns a mapped value for option
+     *
+     * @param string $optionId
+     * @param EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav_Option_Hash $options
+     * @return string
+     */
+    protected function getMappedValue($optionId, $options)
     {
-        parent::__construct(self::TYPE_ATTRIBUTE_MULTI, $name);
+        if ($options->getOption($optionId, $this->source) === false) {
+            return false;
+        }
 
+        if (isset($this->mapping['option_alias'][$optionId])) {
+            return $this->mapping['option_alias'][$optionId];
+        }
+
+        return $optionId;
     }
+
+
 }

@@ -86,11 +86,9 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
             [
                 'attribute_id',
                 'attribute_code',
+                'source_model',
                 'is_multiple' => $this->_getReadAdapter()->getCheckSql(
-                    $this->_getReadAdapter()->quoteInto(
-                        'source_model = ?',
-                        'eav/entity_attribute_source_table'
-                    ),
+                    'source_model = :source_table or (backend_type = :int and frontend_input = :select and source_model is null)',
                     '1',
                     '0'
                 )
@@ -106,7 +104,11 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
         $attributeIds = [];
         $multiValueAttributeIds = [];
 
-        foreach ($this->_getReadAdapter()->query($select) as $row) {
+        foreach ($this->_getReadAdapter()->query($select, [
+            'source_table' => 'eav/entity_attribute_source_table',
+            'int' => 'int',
+            'select' => 'select'
+        ]) as $row) {
             $this->attributeCache['info'][$row['attribute_id']] = $row;
 
             $attributeIds[] = $row['attribute_id'];
