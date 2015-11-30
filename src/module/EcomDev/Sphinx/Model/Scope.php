@@ -278,7 +278,14 @@ class EcomDev_Sphinx_Model_Scope
 
         if (Mage::app()->useCache('sphinx') && $data = Mage::app()->loadCache($cacheKey)) {
             $facets = unserialize($data);
-            $this->_facets = $facets;
+
+            $categoryData = [];
+            if ($this->getConfigurationValue('category_filter/is_active')) {
+                $categoryFacet = $this->_getCategoryFacet();
+                $categoryData = [$categoryFacet->getFilterField() => $categoryFacet];
+            }
+
+            $this->_facets = $categoryData + $facets;
             return $this;
         }
 
@@ -345,8 +352,14 @@ class EcomDev_Sphinx_Model_Scope
         }
 
         if (Mage::app()->useCache('sphinx')) {
+            $toSave = $this->_facets;
+
+            if (isset($categoryFacet)) {
+                unset($toSave[$categoryFacet->getFilterField()]);
+            }
+
             Mage::app()->saveCache(
-                serialize($this->_facets),
+                serialize($toSave),
                 $cacheKey,
                 array(
                     self::CACHE_TAG,
