@@ -311,9 +311,9 @@ class EcomDev_Sphinx_Model_Scope
                 $facetOrder[$facet->getFilterField()] = $attribute->getPosition();
                 if ($this->getConfigurationValue('facet_sort_order/active')
                     && $this->getConfigurationValue(
-                        sprintf('facet_sort_order/%s_override', $attribute->getAttributeCode()))) {
+                        sprintf('facet_sort_order/%s_override', $attribute->getId()))) {
                     $facetOrder[$facet->getFilterField()] = $this->getConfigurationValue(
-                        sprintf('facet_sort_order/%s_value', $attribute->getAttributeCode())
+                        sprintf('facet_sort_order/%s_value', $attribute->getId())
                     );
                 }
             }
@@ -330,9 +330,9 @@ class EcomDev_Sphinx_Model_Scope
                 $facetOrder[$facet->getFilterField()] = $virtualField->getPosition();
                 if ($this->getConfigurationValue('facet_sort_order/active')
                     && $this->getConfigurationValue(
-                        sprintf('facet_sort_order/%s_override', $virtualField->getAttributeCode()))) {
+                        sprintf('facet_sort_order/%s_override', $virtualField->getCode()))) {
                     $facetOrder[$facet->getFilterField()] = $this->getConfigurationValue(
-                        sprintf('facet_sort_order/%s_value', $virtualField->getAttributeCode())
+                        sprintf('facet_sort_order/%s_value', $virtualField->getCode())
                     );
                 }
             }
