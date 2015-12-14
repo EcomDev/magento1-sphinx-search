@@ -29,7 +29,7 @@ class EcomDev_Sphinx_Model_Field_Type_Range
             }
 
             if (isset($target['to']) && $target['to'] !== '') {
-                $map['sorted_ranges'][$index]['to'] = $target['from'];
+                $map['sorted_ranges'][$index]['to'] = $target['to'];
             }
 
             if (empty($map['sorted_ranges'][$index])) {
