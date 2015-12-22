@@ -466,8 +466,11 @@ class EcomDev_Sphinx_Model_Scope
             ->getProductCollection()
             ->initQuery(
                 $this->_baseQuery,
-                $this->_getConfig()->getContainer()->getIndexNames('product')
+                $this->_getConfig()->getContainer()->getIndexNames('product'),
+                $this->_getConfig()->getContainer()->getIndexColumns('product'),
+                $this->_getConfig()->getContainer()->getIndexFields('product')
             );
+
         Varien_Profiler::stop(__METHOD__ . '::queryBuilderInit');
 
         Varien_Profiler::start(__METHOD__ . '::priceOptions');
@@ -584,7 +587,12 @@ class EcomDev_Sphinx_Model_Scope
         Varien_Profiler::start(__METHOD__);
         $selectQuery = $this->getQueryBuilder();
 
-        $collection->initQuery($selectQuery, $this->_getConfig()->getContainer()->getIndexNames('product'));
+        $collection->initQuery(
+            $selectQuery,
+            $this->_getConfig()->getContainer()->getIndexNames('product'),
+            $this->_getConfig()->getContainer()->getIndexColumns('product'),
+            $this->_getConfig()->getContainer()->getIndexFields('product')
+        );
 
         if (is_callable($customCallback)) {
             call_user_func($customCallback, $collection, $selectQuery);

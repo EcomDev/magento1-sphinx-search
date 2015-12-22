@@ -50,6 +50,14 @@ class EcomDev_Sphinx_Model_Index_Field_Provider_Product_Attribute_Option
                     $code
                 );
             }
+
+            if ($attribute->getIsSort()) {
+                $fields[] = new FieldOption(
+                    FieldInterface::TYPE_ATTRIBUTE_STRING,
+                    sprintf('s_%s_sort', $code),
+                    $code
+                );
+            }
         }
 
         return $fields;
