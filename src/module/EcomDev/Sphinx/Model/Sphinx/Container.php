@@ -1,6 +1,7 @@
 <?php
 
-use \Foolz\SphinxQL\Drivers\Pdo\Connection as Connection;
+use \Foolz\SphinxQL\Drivers\Pdo\Connection as PdoConnection;
+use \Foolz\SphinxQL\Drivers\Mysqli\Connection as MysqliConnection;
 use EcomDev_Sphinx_Model_Sphinx_Query_Builder as QueryBuilder;
 use \Foolz\SphinxQL\Helper as SphinxHelper;
 
@@ -71,7 +72,12 @@ class EcomDev_Sphinx_Model_Sphinx_Container
     public function getConnection()
     {
         if ($this->_connection === null) {
-            $this->_connection = new Connection();
+            if (defined('HHVM_VERSION')) {
+                $this->_connection = new MysqliConnection();
+            } else {
+                $this->_connection = new PdoConnection();
+            }
+
             $this->_connection->setParam(
                 'host', $this->getConfig()->getConfig('host', 'connection')
             );
