@@ -157,6 +157,17 @@ USAGE;
         }
         parent::_parseArgs();
     }
+
+    /**
+     * Returns a lock model
+     *
+     * @return EcomDev_Sphinx_Model_Lock
+     */
+    protected function _getLock()
+    {
+        return Mage::getSingleton('ecomdev_sphinx/lock');
+    }
+
     /**
      * Retrieves arguments (with map)
      *
@@ -437,6 +448,11 @@ USAGE;
      */
     public function runIndexAll()
     {
+        if (!$this->_getLock()->lock()) {
+            fwrite($this->getOutput(), 'Index process is running at the moment, please try again later');
+            exit(1);
+        }
+
         $withKeywords = !$this->getArg('ignore-keyword', false);
         $this->getSphinxConfig()->controlIndexData(true, $this->getOutput(), $withKeywords);
     }
@@ -446,6 +462,11 @@ USAGE;
      */
     public function runIndexDelta()
     {
+        if (!$this->_getLock()->lock()) {
+            fwrite($this->getOutput(), 'Index process is running at the moment, please try again later');
+            exit(1);
+        }
+
         $this->getSphinxConfig()->controlIndexData(false, $this->getOutput());
     }
 

@@ -15,6 +15,7 @@ class EcomDev_Sphinx_Model_Sphinx_Config
     const TYPE_PRODUCT_SEARCH = 'product_search';
     const TYPE_CATEGORY = 'category';
     const TYPE_KEYWORD = 'keyword';
+    const XML_PATH_KEYWORD_SIZE = 'ecomdev_sphinx/export/keyword_size';
 
     /**
      * Contains an instance of index config model
@@ -369,10 +370,11 @@ class EcomDev_Sphinx_Model_Sphinx_Config
             $pendingRows = $item->getData('pending_rows');
             $storeId = (int)$item->getStoreId();
 
-            if (!$forceReindex && $configLimit && $pendingRows && $pendingRows < $configLimit
-                && $pendingRows < ($indexedRows / 2)) {
+            $isOutOfSync = ($pendingRows > 0 && $configLimit > 0 && $pendingRows < $configLimit);
+
+            if (!$forceReindex && $isOutOfSync && $pendingRows < ($indexedRows / 2)) {
                 $deltaList[] = [$indexName . '_delta', $indexName, $storeId];
-            } elseif ($forceReindex || !$indexedRows || ($configLimit && ($pendingRows > $configLimit)) || $pendingRows > ($indexedRows / 2)) {
+            } elseif ($forceReindex || $isOutOfSync) {
                 $forceReindexList[] = [$indexName, $storeId];
             }
         }
@@ -521,8 +523,16 @@ class EcomDev_Sphinx_Model_Sphinx_Config
      * @param int $limit
      * @return bool
      */
-    public function keywordImport($storeId, $limit = 100000)
+    public function keywordImport($storeId, $limit = null)
     {
+        if ($limit === null) {
+            $limit = (int)Mage::getStoreConfig(self::XML_PATH_KEYWORD_SIZE);
+        }
+
+        if ($limit <= 0) {
+            $limit = 5000;
+        }
+
         $type = self::TYPE_PRODUCT_SEARCH;
 
         $outputFile = tempnam(Mage::getConfig()->getVarDir('sphinx'), 'keyword_import');

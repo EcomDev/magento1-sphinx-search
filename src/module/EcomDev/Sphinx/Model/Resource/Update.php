@@ -43,7 +43,7 @@ class EcomDev_Sphinx_Model_Resource_Update extends Mage_Core_Model_Resource_Db_A
         while ($id = $stmt->fetchColumn()) {
             $ids[] = $id;
             if (count($ids) > $limit) {
-                $processor($ids);
+                $processor($ids, $type);
                 $ids = [];
             }
         }

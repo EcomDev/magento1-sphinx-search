@@ -16,28 +16,48 @@ class EcomDev_Sphinx_Model_Cron
         return Mage::getModel('ecomdev_sphinx/sphinx_config');
     }
 
+    /**
+     * Returns a lock model
+     *
+     * @return EcomDev_Sphinx_Model_Lock
+     */
+    protected function _getLock()
+    {
+        return Mage::getSingleton('ecomdev_sphinx/lock');
+    }
+
     public function checkIndex()
     {
-        $this->_getModel()->controlIndex();
+        if ($this->_getLock()->lock()) {
+            $this->_getModel()->controlIndex();
+        }
     }
 
     public function updateDeltas()
     {
-        $this->_getModel()->controlIndexData();
+        if ($this->_getLock()->lock()) {
+            $this->_getModel()->controlIndexData();
+        }
     }
 
     public function fullReindex()
     {
-        $this->_getModel()->controlIndex(true);
+        if ($this->_getLock()->lock()) {
+            $this->_getModel()->controlIndex(true);
+        }
     }
 
     public function validateCategoryChanges()
     {
-        Mage::getModel('ecomdev_sphinx/update')->notify('category');
+        if ($this->_getLock()->lock()) {
+            Mage::getModel('ecomdev_sphinx/update')->notify('category');
+        }
     }
 
     public function validateProductChanges()
     {
-        Mage::getModel('ecomdev_sphinx/update')->notify('product');
+        if ($this->_getLock()->lock()) {
+            Mage::getModel('ecomdev_sphinx/update')->notify('product');
+        }
     }
 }

@@ -50,8 +50,8 @@ class EcomDev_Sphinx_Model_Resource_Index_Keyword
     public function startImport($storeId)
     {
         $this->validateConnection();
-        $this->_getWriteAdapter()->beginTransaction();
         $this->_getWriteAdapter()->delete($this->getMainTable(), array('store_id = ?' => $storeId));
+        $this->_getWriteAdapter()->beginTransaction();
         return $this;
     }
 

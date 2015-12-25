@@ -25,15 +25,16 @@ class EcomDev_Sphinx_Model_Index_Keyword
     }
 
     /**
-     * Processes a multi-dimentional array or an iterator that returns each entry as:
+     * Processes a multi-dimensional array or an iterator that returns each entry as:
      *
      * [keyword, frequency]
      *
      * @param int $storeId
      * @param Traversable|array $data
+     * @param int $batchSize
      * @return $this
      */
-    public function importData($data, $storeId, $batchSize = 500)
+    public function importData($data, $storeId, $batchSize = 1000)
     {
         $this->startImport($storeId);
 

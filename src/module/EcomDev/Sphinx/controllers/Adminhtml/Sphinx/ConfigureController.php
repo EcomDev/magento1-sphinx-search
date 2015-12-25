@@ -64,7 +64,7 @@ class EcomDev_Sphinx_Adminhtml_Sphinx_ConfigureController
      */
     protected function _getObjectTitle()
     {
-        // TODO: Implement _getObjectTitle() method.
+        return '';
     }
     
     
@@ -88,20 +88,38 @@ class EcomDev_Sphinx_Adminhtml_Sphinx_ConfigureController
         $this->_manageAction(['controlIndex', 'reindexAll'], $this->__('All indexes has been re-indexed'));
     }
 
+    /**
+     * Returns a lock model
+     *
+     * @return EcomDev_Sphinx_Model_Lock
+     */
+    protected function _getLock()
+    {
+        return Mage::getSingleton('ecomdev_sphinx/lock');
+    }
 
+    /**
+     * @param $method
+     * @param $successText
+     */
     protected function _manageAction($method, $successText)
     {
         try {
-            if (is_array($method)) {
-                foreach ($method as $sequnce) {
-                    $this->_getModel()->$sequnce();
+            if ($this->_getLock()->lock()) {
+                if (is_array($method)) {
+                    foreach ($method as $sequnce) {
+                        $this->_getModel()->$sequnce();
+                    }
+                } else {
+                    $this->_getModel()->$method();
                 }
+
+                $this->_getSession()->addSuccess($successText);
             } else {
-                $this->_getModel()->$method();
+                $this->_getSession()->addWarning(
+                    $this->__('Sphinx index process is running at the moment, please try again later.')
+                );
             }
-
-
-            $this->_getSession()->addSuccess($successText);
         } catch (Exception $e) {
             Mage::logException($e);
             $this->_getSession()->addError($e->getMessage());

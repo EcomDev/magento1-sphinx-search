@@ -418,6 +418,7 @@
             </connection>
             <export>
                 <reader_batch_size>1000</reader_batch_size>
+                <keyword_size>5000</keyword_size>
             </export>
             <general>
                 <active>0</active>
