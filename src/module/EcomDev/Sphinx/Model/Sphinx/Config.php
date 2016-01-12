@@ -446,6 +446,10 @@ class EcomDev_Sphinx_Model_Sphinx_Config
             fwrite($output, $result[0]);
         }
 
+        if ($result[1] === 0 && strpos($additionalArguments, '--rotate') !== false) {
+            $this->waitForRotate($indexName, $storeId, $output);
+        }
+
         return $result[1] == 0;
     }
 
@@ -473,6 +477,14 @@ class EcomDev_Sphinx_Model_Sphinx_Config
         $response = $this->executeIndexerCommand(sprintf(
             '%s %s', implode(' ', $renderedIndexNames), $additionalArguments
         ));
+
+
+        if (strpos($additionalArguments, '--rotate') !== false) {
+            foreach ($indexNames as $info) {
+                list($name, $storeId) = $info;
+                $this->waitForRotate($name, $storeId, $output);
+            }
+        }
 
         if (is_resource($output)) {
             fwrite($output, $response);
@@ -573,6 +585,10 @@ class EcomDev_Sphinx_Model_Sphinx_Config
 
         if (is_resource($output)) {
             fwrite($output, $result[0]);
+        }
+
+        if ($result[1] === 0 && strpos($additionalArguments, '--rotate') !== false) {
+            $this->waitForRotate($targetIndex, $storeId, $output);
         }
 
         return $result[1] == 0;
@@ -774,5 +790,44 @@ class EcomDev_Sphinx_Model_Sphinx_Config
             unlink($this->_privateKeyFile);
         }
     }
-    
+
+    /**
+     * Wait for rotation of indexer
+     *
+     * @param string $indexName
+     * @param string $storeId
+     * @param null $output
+     * @param int $attempts
+     * @return $this
+     */
+    public function waitForRotate($indexName, $storeId, $output = null, $attempts = 20)
+    {
+        $expectedFileName = sprintf(
+            '%s_%s.new.', $indexName, $storeId
+        );
+
+        $command = sprintf(
+            'ls %s | grep "%s"',
+            $this->_getConfig()->getIndexPath(),
+            $expectedFileName
+        );
+
+        while ($attempts > 0) {
+            $result = $this->_execWithExitCode($command);
+            if ($result[1] !== 0) {
+                break;
+            }
+
+            if (is_resource($output)) {
+                fwrite($output, 'Waiting for rotate process to finish, as such files are found: ' . PHP_EOL);
+                fwrite($output, $result[0]);
+            }
+
+            $attempts--;
+            sleep(1);
+        }
+
+        return $this;
+    }
+
 }
