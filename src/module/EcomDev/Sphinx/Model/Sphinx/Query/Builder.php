@@ -5,6 +5,14 @@ use \Foolz\SphinxQL\SphinxQL;
 class EcomDev_Sphinx_Model_Sphinx_Query_Builder
     extends SphinxQL 
 {
+    public function __construct(\Foolz\SphinxQL\Drivers\ConnectionInterface $connection, $static)
+    {
+        parent::__construct($connection, $static);
+        $this->escape_full_chars['*'] = '\\*';
+        $this->escape_full_chars['.'] = '\\.';
+    }
+
+
     /**
      * Makes possible to add more select fields 
      * after initial fields was added
@@ -58,17 +66,23 @@ class EcomDev_Sphinx_Model_Sphinx_Query_Builder
     {
         $query = '';
 
-        if ( ! empty($this->match)) {
+        if (!empty($this->match)) {
             $query .= 'WHERE MATCH(';
 
             $matched = array();
 
             foreach ($this->match as $match) {
                 $pre = '';
-                if (empty($match['column'])) {
+                if (is_callable($match['column'])) {
+                    $sub = new Match($this);
+                    call_user_func($match['column'], $sub);
+                    $pre .= $sub->compile()->getCompiled();
+                } elseif ($match['column'] instanceof Match) {
+                    $pre .= $match['column']->compile()->getCompiled();
+                } elseif (empty($match['column'])) {
                     $pre .= '';
                 } elseif (is_array($match['column'])) {
-                    $pre .= '@('.implode(',',$match['column']).') ';
+                    $pre .= '@('.implode(',', $match['column']).') ';
                 } else {
                     $pre .= '@'.$match['column'].' ';
                 }
@@ -87,9 +101,24 @@ class EcomDev_Sphinx_Model_Sphinx_Query_Builder
             } else {
                 $matched = '(' . implode(') (', $matched ) .')';
             }
-            $query .= $this->getConnection()->escape(trim($matched)).') ';
+            $query .= $this->connection->quote($matched) . ') ';
         }
-        
+
         return $query;
     }
+
+    /**
+     * Escapes the query for the MATCH() function
+     *
+     * @param string $string The string to escape for the MATCH
+     *
+     * @return string The escaped string
+     */
+    public function escapeMatch($string)
+    {
+        $match = implode('', array_keys($this->escape_full_chars));
+        return addcslashes($string, $match);
+    }
+
+
 }

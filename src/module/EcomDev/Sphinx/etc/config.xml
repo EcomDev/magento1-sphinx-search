@@ -423,6 +423,7 @@
             <general>
                 <active>0</active>
                 <search_active>1</search_active>
+                <max_matches>5000</max_matches>
             </general>
         </ecomdev_sphinx>
     </default>

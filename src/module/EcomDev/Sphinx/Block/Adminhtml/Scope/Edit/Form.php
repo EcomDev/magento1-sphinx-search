@@ -28,7 +28,9 @@ class EcomDev_Sphinx_Block_Adminhtml_Scope_Edit_Form
         $nonRequired = array('required' => false);
         $this
 
-            ->_setUpFieldset('general', $this->__('General Filters Configuration'))
+            ->_setUpFieldset('general', $this->__('General Results Configuration'))
+                ->_addField('max_matches', 'text', $this->__('Max Matches'))
+                ->_fieldComment('max_matches', $this->__('Maximum number of results returned by Sphinx. Overrides default value in System / Configuration'))
                 ->_addField('include_facet', 'multiselect', $this->__('Include Specified Facets'), array(
                         'option_model' => 'ecomdev_sphinx/source_attribute_layered',
                         'note' => $this->__('Specifing value in Including rule, overrides excluding rule')

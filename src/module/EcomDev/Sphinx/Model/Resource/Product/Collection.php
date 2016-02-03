@@ -89,7 +89,12 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
                 }
             }
 
-            $query->match(array_keys($fields), $this->_productLimitationFilters['search_query']);
+            $query->match(
+                array_keys($fields),
+                $this->getScope()->prepareMatchString($this->_productLimitationFilters['search_query'], $query),
+                true
+            );
+
             $query->option('field_weights', $fields);
         }
 
@@ -217,6 +222,13 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
 
         
         if ($scope->getPageSize() && $scope->getCurrentPage()) {
+
+            $lastItem = $scope->getPageSize() * $scope->getCurrentPage();
+
+            if ($lastItem > $scope->getMaxMatches()) {
+                $scope->setCurrentPage(floor($scope->getMaxMatches() / $scope->getPageSize()));
+            }
+
             $this->setPageSize((int)$scope->getPageSize());
             $this->setCurPage((int)$scope->getCurrentPage());
             

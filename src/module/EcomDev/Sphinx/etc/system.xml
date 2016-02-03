@@ -372,6 +372,15 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </scope>
+                        <max_matches>
+                            <label>Maximum Matches</label>
+                            <frontend_type>text</frontend_type>
+                            <comment>Maximum matches number for a query, change it to a reasonable number, depending on your dataset. Can be overridden for a particular scope.</comment>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </max_matches>
                     </fields>
                 </general>
             </groups>

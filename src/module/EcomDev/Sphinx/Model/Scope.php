@@ -21,6 +21,7 @@ class EcomDev_Sphinx_Model_Scope
     
     const CACHE_KEY_FACETS = 'sphinx_scope_facet_%s_%s_%s';
     const CACHE_KEY_SEARCH = 'sphinx_scope_search_%s_%s_%s';
+    const DEFAULT_MAX_MATCHES = 1000;
 
     /**
      * Layer instance
@@ -619,6 +620,60 @@ class EcomDev_Sphinx_Model_Scope
     }
 
     /**
+     * Returns max matches
+     *
+     * @return int
+     */
+    public function getMaxMatches()
+    {
+        $matches = (int)$this->getConfigurationValue('general/max_matches');
+
+        if ($matches > 0) {
+            return $matches;
+        }
+
+        $matches = (int)$this->_getConfig()->getConfig('max_matches', 'general');
+
+        if ($matches > 0) {
+            return $matches;
+        }
+
+        return self::DEFAULT_MAX_MATCHES;
+    }
+
+
+    /**
+     * Returns query for match expression
+     *
+     * @param $text
+     * @param EcomDev_Sphinx_Model_Sphinx_Query_Builder $query
+     * @return string
+     */
+    public function prepareMatchString($text, QueryBuilder $query)
+    {
+        $text = strtr(
+            $text,
+            [
+                "\n" => ' ',
+                "\r" => ' ',
+                "\t" => ' '
+            ]
+        );
+
+        $keywords = array_filter(explode(' ', $text), function ($v) { return $v !== ''; });
+
+        if (empty($keywords)) {
+            $keywords[] = '';
+        }
+
+        $formatWord = function ($word) use ($query) {
+            return sprintf('"%s"', addcslashes($word, '"*'));
+        };
+
+        return implode(' ', array_map($formatWord, $keywords));
+    }
+
+    /**
      * Fetches data from sphinx
      * 
      * @return $this
@@ -655,6 +710,7 @@ class EcomDev_Sphinx_Model_Scope
         }
 
         $prevQuery = $selectQuery;
+        $selectQuery->option('max_matches', $this->getMaxMatches());
 
         $prevQuery = $prevQuery
             ->enqueue($this->_getConfig()->getContainer()->getHelper()->showMeta());
