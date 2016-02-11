@@ -122,40 +122,48 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
                 'keyword', $baseType, $storeId
             );
 
+            $stemmerConfig = [];
+
+            if (Mage::getStoreConfigFlag('ecomdev_sphinx/general/stemmer', $storeId)) {
+                $morphology = Mage::getStoreConfig('ecomdev_sphinx/general/stemmer_morphology', $storeId);
+                $stemmerConfig = [3 => sprintf('morphology = %s', $morphology)];
+            }
+
+            $stemmer = $this->_getConfig()->getConfig('');
             $config['indexes'][sprintf('category_%s', $storeId)] = array(
                 sprintf('source = category_%s', $storeId),
                 sprintf('path = %s/%s_%s', $indexPath, 'category', $storeId)
-            );
+            ) + $stemmerConfig;
 
             $config['indexes'][sprintf('category_delta_%s', $storeId)] = array(
                 sprintf('source = category_delta_%s', $storeId),
                 sprintf('path = %s/%s_%s', $indexPath, 'category_delta', $storeId)
-            );
+            ) + $stemmerConfig;
 
             $config['indexes'][sprintf('product_%s', $storeId)] = array(
                 sprintf('source = product_%s', $storeId),
                 sprintf('path = %s/%s_%s', $indexPath, 'product', $storeId)
-            );
+            ) + $stemmerConfig;
 
             $config['indexes'][sprintf('product_search_%s', $storeId)] = array(
                 sprintf('source = product_search_%s', $storeId),
                 sprintf('path = %s/%s_%s', $indexPath, 'product_search', $storeId)
-            );
+            ) + $stemmerConfig;
 
             $config['indexes'][sprintf('product_delta_%s', $storeId)] = array(
                 sprintf('source = product_delta_%s', $storeId),
                 sprintf('path = %s/%s_%s', $indexPath, 'product_delta', $storeId)
-            );
+            ) + $stemmerConfig;
 
             $config['indexes'][sprintf('product_search_delta_%s', $storeId)] = array(
                 sprintf('source = product_search_delta_%s', $storeId),
                 sprintf('path = %s/%s_%s', $indexPath, 'product_search_delta', $storeId)
-            );
+            ) + $stemmerConfig;
 
             $config['indexes'][sprintf('keyword_%s', $storeId)] = array(
                 sprintf('source = keyword_%s', $storeId),
                 sprintf('path = %s/%s_%s', $indexPath, 'keyword', $storeId)
-            );
+            ) + $stemmerConfig;
         }
 
         return $config;

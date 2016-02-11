@@ -248,6 +248,8 @@ USAGE;
 
     /**
      * Returns index configuration model
+     *
+     * @return EcomDev_Sphinx_Model_Sphinx_Config_Index
      */
     private function getIndexConfig()
     {

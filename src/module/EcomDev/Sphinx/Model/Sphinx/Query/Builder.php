@@ -5,7 +5,7 @@ use \Foolz\SphinxQL\SphinxQL;
 class EcomDev_Sphinx_Model_Sphinx_Query_Builder
     extends SphinxQL 
 {
-    public function __construct(\Foolz\SphinxQL\Drivers\ConnectionInterface $connection, $static)
+    public function __construct(\Foolz\SphinxQL\Drivers\ConnectionInterface $connection, $static = false)
     {
         parent::__construct($connection, $static);
         $this->escape_full_chars['*'] = '\\*';
