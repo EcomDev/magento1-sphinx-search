@@ -88,7 +88,9 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
                 'attribute_code',
                 'source_model',
                 'is_multiple' => $this->_getReadAdapter()->getCheckSql(
-                    'source_model = :source_table or (backend_type = :int and frontend_input = :select and source_model is null)',
+                    'source_model = :source_table or '
+                    . ' (backend_type = :int and frontend_input = :select and source_model is null) or '
+                    . ' (backend_type = :varchar and frontend_input = :multiselect and source_model is null)',
                     '1',
                     '0'
                 )
@@ -98,7 +100,6 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
         $select->where('attribute.entity_type_id = ?', $this->entityTypeId);
         $select->where('attribute.attribute_code IN(?)', $attributeCodes);
 
-
         $this->attributeCache['info'] = [];
         $this->attributeCache['has_multiple'] = false;
         $attributeIds = [];
@@ -107,7 +108,9 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
         foreach ($this->_getReadAdapter()->query($select, [
             'source_table' => 'eav/entity_attribute_source_table',
             'int' => 'int',
-            'select' => 'select'
+            'select' => 'select',
+            'varchar' => 'varchar',
+            'multiselect' => 'multiselect'
         ]) as $row) {
             $this->attributeCache['info'][$row['attribute_id']] = $row;
 
@@ -271,7 +274,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
                 'entity_id' => 'entity_id.id',
                 'attribute_id' => 'default_value.attribute_id',
                 'value' => new Zend_Db_Expr('TRIM(default_value.value)'),
-                'is_multi_value' => new Zend_Db_Expr('LOCATE(default_value.value, \',\')'),
+                'is_multi_value' => new Zend_Db_Expr('LOCATE(\',\', default_value.value)'),
             ])
             ->where('default_value.store_id = ?', $storeId)
         ;
