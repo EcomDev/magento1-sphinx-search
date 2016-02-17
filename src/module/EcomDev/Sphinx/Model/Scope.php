@@ -649,7 +649,7 @@ class EcomDev_Sphinx_Model_Scope
      * @param EcomDev_Sphinx_Model_Sphinx_Query_Builder $query
      * @return string
      */
-    public function prepareMatchString($text, QueryBuilder $query)
+    public function prepareMatchString($text, $query)
     {
         $text = strtr(
             $text,
