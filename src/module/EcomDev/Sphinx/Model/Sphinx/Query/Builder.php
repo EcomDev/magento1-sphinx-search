@@ -116,6 +116,10 @@ class EcomDev_Sphinx_Model_Sphinx_Query_Builder
      */
     public function escapeMatch($string)
     {
+        if ($string instanceof \Foolz\SphinxQL\Expression) {
+            return $string->value();
+        }
+
         $match = implode('', array_keys($this->escape_full_chars));
         return addcslashes($string, $match);
     }

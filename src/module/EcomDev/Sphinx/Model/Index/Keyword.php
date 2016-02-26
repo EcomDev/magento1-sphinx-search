@@ -144,10 +144,7 @@ class EcomDev_Sphinx_Model_Index_Keyword
         $keyword = array_pop($keywords);
 
         $suggestedKeyword = $this->completeKeyword($keyword, $scope);
-
-        if (!$suggestedKeyword) {
-            $suggestedKeyword = $this->findKeywordByTrigram($keyword, $scope);
-        }
+        $suggestedKeyword = $this->findKeywordByTrigram($suggestedKeyword, $scope);
 
         $result = [];
 
@@ -167,6 +164,10 @@ class EcomDev_Sphinx_Model_Index_Keyword
      */
     protected function completeKeyword($keyword, $scope)
     {
+        if (strlen($keyword) > 5) {
+            return $keyword;
+        }
+
         $query = $scope->getQueryBuilder();
 
         $query->select('keyword')
@@ -175,14 +176,14 @@ class EcomDev_Sphinx_Model_Index_Keyword
             ->where('length', 'BETWEEN', [strlen($keyword), strlen($keyword) + 5])
             ->orderBy($query->expr('weight()'), 'desc')
             ->orderBy('frequency', 'desc')
-            ->limit(10);
+            ->limit(1);
 
         $result = [];
         foreach ($query->execute()->store() as $item) {
-            $result[] = $item['keyword'];
+            return $item['keyword'];
         }
 
-        return $result;
+        return $keyword;
     }
 
     /**
@@ -195,29 +196,30 @@ class EcomDev_Sphinx_Model_Index_Keyword
     protected function findKeywordByTrigram($keyword, $scope)
     {
         $trigrams = implode(' ', $this->createTrigram($keyword));
+        $keywordLength = strlen($keyword);
         $query = $scope->getQueryBuilder();
         $query
-            ->select('keyword')
+            ->select('keyword', $query->exprFormat('weight()+2-abs(length-%d) as rank', $keywordLength))
             ->from($scope->getContainer()->getIndexNames('keyword'))
-            ->match([], $query->expr(sprintf('"%s"/1', $query->escapeMatch($trigrams))))
-            ->where('length', 'BETWEEN', [strlen($keyword), strlen($keyword) + 5])
-            ->orderBy($query->expr('weight()'), 'desc')
-            ->orderBy('length', 'desc')
+            ->match('trigram_list', $query->expr(sprintf('"%s"/2', $query->escapeMatch($trigrams))))
+            ->where('length', 'BETWEEN', [$keywordLength - 2, $keywordLength + 5])
+            ->orderBy('rank', 'desc')
             ->orderBy('frequency', 'desc')
             ->option('ranker', 'wordcount')
-            ->option('field_weights', ['keyword' => 4, 'trigram_list' => 2])
-            ->limit(10);
+            ->option('field_weights', ['trigram_list' => 2])
+            ->limit(30);
 
         $result = [];
         foreach ($query->execute()->store() as $item) {
             $levenstein = levenshtein($item['keyword'], $keyword);
-            if ($levenstein > strlen($keyword) / 2) {
-                continue;
-            }
             $result[$item['keyword']] = $levenstein;
         }
 
         asort($result);
+
+        if ($result > 10) {
+            array_slice($result, 0, 10);
+        }
 
         return array_keys($result);
     }
