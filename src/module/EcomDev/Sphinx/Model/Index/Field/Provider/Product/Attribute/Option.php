@@ -31,31 +31,30 @@ class EcomDev_Sphinx_Model_Index_Field_Provider_Product_Attribute_Option
     {
         $attributes = $this->sphinxConfig->getAttributesByType('option');
         $attributeIds = [];
-        $options = [];
 
         foreach ($attributes as $attribute) {
             $attributeIds[] = $attribute->getId();
-        }
-
-        if ($attributeIds) {
-            $options = $this->sphinxConfig->getAttributeOptions(
-                $attributeIds, Mage_Catalog_Model_Product::ENTITY
-            );
         }
 
         $fields = [];
         foreach ($attributes as $code => $attribute) {
             $fields[] = new FieldOption(
                 FieldInterface::TYPE_ATTRIBUTE_MULTI,
-                $code,
-                isset($options[$attribute->getId()]) ? $options[$attribute->getId()] : []
+                $code
             );
 
             if ($attribute->getIsFulltext()) {
                 $fields[] = new FieldOption(
                     FieldInterface::TYPE_FIELD,
                     sprintf('s_%s_label', $code),
-                    isset($options[$attribute->getId()]) ? $options[$attribute->getId()] : [],
+                    $code
+                );
+            }
+
+            if ($attribute->getIsSort()) {
+                $fields[] = new FieldOption(
+                    FieldInterface::TYPE_ATTRIBUTE_STRING,
+                    sprintf('s_%s_sort', $code),
                     $code
                 );
             }

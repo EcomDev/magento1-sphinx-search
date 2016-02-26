@@ -10,13 +10,6 @@ class EcomDev_Sphinx_Model_Index_Field_Option
     extends EcomDev_Sphinx_Model_Index_AbstractField
 {
     /**
-     * List of options per store view
-     *
-     * @var string[][]
-     */
-    private $options;
-
-    /**
      * Attribute code
      *
      * @var string
@@ -26,16 +19,14 @@ class EcomDev_Sphinx_Model_Index_Field_Option
     /**
      * @param string $type
      * @param string $name
-     * @param string[][] $options
      * @param string|null $attributeCode
      */
-    public function __construct($type, $name, $options, $attributeCode = null)
+    public function __construct($type, $name, $attributeCode = null)
     {
         if ($attributeCode === null) {
             $attributeCode = $name;
         }
         parent::__construct($type, $name);
-        $this->options = $options;
         $this->attributeCode = $attributeCode;
     }
 
@@ -50,40 +41,40 @@ class EcomDev_Sphinx_Model_Index_Field_Option
     {
         $value = $row->getValue($this->attributeCode, []);
 
-        if (!is_array($value)) {
-            $value = (array)$value;
+        /** @var EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav_Option_Hash $options */
+        $options = $row->getValue('_' . $this->attributeCode . '_label', false);
+
+        if (!$options) {
+            return '';
+        }
+
+        if (!is_array($value) && $this->isText()) {
+            return (string)$options->getOption($value, $this->attributeCode);
+        } elseif (!is_array($value)) {
+            return ($options->getOption($value, $this->attributeCode) !== false ? $value : '');
         }
 
         $result = [];
 
-        $storeId = 0;
-        if ($scope->hasFilter('store_id')) {
-            $storeId = $scope->getFilter('store_id')->getValue();
-        }
-
         foreach ($value as $optionId) {
-            if (!isset($this->options[$optionId])) {
+            $label = $options->getOption($optionId, $this->attributeCode);
+
+            if ($label === false) {
                 continue;
             }
 
-            if ($this->getType() === self::TYPE_FIELD && isset($this->options[$optionId][0])) {
-                $result[] = (
-                    isset($this->options[$optionId][$storeId]) ?
-                    $this->options[$optionId][$storeId] :
-                    $this->options[$optionId][0]
-                );
-            } elseif ($this->getType() !== self::TYPE_FIELD) {
+            if ($this->isText()) {
+                $result[] = $label;
+            } else {
                 $result[] = $optionId;
             }
         }
 
-        if ($this->getType() === self::TYPE_FIELD) {
+        if ($this->isText()) {
             // Just string output for a field
             return implode(' ', $result);
         }
 
         return $result;
     }
-
-
 }

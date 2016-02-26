@@ -6,6 +6,8 @@ use EcomDev_Sphinx_Contract_Reader_ScopeInterface as ScopeInterface;
 class EcomDev_Sphinx_Model_Index_Field
     extends EcomDev_Sphinx_Model_Index_AbstractField
 {
+
+
     /**
      * Default field value
      *
@@ -50,7 +52,7 @@ class EcomDev_Sphinx_Model_Index_Field
     {
         $value = $row->getValue($this->source, $this->default);
 
-        if ($this->getType() === self::TYPE_ATTRIBUTE_TIMESTAMP) {
+        if ($this->isTimestamp() && $value) {
             $value = strtotime($value);
         }
 

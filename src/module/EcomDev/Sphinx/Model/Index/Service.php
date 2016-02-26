@@ -5,12 +5,15 @@ use Mage_Catalog_Model_Category as Category;
 
 class EcomDev_Sphinx_Model_Index_Service
 {
+    const XML_PATH_BATCH_SIZE = 'ecomdev_sphinx/export/reader_batch_size';
+
     protected $configurationProviders = [
         'product' => [
             'ecomdev_sphinx/index_field_provider_product_attribute_system',
             'ecomdev_sphinx/index_field_provider_product_attribute_price',
             'ecomdev_sphinx/index_field_provider_product_attribute_option',
-            'ecomdev_sphinx/index_field_provider_product_attribute_regular'
+            'ecomdev_sphinx/index_field_provider_product_attribute_regular',
+            'ecomdev_sphinx/index_field_provider_product_attribute_virtual'
         ],
         'category' => [
             'ecomdev_sphinx/index_field_provider_category'
@@ -148,6 +151,10 @@ class EcomDev_Sphinx_Model_Index_Service
             'ecomdev_sphinx/index_reader',
             [$this->getPluginContainer(), $this->getDataRowFactory(), $this->getProvider($type)]
         );
+
+        if (Mage::getStoreConfig(self::XML_PATH_BATCH_SIZE)) {
+            $reader->setBatchSize((int)Mage::getStoreConfig(self::XML_PATH_BATCH_SIZE));
+        }
 
         if ($reader && isset($this->readerPlugins[$type])) {
             foreach ($this->readerPlugins[$type] as $pluginInfo) {

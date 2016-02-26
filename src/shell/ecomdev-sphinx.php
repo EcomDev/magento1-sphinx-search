@@ -38,14 +38,16 @@ class EcomDev_Sphinx_Shell extends Mage_Shell_Abstract
             'visibility' => 'v',
             'delta' => 'd',
             'format' => 'f',
-            'output' => 'o'
+            'output' => 'o',
+            'header' => 't'
         ),
         'export:category' => array(
             'store' => 's',
             'visibility' => 'v',
             'delta' => 'd',
             'format' => 'f',
-            'output' => 'o'
+            'output' => 'o',
+            'header' => 't'
         ),
         'export:keyword' => array(
             'store' => 's',
@@ -95,6 +97,7 @@ Defined <action>s:
     -d --delta          Is it a delta index?
     -f --format         Format of the output, allowed values: csv, tsv, xml  [required]
     -o --output         Output filename, by default outputs to STDOUT
+    -t --header         Output header of CSV or TSV file
 
   export:category   Exports category index
 
@@ -102,6 +105,7 @@ Defined <action>s:
     -d --delta          Is it a delta index?
     -f --format         Format of the output, allowed values: csv, tsv, xml  [required]
     -o --output         Output file, by default outputs to STDOUT
+    -t --header         Output header of CSV or TSV file
 
   export:keyword    Export keyword index
 
@@ -153,6 +157,17 @@ USAGE;
         }
         parent::_parseArgs();
     }
+
+    /**
+     * Returns a lock model
+     *
+     * @return EcomDev_Sphinx_Model_Lock
+     */
+    protected function _getLock()
+    {
+        return Mage::getSingleton('ecomdev_sphinx/lock');
+    }
+
     /**
      * Retrieves arguments (with map)
      *
@@ -188,6 +203,8 @@ USAGE;
         if ($reflection->hasMethod($methodName)) {
             try {
                 Mage::app('admin');
+                ini_set('memory_limit', '-1');
+                ob_implicit_flush(1);
                 $this->$methodName();
             } catch (Exception $e) {
                 fwrite(STDERR, "Error: \n{$e->getMessage()}\n");
@@ -231,6 +248,8 @@ USAGE;
 
     /**
      * Returns index configuration model
+     *
+     * @return EcomDev_Sphinx_Model_Sphinx_Config_Index
      */
     private function getIndexConfig()
     {
@@ -362,6 +381,9 @@ USAGE;
 
         $scope = $this->getService()->getProductScope($store, $visibility, $updatedAt);
         $writer = $this->getService()->getWriter($this->getArg('format'), $output);
+        if ($writer instanceof EcomDev_Sphinx_Contract_Writer_HeaderAwareInterface && $this->getArg('header')) {
+            $writer->setOutputHeaders(true);
+        }
         $writer->process($reader, $scope);
     }
 
@@ -428,6 +450,11 @@ USAGE;
      */
     public function runIndexAll()
     {
+        if (!$this->_getLock()->lock()) {
+            fwrite($this->getOutput(), 'Index process is running at the moment, please try again later');
+            exit(1);
+        }
+
         $withKeywords = !$this->getArg('ignore-keyword', false);
         $this->getSphinxConfig()->controlIndexData(true, $this->getOutput(), $withKeywords);
     }
@@ -437,6 +464,11 @@ USAGE;
      */
     public function runIndexDelta()
     {
+        if (!$this->_getLock()->lock()) {
+            fwrite($this->getOutput(), 'Index process is running at the moment, please try again later');
+            exit(1);
+        }
+
         $this->getSphinxConfig()->controlIndexData(false, $this->getOutput());
     }
 

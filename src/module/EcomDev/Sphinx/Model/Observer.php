@@ -44,6 +44,9 @@ class EcomDev_Sphinx_Model_Observer
     {
         if ($this->_getConfig()->isEnabled()) {
             $this->_layerModel = Mage::getModel('ecomdev_sphinx/catalog_layer');
+            if (Mage::registry('_singleton/catalog/layer')) {
+                Mage::unregister('_singleton/catalog/layer');
+            }
             Mage::register(
                 '_singleton/catalog/layer', 
                 $this->_layerModel
@@ -153,7 +156,7 @@ class EcomDev_Sphinx_Model_Observer
                 'level'
             )
             ->from($indexNames)
-            ->where('is_active', 1)
+            ->where('is_active','=', 1)
             ->orderBy('level', 'asc')
             ->orderBy('position', 'asc')
             ->match('path', $query->expr(
@@ -261,7 +264,15 @@ class EcomDev_Sphinx_Model_Observer
     {
         if ($this->_getConfig()->isSearchEnabled()) {
             $this->_layerModel = Mage::getModel('ecomdev_sphinx/search_layer');
-            
+
+            if (Mage::registry('_singleton/catalogsearch/layer')) {
+                Mage::unregister('_singleton/catalogsearch/layer');
+            }
+
+            if (Mage::registry('_singleton/catalog/layer')) {
+                Mage::unregister('_singleton/catalog/layer');
+            }
+
             Mage::register(
                 '_singleton/catalogsearch/layer', $this->_layerModel
             );

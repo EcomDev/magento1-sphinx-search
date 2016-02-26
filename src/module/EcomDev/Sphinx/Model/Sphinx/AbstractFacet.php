@@ -2,6 +2,7 @@
 
 use EcomDev_Sphinx_Model_Sphinx_Facet_Filter_OptionInterface as OptionInterface;
 use EcomDev_Sphinx_Model_Sphinx_Facet_Filter_ConditionInterface as ConditionInterface;
+use EcomDev_Sphinx_Model_Sphinx_Query_Builder as QueryBuilder;
 
 abstract class EcomDev_Sphinx_Model_Sphinx_AbstractFacet
     implements EcomDev_Sphinx_Model_Sphinx_FacetInterface, Serializable
@@ -295,7 +296,6 @@ abstract class EcomDev_Sphinx_Model_Sphinx_AbstractFacet
 
         $result = array();
         $optionClass = $this->_getOptionClass();
-        $totalItems = count($this->_sphinxResponse);
         foreach ($this->_sphinxResponse as $index => $row) {
             $row['label'] = $this->_prepareOptionLabel($row);
             /* @var $option OptionInterface */
@@ -444,4 +444,24 @@ abstract class EcomDev_Sphinx_Model_Sphinx_AbstractFacet
         $this->_processSerializedData(unserialize($serialized));
     }
 
+    /**
+     * Facet SphinxQL for retrieval of data
+     *
+     * @return QueryBuilder
+     */
+    public function getFacetSphinxQL(QueryBuilder $baseQuery)
+    {
+        $query = clone $baseQuery;
+        $query->select(
+            $query->exprFormat('GROUPBY() as %s', $query->quoteIdentifier('value')),
+            $query->exprFormat('COUNT(*) as %s', $query->quoteIdentifier('count'))
+        );
+
+        $query->from($this->_getIndexNames())
+            ->groupBy($this->getColumnName())
+            ->orderBy('count', 'desc')
+            ->limit(200);
+
+        return $query;
+    }
 }

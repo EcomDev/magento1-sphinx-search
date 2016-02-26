@@ -33,6 +33,14 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_Product
 
         $this->_validateConnection($this->_getReadAdapter());
 
+        if ($this->pluginContainer) {
+            foreach ($this->pluginContainer->get() as $plugin) {
+                if ($plugin instanceof EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_MemoryTableAwareInterface) {
+                    $plugin->setEntityTableName($this->getMemoryTableName('entity_id'));
+                }
+            }
+        }
+
         $select = $this->_getReadAdapter()->select();
         $select->from(['index' => $this->getMainTable()], ['product_id', 'status', 'visibility']);
 
@@ -68,6 +76,10 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_Product
 
         if ($lastIdentifier >= $maximumIdentifier) {
             $this->endProcess($scope);
+        }
+
+        if ($this->pluginContainer) {
+            $this->fillMemoryTable('entity_id', array_keys($data));
         }
 
         return $data;

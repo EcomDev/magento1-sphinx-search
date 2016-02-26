@@ -65,10 +65,10 @@ class EcomDev_Sphinx_Model_Index_Data_Row
      */
     public function getValue($field, $default = null)
     {
-        if (isset($this->main[$this->getId()][$field])) {
-            return $this->main[$this->getId()][$field];
-        } elseif (isset($this->additional[$this->getId()][$field])) {
-            return $this->additional[$this->getId()][$field];
+        if (isset($this->main[$this->identifiers[$this->currentIndex]][$field])) {
+            return $this->main[$this->identifiers[$this->currentIndex]][$field];
+        } elseif (isset($this->additional[$this->identifiers[$this->currentIndex]][$field])) {
+            return $this->additional[$this->identifiers[$this->currentIndex]][$field];
         }
 
         return $default;

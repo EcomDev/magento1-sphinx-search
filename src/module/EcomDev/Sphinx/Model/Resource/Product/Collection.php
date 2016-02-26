@@ -15,6 +15,20 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
     protected $_fieldsToSelect;
 
     /**
+     * List of all available columns
+     *
+     * @var string[]|null
+     */
+    protected $_availableColumns;
+
+    /**
+     * List of all available fields
+     *
+     * @var string[]|null
+     */
+    protected $_availableFields;
+
+    /**
      * @var QueryBuilder
      */
     protected $_currentQuery;
@@ -39,12 +53,18 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
      * Initializes base query
      *
      * @param EcomDev_Sphinx_Model_Sphinx_Query_Builder $query
+     * @param string[] $indexes
+     * @param string[] $availableColumns
+     * @param string[] $availableFields
      * @return $this
      */
-    public function initQuery(QueryBuilder $query, $indexes)
+    public function initQuery(QueryBuilder $query, $indexes, $availableColumns = null, $availableFields = null)
     {
         $query->select()
             ->from($indexes);
+
+        $this->_availableColumns = $availableColumns;
+        $this->_availableFields = $availableFields;
         
         if (isset($this->_productLimitationFilters['category_id'])) {
             $filterName = 'anchor_category_ids';
@@ -62,7 +82,20 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
         
         if (isset($this->_productLimitationFilters['search_query'])) {
             $fields = $this->getScope()->getSearchableAttributes();
-            $query->match($fields, $this->_productLimitationFilters['search_query']);
+
+            foreach (array_keys($fields) as $field) {
+                if (!isset($this->_availableFields[$field])) {
+                    unset($fields[$field]);
+                }
+            }
+
+            $query->match(
+                array_keys($fields),
+                $this->getScope()->prepareMatchString($this->_productLimitationFilters['search_query'], $query),
+                true
+            );
+
+            $query->option('field_weights', $fields);
         }
 
         $this->_currentQuery = $query;
@@ -102,6 +135,15 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
         $this->_fieldsToSelect['is_salable'] = 'stock_status';
         $this->_fieldsToSelect['is_in_stock'] = 'stock_status';
 
+        if (isset($this->_productLimitationFilters['category_id'])) {
+            $this->_fieldsToSelect['request_path'] = $query->exprFormat(
+                'IF(s_category_url.cat_%1$s <> NULL, s_category_url.cat_%1$s, request_path)', $this->_productLimitationFilters['category_id']
+            );
+        } else {
+            $this->_fieldsToSelect['request_path'] = 'request_path';
+        }
+
+
         Mage::dispatchEvent(
             'ecomdev_sphinx_product_collection_add_fields_to_query', ['query' => $query, 'collection' => $this]
         );
@@ -118,6 +160,8 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
             
             if ($field === $source) {
                 $query->select($source);
+            } elseif ($source instanceof \Foolz\SphinxQL\Expression) {
+                $query->select($query->exprFormat('%s as %s', $source, $field));
             } else {
                 $query->select($query->exprFormat(
                     '%s as %s',
@@ -137,31 +181,38 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
             }
 
             if (isset($complexOrders[$order])) {
+
                 foreach ($complexOrders[$order]->getSortInfo($direction) as $column => $direction) {
                     if ($column === 'price') {
                         $column = 'price_index_min_price_' . $this->getCustomerGroupId();
                     }
 
-                    if ($column === '@position') {
-                        $query->orderBy('i_category_position', $direction);
-                    } elseif ($column === '@stock_status') {
-                        $query->orderBy('stock_status', $direction);
-                    }  elseif ($column === '@relevance') {
+                    if ($column === '@position' && in_array('j_category_position', $indexFields) && isset($this->_productLimitationFilters['category_id'])) {
+                        $query->orderBy($query->expr('j_category_position.cat_' . $this->_productLimitationFilters['category_id']), $direction);
+                    } elseif ($column === '@relevance') {
                         $query->orderBy($query->expr('weight()'), $direction);
-                    } elseif ($column && in_array($column, $indexFields)) {
+                    } elseif (strpos($column, '@') === 0 && in_array(substr($column, 1), $indexFields)) {
+                        $query->orderBy(substr($column, 1), $direction);
+                    } elseif ($column && isset($indexFields[sprintf('s_%s_sort', $column)])) {
+                        $query->orderBy(sprintf('s_%s_sort', $column), $direction);
+                    } elseif ($column && isset($indexFields[$column])) {
                         $query->orderBy($column, $direction);
                     }
+
                 }
             }
-
         } else {
             if ($order === 'price') {
                 $order = 'price_index_min_price_' . $this->getCustomerGroupId();
             }
 
-            if ($order === 'position') {
-                $query->orderBy('i_category_position', $direction);
-            } elseif ($order && in_array($order, $indexFields)) {
+            if ($order === 'position'
+                && isset($indexFields['j_category_position'])
+                && isset($this->_productLimitationFilters['category_id'])) {
+                $query->orderBy($query->expr('j_category_position.cat_' . $this->_productLimitationFilters['category_id']), $direction);
+            } elseif ($order && isset($indexFields[sprintf('s_%s_sort', $order)])) {
+                $query->orderBy(sprintf('s_%s_sort', $order), $direction);
+            } elseif ($order && isset($indexFields[$order])) {
                 $query->orderBy($order, $direction);
             } elseif ($order === 'relevance') {
                 $query->orderBy($query->expr('weight()'), $direction);
@@ -171,6 +222,13 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
 
         
         if ($scope->getPageSize() && $scope->getCurrentPage()) {
+
+            $lastItem = $scope->getPageSize() * $scope->getCurrentPage();
+
+            if ($lastItem > $scope->getMaxMatches()) {
+                $scope->setCurrentPage(floor($scope->getMaxMatches() / $scope->getPageSize()));
+            }
+
             $this->setPageSize((int)$scope->getPageSize());
             $this->setCurPage((int)$scope->getCurrentPage());
             
@@ -178,9 +236,6 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
                 ($this->getCurPage() - 1) * $this->getPageSize(), $this->getPageSize()
             );
         }
-
-
-
 
         return $this;
     }

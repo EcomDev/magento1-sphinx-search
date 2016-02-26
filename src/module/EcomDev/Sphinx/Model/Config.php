@@ -54,6 +54,13 @@ class EcomDev_Sphinx_Model_Config
     protected $_attributeByType;
 
     /**
+     * List of all attributes by type and code
+     *
+     * @var EcomDev_Sphinx_Model_Attribute[]
+     */
+    protected $_searchableAttributes;
+
+    /**
      * List of option attributes
      * 
      * @var EcomDev_Sphinx_Model_Attribute[]
@@ -94,7 +101,6 @@ class EcomDev_Sphinx_Model_Config
      * @var string[]
      */
     protected $_productIndexerClasses;
-
 
     /**
      * Classes for rendering configuration for attributes
@@ -180,6 +186,7 @@ class EcomDev_Sphinx_Model_Config
         $this->_plainAttributes = array();
         $this->_virtualFields = array();
         $this->_sortOrders = array();
+        $this->_searchableAttributes = array();
         
         if ($this->_initAttributesFromCache()) {
             return $this;
@@ -208,6 +215,10 @@ class EcomDev_Sphinx_Model_Config
             if ($attribute->getIsActive()) {
                 $this->_activeAttributes[$code] = $attribute;
             }
+
+            if ($attribute->getIsActive() && $attribute->getIsFulltext()) {
+                $this->_searchableAttributes[$code] = $attribute;
+            }
             
             $this->_attributeByCode[$code] = $attribute;
             
@@ -229,7 +240,6 @@ class EcomDev_Sphinx_Model_Config
                      ->getItems() as $sort) {
             $this->_sortOrders[$sort->getCode()] = $sort;
         }
-
 
         $this->_saveAttributesToCache();
         Varien_Profiler::stop(__FUNCTION__);
@@ -259,6 +269,10 @@ class EcomDev_Sphinx_Model_Config
                 
                 if (isset($data['plain'][$code])) {
                     $this->_plainAttributes[$code] = $attribute;
+                }
+
+                if (isset($data['searchable'][$code])) {
+                    $this->_searchableAttributes[$code] = $attribute;
                 }
 
                 if (isset($data['by_type'][$code])) {
@@ -317,6 +331,10 @@ class EcomDev_Sphinx_Model_Config
                 if (isset($this->_plainAttributes[$code])) {
                     $data['plain'][$code] = true;
                 }
+
+                if (isset($this->_searchableAttributes[$code])) {
+                    $data['searchable'][$code] = true;
+                }
                 
                 if (isset($this->_attributeByType[$attribute->getBackendType()][$code])) {
                     $data['by_type'][$code] = $attribute->getBackendType();
@@ -336,7 +354,9 @@ class EcomDev_Sphinx_Model_Config
             }
             
             Mage::app()->saveCache(json_encode($data), $cacheKey, array(
-                EcomDev_Sphinx_Model_Attribute::CACHE_TAG
+                EcomDev_Sphinx_Model_Attribute::CACHE_TAG,
+                EcomDev_Sphinx_Model_Sort::CACHE_TAG,
+                EcomDev_Sphinx_Model_Field::CACHE_TAG
             ));
         }
         return $this;
@@ -382,6 +402,20 @@ class EcomDev_Sphinx_Model_Config
         }
         
         return $this->_plainAttributes;
+    }
+
+    /**
+     * Returns all non system attributes
+     *
+     * @return EcomDev_Sphinx_Model_Attribute[]
+     */
+    public function getSearchableAttributes()
+    {
+        if ($this->_searchableAttributes === null) {
+            $this->_initAttributes();
+        }
+
+        return $this->_searchableAttributes;
     }
 
     /**

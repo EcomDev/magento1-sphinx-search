@@ -1,39 +1,14 @@
 <layout>
 
-    <catalog_category_layered_ecomdev_sphinx>
-        <remove name="catalog.leftnav"/>
-        <block name="sphinx.loader" type="ecomdev_sphinx/layer_loader">
-            <action method="setListBlock">
-                <block>product_list</block>
-            </action>
-        </block>
-        <reference name="content">
-            <action method="insert"><block>sphinx.loader</block></action>
-        </reference>
-        <reference name="left">
-            <action method="insert"><block>sphinx.loader</block></action>
-            <block name="sphinx.leftnav"
-                   type="ecomdev_sphinx/layer"
-                   template="ecomdev/sphinx/layer.phtml" />
-        </reference>
-
-        <update handle="sphinx_renderer_add" />
-        <update handle="sphinx_script_add" />
-    </catalog_category_layered_ecomdev_sphinx>
-
-    <catalog_category_default_ecomdev_sphinx>
-        <remove name="catalog.leftnav"/>
-        <block name="sphinx.loader" type="ecomdev_sphinx/layer_loader">
-            <action method="setListBlock"><block>product_list</block></action>
-        </block>
-        <reference name="content">
-            <action method="insert"><block>sphinx.loader</block></action>
-        </reference>
-        <remove name="product_list.swatches" />
-    </catalog_category_default_ecomdev_sphinx>
+    <remove_all_elements>
+        <remove name="header" />
+        <remove name="footer" />
+    </remove_all_elements>
 
     <sphinx_renderer_add>
-        <reference name="sphinx.leftnav">
+        <block name="sphinx.leftnav"
+               type="ecomdev_sphinx/layer"
+               template="ecomdev/sphinx/layer.phtml">
             <block type="ecomdev_sphinx/layer_facet_renderer_option"
                    name="sphinx.facet.option" as="renderer_option"
                    template="ecomdev/sphinx/layer/facet/renderer/option.phtml" />
@@ -53,7 +28,7 @@
             <action method="addRenderer"><type>range</type><block>renderer_range</block></action>
             <action method="addRenderer"><type>limit</type><block>renderer_slider</block></action>
             <action method="addRenderer"><type>link</type><block>renderer_link</block></action>
-        </reference>
+        </block>
     </sphinx_renderer_add>
 
     <sphinx_script_add>
@@ -65,8 +40,42 @@
         </reference>
     </sphinx_script_add>
 
+
+    <catalog_category_layered_ecomdev_sphinx>
+        <remove name="catalog.leftnav"/>
+
+        <update handle="sphinx_script_add" />
+        <update handle="sphinx_renderer_add" />
+
+        <block name="sphinx.loader" type="ecomdev_sphinx/layer_loader">
+            <action method="setListBlock">
+                <block>product_list</block>
+            </action>
+        </block>
+        <reference name="content">
+            <action method="insert"><block>sphinx.loader</block></action>
+        </reference>
+        <reference name="left">
+            <action method="insert"><block>sphinx.loader</block></action>
+            <action method="append"><block>sphinx.leftnav</block></action>
+        </reference>
+    </catalog_category_layered_ecomdev_sphinx>
+
+    <catalog_category_default_ecomdev_sphinx>
+        <remove name="catalog.leftnav"/>
+        <block name="sphinx.loader" type="ecomdev_sphinx/layer_loader">
+            <action method="setListBlock"><block>product_list</block></action>
+        </block>
+        <reference name="content">
+            <action method="insert"><block>sphinx.loader</block></action>
+        </reference>
+        <remove name="product_list.swatches" />
+    </catalog_category_default_ecomdev_sphinx>
+
     <catalogsearch_result_index_ecomdev_sphinx>
         <remove name="catalogsearch.leftnav"/>
+        <update handle="sphinx_script_add" />
+        <update handle="sphinx_renderer_add" />
         <block name="sphinx.loader" type="ecomdev_sphinx/layer_loader">
             <action method="setListBlock"><block>search_result_list</block></action>
         </block>
@@ -75,12 +84,8 @@
         </reference>
         <reference name="left">
             <action method="insert"><block>sphinx.loader</block></action>
-            <block name="sphinx.leftnav"
-                   type="ecomdev_sphinx/layer"
-                   template="ecomdev/sphinx/layer.phtml" />
+            <action method="append"><block>sphinx.leftnav</block></action>
         </reference>
-        <update handle="sphinx_renderer_add" />
-        <update handle="sphinx_script_add" />
     </catalogsearch_result_index_ecomdev_sphinx>
 
     <catalog_category_layered_ecomdev_sphinx_json>
@@ -95,9 +100,4 @@
         <update handle="remove_all_elements" />
     </catalogsearch_result_index_ecomdev_sphinx_json>
 
-    <remove_all_elements>
-        <remove name="head" />
-        <remove name="header" />
-        <remove name="footer" />
-    </remove_all_elements>
 </layout>

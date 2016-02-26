@@ -21,6 +21,7 @@ class EcomDev_Sphinx_Model_Scope
     
     const CACHE_KEY_FACETS = 'sphinx_scope_facet_%s_%s_%s';
     const CACHE_KEY_SEARCH = 'sphinx_scope_search_%s_%s_%s';
+    const DEFAULT_MAX_MATCHES = 1000;
 
     /**
      * Layer instance
@@ -251,12 +252,12 @@ class EcomDev_Sphinx_Model_Scope
 
         $orders = $this->_getConfig()->getSortOrders();
         $complexSortOrders = [];
-        foreach ($this->getSortOrders() as $sortOrder) {
-            if (!isset($orders[$sortOrder])) {
-                 continue;
+        foreach ($this->getSortOrders() as $code => $label) {
+            if (!isset($orders[$code])) {
+                continue;
             }
 
-            $complexSortOrders[$sortOrder] = $orders[$sortOrder];
+            $complexSortOrders[$code] = $orders[$code];
         }
 
         return $complexSortOrders;
@@ -278,33 +279,93 @@ class EcomDev_Sphinx_Model_Scope
 
         if (Mage::app()->useCache('sphinx') && $data = Mage::app()->loadCache($cacheKey)) {
             $facets = unserialize($data);
-        } else {
-            $excludedFacets = $this->getConfigurationValue('general/limit_facet');
-            $facets = array();
-            foreach ($this->_getConfig()->getActiveAttributes() as $attribute) {
-                if (is_array($excludedFacets) && in_array($attribute->getId(), $excludedFacets)) {
-                    continue;
+
+            $categoryData = [];
+            if ($this->getConfigurationValue('category_filter/is_active')) {
+                $categoryFacet = $this->_getCategoryFacet();
+                $categoryData = [$categoryFacet->getFilterField() => $categoryFacet];
+            }
+
+            $this->_facets = $categoryData + $facets;
+            return $this;
+        }
+
+        $excludedFacets = $this->getConfigurationValue('general/limit_facet');
+        $includeFacets = $this->getConfigurationValue('general/include_facet');
+        $includeVirtual = $this->getConfigurationValue('general/virtual_field');
+
+        $facets = array();
+        $facetOrder = [];
+        foreach ($this->_getConfig()->getActiveAttributes() as $attribute) {
+            if (is_array($includeFacets) && !in_array($attribute->getId(), $includeFacets)) {
+                continue;
+            }
+
+            if (is_array($excludedFacets) && in_array($attribute->getId(), $excludedFacets)) {
+                continue;
+            }
+
+            if ($attribute->getIsLayered()
+                && ($facet = $attribute->getFacetModel())
+                && $facet->isAvailable()) {
+                $facets[$facet->getFilterField()] = $facet;
+                $facetOrder[$facet->getFilterField()] = $attribute->getPosition();
+                if ($this->getConfigurationValue('facet_sort_order/active')
+                    && $this->getConfigurationValue(
+                        sprintf('facet_sort_order/%s_override', $attribute->getId()))) {
+                    $facetOrder[$facet->getFilterField()] = $this->getConfigurationValue(
+                        sprintf('facet_sort_order/%s_value', $attribute->getId())
+                    );
                 }
-                if ($attribute->getIsLayered()
-                    && ($facet = $attribute->getFacetModel())
-                    && $facet->isAvailable()) {
-                    $facets[$facet->getFilterField()] = $facet;
+            }
+        }
+
+        foreach ($this->_getConfig()->getVirtualFields() as $virtualField) {
+            if (!is_array($includeVirtual) || !in_array($virtualField->getCode(), $includeVirtual)) {
+                continue;
+            }
+
+            if (($facet = $virtualField->getFacet())
+                && $facet->isAvailable()) {
+                $facets[$facet->getFilterField()] = $facet;
+                $facetOrder[$facet->getFilterField()] = $virtualField->getPosition();
+                if ($this->getConfigurationValue('facet_sort_order/active')
+                    && $this->getConfigurationValue(
+                        sprintf('facet_sort_order/%s_override', $virtualField->getCode()))) {
+                    $facetOrder[$facet->getFilterField()] = $this->getConfigurationValue(
+                        sprintf('facet_sort_order/%s_value', $virtualField->getCode())
+                    );
                 }
             }
         }
 
         $this->_facets = array();
-        $categoryFacet = $this->_getCategoryFacet();
-        $this->_facets[$categoryFacet->getFilterField()] = $categoryFacet;
-        $this->_facets += $facets;
+
+        if ($this->getConfigurationValue('category_filter/is_active')) {
+            $categoryFacet = $this->_getCategoryFacet();
+            $this->_facets[$categoryFacet->getFilterField()] = $categoryFacet;
+        }
+
+        asort($facetOrder);
+
+        foreach ($facetOrder as $key => $order) {
+            $this->_facets[$key] = $facets[$key];
+        }
 
         if (Mage::app()->useCache('sphinx')) {
+            $toSave = $this->_facets;
+
+            if (isset($categoryFacet)) {
+                unset($toSave[$categoryFacet->getFilterField()]);
+            }
+
             Mage::app()->saveCache(
-                serialize($facets),
+                serialize($toSave),
                 $cacheKey,
                 array(
                     self::CACHE_TAG,
-                    EcomDev_Sphinx_Model_Attribute::CACHE_TAG
+                    EcomDev_Sphinx_Model_Attribute::CACHE_TAG,
+                    EcomDev_Sphinx_Model_Field::CACHE_TAG
                 )
             );
         }
@@ -319,41 +380,37 @@ class EcomDev_Sphinx_Model_Scope
      */
     protected function _initSearchableAttributes()
     {
-        $cacheKey = sprintf(
-            self::CACHE_KEY_SEARCH,
-            $this->getId(),
-            Mage::app()->getStore()->getId(),
-            Mage::app()->getStore()->getRootCategoryId()
-        );
-
-        if (Mage::app()->useCache('sphinx') && $data = Mage::app()->loadCache($cacheKey)) {
-            $this->_searchableAttributes = unserialize($data);
-            return $this;
-        }
-
         $this->_searchableAttributes = array();
-        $this->_searchableAttributes[] = 's_anchor_category_names';
-        $this->_searchableAttributes[] = 'request_path';
 
-        foreach ($this->_getConfig()->getActiveAttributes() as $attribute) {
-            if ($attribute->isFulltext() && $attribute->isOption()) {
-                $this->_searchableAttributes[] = sprintf(
-                    's_%s_label', $attribute->getAttributeCode()
-                );
-            } elseif ($attribute->isFulltext()) {
-                $this->_searchableAttributes[] = $attribute->getAttributeCode();
+        if (!$this->getConfigurationValue('search_attribute/active')) {
+            $this->_searchableAttributes['s_anchor_category_names'] = 5;
+            $this->_searchableAttributes['request_path'] = 5;
+
+            foreach ($this->_getConfig()->getSearchableAttributes() as $attribute) {
+                if ($attribute->isOption()) {
+                    $this->_searchableAttributes[sprintf('s_%s_label', $attribute->getAttributeCode())] = 10;
+                } else {
+                    $this->_searchableAttributes[$attribute->getAttributeCode()] = 10;
+                }
             }
-        }
+        } else {
+            $options = ['s_anchor_category_names', 's_direct_category_names', 'request_path'];
+            $options = array_merge($options, array_keys($this->_getConfig()->getSearchableAttributes()));
 
-        if (Mage::app()->useCache('sphinx')) {
-            Mage::app()->saveCache(
-                serialize($this->_searchableAttributes),
-                $cacheKey,
-                array(
-                    self::CACHE_TAG,
-                    EcomDev_Sphinx_Model_Attribute::CACHE_TAG
-                )
-            );
+            $searchableAttributes = $this->_getConfig()->getSearchableAttributes();
+            foreach ($options as $attributeCode) {
+                $fieldCode = $attributeCode;
+                if (isset($searchableAttributes[$attributeCode])
+                    && $searchableAttributes[$attributeCode]->isOption()) {
+                    $fieldCode = sprintf('s_%s_label', $attributeCode);
+                }
+
+                if ($this->getConfigurationValue(sprintf('search_attribute/%s_active', $attributeCode))) {
+                    $this->_searchableAttributes[$fieldCode] = (int)$this->getConfigurationValue(
+                        sprintf('search_attribute/%s_weight', $attributeCode)
+                    );
+                }
+            }
         }
 
         return $this;
@@ -410,8 +467,11 @@ class EcomDev_Sphinx_Model_Scope
             ->getProductCollection()
             ->initQuery(
                 $this->_baseQuery,
-                $this->_getConfig()->getContainer()->getIndexNames('product')
+                $this->_getConfig()->getContainer()->getIndexNames('product'),
+                $this->_getConfig()->getContainer()->getIndexColumns('product'),
+                $this->_getConfig()->getContainer()->getIndexFields('product')
             );
+
         Varien_Profiler::stop(__METHOD__ . '::queryBuilderInit');
 
         Varien_Profiler::start(__METHOD__ . '::priceOptions');
@@ -485,7 +545,7 @@ class EcomDev_Sphinx_Model_Scope
         $query
             ->select('category_id', 'name', 'path', 'request_path', 'include_in_menu')
             ->from($this->_getConfig()->getContainer()->getIndexNames('category'))
-            ->where('is_active', 1)
+            ->where('is_active','=', 1)
             ->where('level', '<=', (int)$maxLevel)
             ->where('level', '>', (int)$minLevel)
             ->orderBy('level', 'asc')
@@ -528,7 +588,12 @@ class EcomDev_Sphinx_Model_Scope
         Varien_Profiler::start(__METHOD__);
         $selectQuery = $this->getQueryBuilder();
 
-        $collection->initQuery($selectQuery, $this->_getConfig()->getContainer()->getIndexNames('product'));
+        $collection->initQuery(
+            $selectQuery,
+            $this->_getConfig()->getContainer()->getIndexNames('product'),
+            $this->_getConfig()->getContainer()->getIndexColumns('product'),
+            $this->_getConfig()->getContainer()->getIndexFields('product')
+        );
 
         if (is_callable($customCallback)) {
             call_user_func($customCallback, $collection, $selectQuery);
@@ -552,6 +617,60 @@ class EcomDev_Sphinx_Model_Scope
 
         Varien_Profiler::stop(__METHOD__);
         return $this;
+    }
+
+    /**
+     * Returns max matches
+     *
+     * @return int
+     */
+    public function getMaxMatches()
+    {
+        $matches = (int)$this->getConfigurationValue('general/max_matches');
+
+        if ($matches > 0) {
+            return $matches;
+        }
+
+        $matches = (int)$this->_getConfig()->getConfig('max_matches', 'general');
+
+        if ($matches > 0) {
+            return $matches;
+        }
+
+        return self::DEFAULT_MAX_MATCHES;
+    }
+
+
+    /**
+     * Returns query for match expression
+     *
+     * @param $text
+     * @param EcomDev_Sphinx_Model_Sphinx_Query_Builder $query
+     * @return string
+     */
+    public function prepareMatchString($text, $query)
+    {
+        $text = strtr(
+            $text,
+            [
+                "\n" => ' ',
+                "\r" => ' ',
+                "\t" => ' '
+            ]
+        );
+
+        $keywords = array_filter(explode(' ', $text), function ($v) { return $v !== ''; });
+
+        if (empty($keywords)) {
+            $keywords[] = '';
+        }
+
+        $formatWord = function ($word) use ($query) {
+            return sprintf('"%s"', addcslashes($word, '"*'));
+        };
+
+        return implode(' ', array_map($formatWord, $keywords));
     }
 
     /**
@@ -591,6 +710,7 @@ class EcomDev_Sphinx_Model_Scope
         }
 
         $prevQuery = $selectQuery;
+        $selectQuery->option('max_matches', $this->getMaxMatches());
 
         $prevQuery = $prevQuery
             ->enqueue($this->_getConfig()->getContainer()->getHelper()->showMeta());

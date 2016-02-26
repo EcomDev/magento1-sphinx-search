@@ -4,8 +4,9 @@ use EcomDev_Sphinx_Contract_Reader_ScopeInterface as ScopeInterface;
 use EcomDev_Sphinx_Model_Resource_Index_Reader_Filter_Date as FilterDate;
 
 abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_AbstractProvider
-    extends Mage_Core_Model_Resource_Db_Abstract
-    implements EcomDev_Sphinx_Contract_Reader_ProviderInterface
+    extends EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractResource
+    implements EcomDev_Sphinx_Contract_Reader_ProviderInterface,
+        EcomDev_Sphinx_Contract_Reader_Provider_PluginContainerAwareInterface
 {
     /**
      * Date time filter
@@ -15,11 +16,27 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_AbstractProvi
     protected $startedAt;
 
     /**
+     * @var EcomDev_Sphinx_Contract_Reader_PluginContainerInterface
+     */
+    protected $pluginContainer;
+
+    /**
      * Returns type of the record
      *
      * @return string
      */
     abstract protected function _getType();
+
+    /**
+     * @param EcomDev_Sphinx_Contract_Reader_PluginContainerInterface $container
+     * @return $this
+     */
+    public function setPluginContainer(EcomDev_Sphinx_Contract_Reader_PluginContainerInterface $container)
+    {
+        $this->pluginContainer = $container;
+        return $this;
+    }
+
 
     /**
      * Returns type of meta record

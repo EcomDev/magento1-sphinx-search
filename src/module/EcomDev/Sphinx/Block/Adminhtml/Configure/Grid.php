@@ -7,6 +7,7 @@ class EcomDev_Sphinx_Block_Adminhtml_Configure_Grid
     protected $_sortDirection = 'desc';
     protected $_prefix = 'sphinx_configure';
     protected $_objectId = 'code';
+    protected $_defaultLimit = 10000;
     
     public function __construct()
     {

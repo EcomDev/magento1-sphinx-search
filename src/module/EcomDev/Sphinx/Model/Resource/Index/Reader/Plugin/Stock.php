@@ -41,11 +41,25 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Stock
             return [];
         }
 
+        if (!$this->entityMemoryTable) {
+            $this->fillMemoryTable('entity_id', $identifiers);
+        }
+
         $select = $this->_getReadAdapter()->select();
         $select
             ->from(
                 ['index' => $this->getTable('cataloginventory/stock_status')],
-                ['product_id', 'qty', 'stock_status']
+                ['product_id', 'stock_status']
+            )
+            ->join(
+                ['entity_id' => $this->getMainMemoryTable('entity_id')],
+                'entity_id.id = index.product_id',
+                []
+            )
+            ->join(
+                ['stock' => $this->getTable('cataloginventory/stock_item')],
+                'stock.stock_id = index.stock_id and stock.product_id = index.product_id',
+                ['qty']
             )
             ->join(
                 ['store' => $this->getTable('core/store')],
@@ -54,7 +68,6 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Stock
             );
 
         $scope->getFilter('store_id')->render('store', $select);
-        $select->where('index.product_id IN(?)', $identifiers);
         $select->where('index.stock_id = ?', $this->stockId);
 
         $data = [];

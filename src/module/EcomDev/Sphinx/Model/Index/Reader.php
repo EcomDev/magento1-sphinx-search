@@ -88,6 +88,10 @@ class EcomDev_Sphinx_Model_Index_Reader
         $this->pluginContainer = $pluginContainer;
         $this->provider = $provider;
         $this->dataRowFactory = $dataRowFactory;
+
+        if ($this->provider instanceof EcomDev_Sphinx_Contract_Reader_Provider_PluginContainerAwareInterface) {
+            $this->provider->setPluginContainer($this->pluginContainer);
+        }
     }
 
 
@@ -175,6 +179,8 @@ class EcomDev_Sphinx_Model_Index_Reader
         if ($this->maxIdentifier < $this->nextIdentifier) {
             return false;
         }
+
+        unset($this->dataRow);
 
         $rows = $this->provider->getRows($this->scope, $this->nextIdentifier, $this->maxIdentifier, $this->batchSize);
 

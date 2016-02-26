@@ -71,16 +71,7 @@ class EcomDev_Sphinx_Block_Adminhtml_Field_Edit_Form
                     [
                         'required' => false
                     ]
-                )
-            ->_setUpFieldset('store_name', $this->__('Name in Store View'))
-        ;
-
-        foreach (Mage::app()->getStores(false) as $store) {
-            $this->_addField($store->getCode(), 'text', $store->getName(), [
-                'note' => $this->__('Leave empty to use default name'),
-                'required' => false
-            ]);
-        }
+                );
 
         if ($this->getChild('container')) {
             $this->getChild('container')->setField($this->getDataObject());
@@ -99,8 +90,15 @@ class EcomDev_Sphinx_Block_Adminhtml_Field_Edit_Form
                     'options' => $this->getDataObject()->getAvailableOptions(),
                     'row_template' => $this->getChildHtml('row')
                 ]
+            ])
+            ->_setUpFieldset('store_name', $this->__('Name in Store View'));
+
+        foreach (Mage::app()->getStores(false) as $store) {
+            $this->_addField($store->getCode(), 'text', $store->getName(), [
+                'note' => $this->__('Leave empty to use default name'),
+                'required' => false
             ]);
-        ;
+        }
 
         return $this;
     }

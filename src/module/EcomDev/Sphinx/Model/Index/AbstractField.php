@@ -18,6 +18,33 @@ abstract class EcomDev_Sphinx_Model_Index_AbstractField
     private $name;
 
     /**
+     * @var bool[]
+     */
+    private $multipleTypes = [];
+
+    /**
+     * @var bool[]
+     */
+    private $intTypes = [];
+
+    /**
+     * @var bool[]
+     */
+    private $textTypes = [];
+
+    /**
+     * Cached scope value
+     *
+     * @var int
+     */
+    protected $cachedScopeValue;
+
+    /**
+     * @var EcomDev_Sphinx_Contract_Reader_ScopeInterface
+     */
+    protected $cachedScope;
+
+    /**
      * Sets field properties
      *
      * @param string $type
@@ -27,6 +54,13 @@ abstract class EcomDev_Sphinx_Model_Index_AbstractField
     {
         $this->type = $type;
         $this->name = $name;
+        $this->multipleTypes[self::TYPE_ATTRIBUTE_MULTI] = true;
+        $this->multipleTypes[self::TYPE_ATTRIBUTE_MULTI64] = true;
+        $this->intTypes[self::TYPE_ATTRIBUTE_INT] = true;
+        $this->intTypes[self::TYPE_ATTRIBUTE_BIGINT] = true;
+        $this->textTypes[self::TYPE_FIELD] = true;
+        $this->textTypes[self::TYPE_FIELD_STRING] = true;
+        $this->textTypes[self::TYPE_ATTRIBUTE_STRING] = true;
     }
 
 
@@ -57,11 +91,7 @@ abstract class EcomDev_Sphinx_Model_Index_AbstractField
      */
     public function isInt()
     {
-        return in_array(
-            $this->getType(),
-            [self::TYPE_ATTRIBUTE_INT, self::TYPE_ATTRIBUTE_BIGINT],
-            true
-        );
+        return isset($this->intTypes[$this->type]);
     }
 
     /**
@@ -71,11 +101,7 @@ abstract class EcomDev_Sphinx_Model_Index_AbstractField
      */
     public function isMultiple()
     {
-        return in_array(
-            $this->getType(),
-            [self::TYPE_ATTRIBUTE_MULTI, self::TYPE_ATTRIBUTE_MULTI64],
-            true
-        );
+        return isset($this->multipleTypes[$this->type]);
     }
 
     /**
@@ -85,10 +111,16 @@ abstract class EcomDev_Sphinx_Model_Index_AbstractField
      */
     public function isText()
     {
-        return in_array(
-            $this->getType(),
-            [self::TYPE_FIELD, self::TYPE_FIELD_STRING, self::TYPE_ATTRIBUTE_STRING],
-            true
-        );
+        return isset($this->textTypes[$this->type]);
+    }
+
+    /**
+     * Is it a text field
+     *
+     * @return bool
+     */
+    public function isTimestamp()
+    {
+        return $this->type === self::TYPE_ATTRIBUTE_TIMESTAMP;
     }
 }

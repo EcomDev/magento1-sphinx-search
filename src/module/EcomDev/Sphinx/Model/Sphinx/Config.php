@@ -15,6 +15,7 @@ class EcomDev_Sphinx_Model_Sphinx_Config
     const TYPE_PRODUCT_SEARCH = 'product_search';
     const TYPE_CATEGORY = 'category';
     const TYPE_KEYWORD = 'keyword';
+    const XML_PATH_KEYWORD_SIZE = 'ecomdev_sphinx/export/keyword_size';
 
     /**
      * Contains an instance of index config model
@@ -369,10 +370,11 @@ class EcomDev_Sphinx_Model_Sphinx_Config
             $pendingRows = $item->getData('pending_rows');
             $storeId = (int)$item->getStoreId();
 
-            if (!$forceReindex && $configLimit && $pendingRows && $pendingRows < $configLimit
-                && $pendingRows < ($indexedRows / 2)) {
+            $isOutOfSync = ($pendingRows > 0 && $configLimit > 0 && $pendingRows < $configLimit);
+
+            if (!$forceReindex && $isOutOfSync && $pendingRows < ($indexedRows / 2)) {
                 $deltaList[] = [$indexName . '_delta', $indexName, $storeId];
-            } elseif ($forceReindex || !$indexedRows || ($configLimit && ($pendingRows > $configLimit)) || $pendingRows > ($indexedRows / 2)) {
+            } elseif ($forceReindex || $isOutOfSync) {
                 $forceReindexList[] = [$indexName, $storeId];
             }
         }
@@ -444,6 +446,10 @@ class EcomDev_Sphinx_Model_Sphinx_Config
             fwrite($output, $result[0]);
         }
 
+        if ($result[1] === 0 && strpos($additionalArguments, '--rotate') !== false) {
+            $this->waitForRotate($indexName, $storeId, $output);
+        }
+
         return $result[1] == 0;
     }
 
@@ -471,6 +477,14 @@ class EcomDev_Sphinx_Model_Sphinx_Config
         $response = $this->executeIndexerCommand(sprintf(
             '%s %s', implode(' ', $renderedIndexNames), $additionalArguments
         ));
+
+
+        if (strpos($additionalArguments, '--rotate') !== false) {
+            foreach ($indexNames as $info) {
+                list($name, $storeId) = $info;
+                $this->waitForRotate($name, $storeId, $output);
+            }
+        }
 
         if (is_resource($output)) {
             fwrite($output, $response);
@@ -521,8 +535,16 @@ class EcomDev_Sphinx_Model_Sphinx_Config
      * @param int $limit
      * @return bool
      */
-    public function keywordImport($storeId, $limit = 100000)
+    public function keywordImport($storeId, $limit = null)
     {
+        if ($limit === null) {
+            $limit = (int)Mage::getStoreConfig(self::XML_PATH_KEYWORD_SIZE);
+        }
+
+        if ($limit <= 0) {
+            $limit = 5000;
+        }
+
         $type = self::TYPE_PRODUCT_SEARCH;
 
         $outputFile = tempnam(Mage::getConfig()->getVarDir('sphinx'), 'keyword_import');
@@ -563,6 +585,10 @@ class EcomDev_Sphinx_Model_Sphinx_Config
 
         if (is_resource($output)) {
             fwrite($output, $result[0]);
+        }
+
+        if ($result[1] === 0 && strpos($additionalArguments, '--rotate') !== false) {
+            $this->waitForRotate($targetIndex, $storeId, $output);
         }
 
         return $result[1] == 0;
@@ -764,5 +790,44 @@ class EcomDev_Sphinx_Model_Sphinx_Config
             unlink($this->_privateKeyFile);
         }
     }
-    
+
+    /**
+     * Wait for rotation of indexer
+     *
+     * @param string $indexName
+     * @param string $storeId
+     * @param null $output
+     * @param int $attempts
+     * @return $this
+     */
+    public function waitForRotate($indexName, $storeId, $output = null, $attempts = 20)
+    {
+        $expectedFileName = sprintf(
+            '%s_%s.new.', $indexName, $storeId
+        );
+
+        $command = sprintf(
+            'ls %s | grep "%s"',
+            $this->_getConfig()->getIndexPath(),
+            $expectedFileName
+        );
+
+        while ($attempts > 0) {
+            $result = $this->_execWithExitCode($command);
+            if ($result[1] !== 0) {
+                break;
+            }
+
+            if (is_resource($output)) {
+                fwrite($output, 'Waiting for rotate process to finish, as such files are found: ' . PHP_EOL);
+                fwrite($output, $result[0]);
+            }
+
+            $attempts--;
+            sleep(1);
+        }
+
+        return $this;
+    }
+
 }

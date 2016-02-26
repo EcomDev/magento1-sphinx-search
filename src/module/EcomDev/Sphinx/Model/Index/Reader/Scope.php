@@ -14,6 +14,13 @@ class EcomDev_Sphinx_Model_Index_Reader_Scope
     private $filters;
 
     /**
+     * Cached filters per type of request
+     *
+     * @var FilterInterface[][]
+     */
+    private $cachedFilters = [];
+
+    /**
      * Configuration scope
      *
      * @var ConfigurationInterface
@@ -43,13 +50,19 @@ class EcomDev_Sphinx_Model_Index_Reader_Scope
      */
     public function getFilters()
     {
+        if (isset($this->cachedFilters['list'])) {
+            return $this->cachedFilters['list'];
+        }
+
         $result = [];
 
         foreach ($this->filters as $filters) {
             $result = array_merge($result, $filters);
         }
 
-        return $result;
+        $this->cachedFilters['list'] = $result;
+
+        return $this->cachedFilters['list'];
     }
 
     /**
@@ -72,20 +85,23 @@ class EcomDev_Sphinx_Model_Index_Reader_Scope
      */
     public function getFilter($field, $multiple = false)
     {
+        if (isset($this->cachedFilters['single'][$field][$multiple])) {
+            return $this->cachedFilters['single'][$field][$multiple];
+        }
+
+        $this->cachedFilters['single'][$field][$multiple] = ($multiple ? [] : false);
+
         if ($this->hasFilter($field)) {
             $filters = $this->filters[$field];
+
             if ($multiple) {
-                return $filters;
+                $this->cachedFilters['single'][$field][$multiple] = $filters;
+            } else {
+                $this->cachedFilters['single'][$field][$multiple] = current($filters);
             }
-
-            return current($filters);
         }
 
-        if ($multiple) {
-            return [];
-        }
-
-        return false;
+        return $this->cachedFilters['single'][$field][$multiple];
     }
 
     /**
@@ -97,6 +113,7 @@ class EcomDev_Sphinx_Model_Index_Reader_Scope
     public function replaceFilter(FilterInterface $filter)
     {
         $this->filters[$filter->getField()] = [$filter];
+        $this->cachedFilters = [];
         return $this;
     }
 
