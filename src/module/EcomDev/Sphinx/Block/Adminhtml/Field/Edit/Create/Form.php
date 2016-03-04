@@ -31,6 +31,7 @@ class EcomDev_Sphinx_Block_Adminhtml_Field_Edit_Create_Form
             EcomDev_Sphinx_Model_Source_Field_Type::TYPE_RANGE,
             EcomDev_Sphinx_Model_Source_Field_Type::TYPE_ALIAS
         ]);
+
         return $this;
     }
 }

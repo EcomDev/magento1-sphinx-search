@@ -1,7 +1,5 @@
 <?php
 
-use EcomDev_Sphinx_Model_Sphinx_Facet_Filter_OptionInterface as OptionInterface;
-
 /**
  * Renderer option interface
  *
@@ -69,16 +67,19 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Slider
     /**
      * Returns a value url
      *
+     * @param string $separator
      * @return string
      */
     public function getValueUrl($separator = '&amp;')
     {
-        $baseUrl = $this->getLayer()->getCurrentUrl();
-        $activeFilters = $this->getLayer()->getActiveFilters()
-            + $this->getLayer()->getAdditionalQuery();
+        $url = $this->urlBuilder->getUrl(
+            [$this->getFacet()->getFilterField() => '^'],
+            [],
+            true,
+            false,
+            $separator
+        );
 
-        $activeFilters[$this->getFacet()->getFilterField()] = '^';
-        $url = $baseUrl . ($activeFilters ? '?' . http_build_query($activeFilters, '', $separator) : '');
         return str_replace('=%5E', '={start}%2B{end}', $url);
     }
 

@@ -59,13 +59,18 @@ class EcomDev_Sphinx_Model_Observer
                 $observer->getControllerAction()
                     ->getRequest()
             );
+
+            Mage::dispatchEvent('ecomdev_sphinx_init_category_view', [
+                'layer' => $this->_layerModel,
+                'category' => Mage::registry('current_category')
+            ]);
         }
         
         return $this;
     }
 
     /**
-     * Enables sphinx search on category initialization
+     * Enables sphinx breadcrumbs
      *
      * @param Varien_Event_Observer $observer
      * @return $this

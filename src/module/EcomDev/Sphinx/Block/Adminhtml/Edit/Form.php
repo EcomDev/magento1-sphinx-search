@@ -232,7 +232,7 @@ abstract class EcomDev_Sphinx_Block_Adminhtml_Edit_Form
     /**
      * Retrieve current brand model as data object for form
      *
-     * @return EcomDev_ProductAssortment_Model_AbstractModel
+     * @return EcomDev_Sphinx_Model_AbstractModel
      */
     public function getDataObject()
     {

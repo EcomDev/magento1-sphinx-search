@@ -100,6 +100,8 @@ class EcomDev_Sphinx_Block_Adminhtml_Field_Edit_Form
             ]);
         }
 
+        Mage::dispatchEvent('ecomdev_sphinx_attribute_form_create_fields', ['form' => $this->getForm(), 'block' => $this]);
+
         return $this;
     }
 

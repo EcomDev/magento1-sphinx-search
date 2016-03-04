@@ -72,6 +72,7 @@ class EcomDev_Sphinx_Block_Adminhtml_Attribute_Edit_Form
             'option_model' => 'ecomdev_sphinx/source_yesno'
         ));
 
+        Mage::dispatchEvent('ecomdev_sphinx_attribute_form_create_fields', ['form' => $this->getForm(), 'block' => $this]);
         return $this;
     }
 }

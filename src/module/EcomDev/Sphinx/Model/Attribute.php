@@ -45,6 +45,20 @@ class EcomDev_Sphinx_Model_Attribute
      * @var Mage_Catalog_Model_Resource_Eav_Attribute|bool
      */
     protected $_attribute = null;
+
+    /**
+     * Event object for customizations
+     *
+     * @var string
+     */
+    protected $_eventObject = 'attribute';
+
+    /**
+     * Event prefix for customizations
+     *
+     * @var string
+     */
+    protected $_eventPrefix = 'ecomdev_sphinx_attribute';
     
     /**
      * Initialization of resource
@@ -177,7 +191,7 @@ class EcomDev_Sphinx_Model_Attribute
      * @param array $data
      * @return $this
      */
-    public function setDataFromArray(array $data)
+    protected function _setDataFromArray(array $data)
     {
         $modifiableFields = array(
             'is_fulltext',
@@ -194,7 +208,6 @@ class EcomDev_Sphinx_Model_Attribute
         
         $this->importData(
             $data, $modifiableFields
-            
         );
         return $this;
     }

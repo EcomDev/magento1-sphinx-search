@@ -8,6 +8,25 @@ abstract class EcomDev_Sphinx_Block_Layer_Facet_AbstractRenderer
     implements EcomDev_Sphinx_Block_Layer_Facet_RendererInterface
 {
     /**
+     * Url builder instance
+     *
+     * @var EcomDev_Sphinx_Model_Url_Builder
+     */
+    protected $urlBuilder;
+
+    /**
+     * Initialize factory instance
+     *
+     * @param array $args
+     */
+    public function __construct(array $args)
+    {
+        parent::__construct($args);
+        $this->urlBuilder = Mage::getSingleton('ecomdev_sphinx/url_builder');
+    }
+
+
+    /**
      * Returns html identifier for container
      *
      */
@@ -122,27 +141,16 @@ abstract class EcomDev_Sphinx_Block_Layer_Facet_AbstractRenderer
      *
      * @param FacetInterface $facet
      * @param string[] $without
+     * @param bool $withRel
      * @return string
      */
-    public function getClearUrl(FacetInterface $facet, $without = [])
+    public function getClearUrl(FacetInterface $facet, $without = [], $withRel = false)
     {
-        $baseUrl = $this->getLayer()->getCurrentUrl();
-
-        $activeFilters = $this->getLayer()->getActiveFilters()
-            + $this->getLayer()->getAdditionalQuery();
-
-        if (isset($activeFilters[$facet->getFilterField()])) {
-            unset($activeFilters[$facet->getFilterField()]);
-        }
-
-        if ($without) {
-            foreach ($without as $name) {
-                if (isset($activeFilters[$name])) {
-                    unset($activeFilters[$name]);
-                }
-            }
-        }
-
-        return $baseUrl . ($activeFilters ? '?' . http_build_query($activeFilters, '', '&amp;') : '');
+        return $this->urlBuilder->getUrl(
+            [],
+            array_merge($without, [$facet->getFilterField()]),
+            true,
+            $withRel
+        );
     }
 }

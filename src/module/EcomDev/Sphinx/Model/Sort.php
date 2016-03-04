@@ -35,7 +35,7 @@ class EcomDev_Sphinx_Model_Sort
      * @param array $data
      * @return $this
      */
-    public function setDataFromArray(array $data)
+    protected function _setDataFromArray(array $data)
     {
         $jsonData = array();
 

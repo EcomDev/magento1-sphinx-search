@@ -73,6 +73,7 @@ class EcomDev_Sphinx_Block_Adminhtml_Sort_Edit_Form
         $this->getForm()->getElement('sort_direction')->setSize(2);
 
 
+        Mage::dispatchEvent('ecomdev_sphinx_sort_form_create_fields', ['form' => $this->getForm(), 'block' => $this]);
 
 
         return $this;
