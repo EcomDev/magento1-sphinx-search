@@ -17,10 +17,10 @@ EcomDev.Sphinx.Field = Class.create({
         this.config = config;
         this.value = $H(config.value);
 
-        if (config.options !== false) {
-            this.options = $H(config.options);
+        if (config.attributes !== false) {
+            this.attributes = $H(config.attributes);
         } else {
-            this.options = false;
+            this.attributes = false;
         }
 
         var containerTemplate = new Template(config.template);
@@ -33,17 +33,17 @@ EcomDev.Sphinx.Field = Class.create({
         this.container.down('.footer button.add').observe('click', this.addRow.bind(this));
     },
     updateSelect: function () {
-        if (this.options === false) {
+        if (this.attributes === false) {
             return;
         }
 
-        var keys = this.options.keys();
+        var keys = this.attributes.keys();
         this.select.update('');
         for (var i = 0, l = keys.length; i < l; i ++) {
             if (!this.value.get(keys[i])) {
                 var option = new Element('option', {value: keys[i]});
                 this.select.insert({bottom: option});
-                option.update(this.options.get(keys[i]));
+                option.update(this.attributes.get(keys[i]));
             }
         }
     },
@@ -76,9 +76,9 @@ EcomDev.Sphinx.Field = Class.create({
                 fieldPrefix: this.config.name,
                 code: code,
                 label: (
-                    (this.options === false || !this.options.get(code))
+                    (this.attributes === false || !this.attributes.get(code))
                         ? code :
-                        this.options.get(code)
+                        this.attributes.get(code)
                 ),
                 position: map.position
             })
@@ -113,7 +113,7 @@ EcomDev.Sphinx.Field = Class.create({
 EcomDev.Sphinx.FieldGrouped = Class.create(EcomDev.Sphinx.Field, {
     getDefaultOptions: function () {
         var options = {};
-        if (this.options !== false) {
+        if (this.attributes !== false) {
             options.target = [];
         } else {
             options.target = '';
@@ -123,13 +123,13 @@ EcomDev.Sphinx.FieldGrouped = Class.create(EcomDev.Sphinx.Field, {
     },
     setRowValues: function ($super, row, code, map) {
         $super(row, code, map);
-        if (this.options !== false) {
+        if (this.attributes !== false) {
             var select = row.down('.target');
-            var keys = this.options.keys();
+            var keys = this.attributes.keys();
             for (var i = 0, l=keys.length; i < l; i++) {
                 var option = new Element('option', {value: keys[i]});
                 select.insert(option);
-                option.update(this.options.get(keys[i]));
+                option.update(this.attributes.get(keys[i]));
                 if (map.target.indexOf(keys[i]) !== -1) {
                     option.selected = true;
                 }
@@ -150,13 +150,13 @@ EcomDev.Sphinx.FieldAlias = Class.create(EcomDev.Sphinx.Field, {
     },
     setRowValues: function ($super, row, code, map) {
         $super(row, code, map);
-        if (this.options !== false) {
+        if (this.attributes !== false) {
             var select = row.down('.target');
-            var keys = this.options.keys();
+            var keys = this.attributes.keys();
             for (var i = 0, l=keys.length; i < l; i++) {
                 var option = new Element('option', {value: keys[i]});
                 select.insert(option);
-                option.update(this.options.get(keys[i]));
+                option.update(this.attributes.get(keys[i]));
             }
         }
         row.down('.target').value = map.target;

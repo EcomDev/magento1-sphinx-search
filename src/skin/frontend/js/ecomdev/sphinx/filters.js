@@ -14,7 +14,13 @@ EcomDev.Sphinx.Layer = Class.create({
     ) {
         this.linkCssSelector = linkCssSelector;
         this.filterCssSelector = filterCssSelector;
-        this.listingCssSelector = listingCssSelector;
+
+        if (Object.isArray(listingCssSelector)) {
+            this.listingCssSelector = listingCssSelector[0];
+            this.contentCssSelector = listingCssSelector[1];
+        } else {
+            this.listingCssSelector = listingCssSelector;
+        }
         this.replaceItems = replaceItems;
         this.onClick = this.handleClick.bind(this);
         this.onLoadUrl = this.handleLoadUrl.bind(this);
@@ -77,7 +83,9 @@ EcomDev.Sphinx.Layer = Class.create({
             this.updateByCssRule(this.filterCssSelector, data.filters);
         }
 
-        if (data.products) {
+        if (this.contentCssSelector && data.content) {
+            this.updateByCssRule(this.contentCssSelector, data.content);
+        } else if (data.products) {
             this.updateByCssRule(this.listingCssSelector, data.products);
         }
     },
@@ -105,14 +113,14 @@ EcomDev.Sphinx.OptionsStorage = $H({});
 EcomDev.Sphinx.Options = Class.create({
     initialize: function (container, options) {
         this.container = $(container);
-        this.options = options;
-        this.id = this.options.id;
+        this.attributes = options;
+        this.id = this.attributes.id;
         this.onExpandClick = this.handleClick.bind(this, true);
         this.onCollapseClick = this.handleClick.bind(this, false);
         this.bindListener();
         this.animation = false;
         this.updateVisibility();
-        this.animation = this.options.animation;
+        this.animation = this.attributes.animation;
     },
     isExpanded: function () {
         return !!this.storage().isExpanded;
@@ -128,24 +136,24 @@ EcomDev.Sphinx.Options = Class.create({
         if (this.hiddenItems && this.collapseBtn && this.expandBtn) {
             for (var i = 0, l = this.hiddenItems.length; i < l; i ++) {
                 var element = this.hiddenItems[i];
-                if (element.hasClassName(this.options.activeClass)) {
+                if (element.hasClassName(this.attributes.activeClass)) {
                     continue;
                 }
 
                 if (this.animation) {
                     this.animate(element, true);
                 } else {
-                    element.removeClassName(this.options.hiddenClass);
+                    element.removeClassName(this.attributes.hiddenClass);
                 }
             }
 
-            this.collapseBtn.removeClassName(this.options.hiddenClass);
-            this.expandBtn.addClassName(this.options.hiddenClass);
+            this.collapseBtn.removeClassName(this.attributes.hiddenClass);
+            this.expandBtn.addClassName(this.attributes.hiddenClass);
         }
     },
     animate: function (element, toShow) {
         var elementOpacity = false;
-        if (!element.hasClassName(this.options.hiddenClass)) {
+        if (!element.hasClassName(this.attributes.hiddenClass)) {
             elementOpacity = element.getOpacity();
         }
 
@@ -158,15 +166,15 @@ EcomDev.Sphinx.Options = Class.create({
             },
             beforeSetup: function(effect) {
                 if (toShow) {
-                    effect.element.removeClassName(this.options.hiddenClass);
+                    effect.element.removeClassName(this.attributes.hiddenClass);
                 }
-                effect.element.setOpacity(effect.options.from);
+                effect.element.setOpacity(effect.attributes.from);
             }.bind(this)
         };
 
         if (!toShow) {
             options.afterFinish = function() {
-                element.addClassName(this.options.hiddenClass);
+                element.addClassName(this.attributes.hiddenClass);
             }.bind(this);
         }
 
@@ -185,19 +193,19 @@ EcomDev.Sphinx.Options = Class.create({
         if (this.hiddenItems && this.collapseBtn && this.expandBtn) {
             for (var i = 0, l = this.hiddenItems.length; i < l; i ++) {
                 var element = this.hiddenItems[i];
-                if (element.hasClassName(this.options.activeClass)) {
+                if (element.hasClassName(this.attributes.activeClass)) {
                     continue;
                 }
 
                 if (this.animation) {
                     this.animate(element, false);
                 } else {
-                    element.addClassName(this.options.hiddenClass);
+                    element.addClassName(this.attributes.hiddenClass);
                 }
             }
 
-            this.expandBtn.removeClassName(this.options.hiddenClass);
-            this.collapseBtn.addClassName(this.options.hiddenClass);
+            this.expandBtn.removeClassName(this.attributes.hiddenClass);
+            this.collapseBtn.addClassName(this.attributes.hiddenClass);
         }
     },
     handleClick: function (flag, evt) {
@@ -213,10 +221,10 @@ EcomDev.Sphinx.Options = Class.create({
         return EcomDev.Sphinx.OptionsStorage.get(this.id);
     },
     bindListener: function () {
-        this.collapseBtn = this.container.down(this.options.collapseCssRule);
-        this.expandBtn = this.container.down(this.options.expandCssRule);
+        this.collapseBtn = this.container.down(this.attributes.collapseCssRule);
+        this.expandBtn = this.container.down(this.attributes.expandCssRule);
 
-        var sortedItems = this.container.select(this.options.itemCssRule);
+        var sortedItems = this.container.select(this.attributes.itemCssRule);
 
         var topActive = function (left, right) {
             // Move active elements to top
@@ -249,14 +257,14 @@ EcomDev.Sphinx.Options = Class.create({
         };
 
 
-        if (this.options.optionByCount) {
+        if (this.attributes.optionByCount) {
             sortedItems = sortedItems.sort(topCount);
         } else {
             sortedItems = sortedItems.sort(topActive);
         }
 
-        if (this.options.optionLimit > 0 && sortedItems.length > this.options.optionLimit) {
-            this.hiddenItems = sortedItems.slice(this.options.optionLimit, sortedItems.length);
+        if (this.attributes.optionLimit > 0 && sortedItems.length > this.attributes.optionLimit) {
+            this.hiddenItems = sortedItems.slice(this.attributes.optionLimit, sortedItems.length);
         } else {
             this.hiddenItems = false;
         }
@@ -275,7 +283,7 @@ EcomDev.Sphinx.Options = Class.create({
 EcomDev.Sphinx.Slider = Class.create({
     initialize: function (container, options) {
         this.layer = false;
-        this.options = options;
+        this.attributes = options;
         this.container = $(container);
         this.onUpdate = this.handleUpdate.bind(this);
         this.tryCreateSlider();
@@ -297,7 +305,7 @@ EcomDev.Sphinx.Slider = Class.create({
     },
     handleUpdate: function (values) {
         if (this.getLayer()) {
-            this.getLayer().loadUrl(this.options.url
+            this.getLayer().loadUrl(this.attributes.url
                 .replace('{start}', encodeURIComponent(values[0]))
                 .replace('{end}', encodeURIComponent(values[1])));
         }
@@ -318,15 +326,15 @@ EcomDev.Sphinx.Slider = Class.create({
     getSliderOptions: function () {
         return {
             range: {
-                'min': this.options.available['min'],
-                'max': this.options.available['max']
+                'min': this.attributes.available['min'],
+                'max': this.attributes.available['max']
             },
-            step: this.options.step,
-            margin: this.options.step*10,
+            step: this.attributes.step,
+            margin: this.attributes.step*10,
             connect: true,
             behaviour: 'tap-drag',
             tooltips: { format: this.getTooltip.bind(this) },
-            start: [this.options.current['min'], this.options.current['max']]
+            start: [this.attributes.current['min'], this.attributes.current['max']]
         };
     },
 
@@ -337,8 +345,8 @@ EcomDev.Sphinx.Slider = Class.create({
 
         formattedValue = parseFloat(formattedValue);
 
-        if (this.options.currency) {
-            return this.options.currency.replace('%s', formattedValue.toFixed(2).replace('.', this.options.decimal_separator));
+        if (this.attributes.currency) {
+            return this.attributes.currency.replace('%s', formattedValue.toFixed(2).replace('.', this.attributes.decimal_separator));
         }
 
         return ceil(formattedValue).toString();
