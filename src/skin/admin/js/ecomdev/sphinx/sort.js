@@ -1,4 +1,3 @@
-
 if (!window.EcomDev) {
     window.EcomDev = {};
 }
@@ -14,7 +13,7 @@ EcomDev.Sphinx.SortOrder = Class.create({
         }
 
         this.container = $(container);
-        this.attributes = options;
+        this.options = options;
         this.value = $H(options.value);
         this.orders = $H(options.orders);
         var containerTemplate = new Template(options.template);
@@ -64,7 +63,7 @@ EcomDev.Sphinx.SortOrder = Class.create({
         table.insert({
             bottom: this.template.evaluate({
                 id: id,
-                fieldPrefix: this.attributes.name,
+                fieldPrefix: this.options.name,
                 code: code,
                 name: this.orders.get(code),
                 position: map.position
