@@ -134,6 +134,9 @@ class EcomDev_Sphinx_Block_Adminhtml_Scope_Edit_Form
             $this->_defaultValues[sprintf('search_attribute_%s_weight', $attributeCode)] = 10;
         }
 
+
+        Mage::dispatchEvent('ecomdev_sphinx_scope_form_create_fields', ['form' => $this->getForm(), 'block' => $this]);
+
         $this->getDataObject();
 
         return $this;

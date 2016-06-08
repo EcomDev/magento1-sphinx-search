@@ -39,7 +39,7 @@ class EcomDev_Sphinx_Model_Field
      * @param array $data
      * @return $this
      */
-    public function setDataFromArray(array $data)
+    protected function _setDataFromArray(array $data)
     {
         $jsonData = array();
 

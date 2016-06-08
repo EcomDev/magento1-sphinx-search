@@ -26,7 +26,33 @@ abstract class EcomDev_Sphinx_Model_AbstractModel
      *
      * @param array $data
      */
-    abstract public function setDataFromArray(array $data);
+    abstract protected function _setDataFromArray(array $data);
+
+    /**
+     * @param array $data
+     */
+    public function setDataFromArray(array $data)
+    {
+        if ($this->_eventObject && $this->_eventPrefix) {
+            $proxy = (object)['data' => $data];
+            Mage::dispatchEvent(
+                $this->_eventPrefix . '_set_data_from_array_before',
+                ['proxy' => $proxy, 'data' => $data] + $this->_getEventData()
+            );
+            $data = $proxy->data;
+        }
+
+        $this->_setDataFromArray($data);
+
+        if ($this->_eventObject && $this->_eventPrefix) {
+            Mage::dispatchEvent(
+                $this->_eventPrefix . '_set_data_from_array_after',
+                ['data' => $data] + $this->_getEventData()
+            );
+        }
+
+        return $this;
+    }
 
     /**
      * Returns list of errors that happened during setDataFromArray
@@ -84,6 +110,12 @@ abstract class EcomDev_Sphinx_Model_AbstractModel
         if ($errors) {
             return $errors;
         }
+
+        if ($this->_eventPrefix && $this->_eventObject) {
+            $proxy = (object)['result' => true];
+            Mage::dispatchEvent($this->_eventPrefix . '_validate', ['proxy' => $proxy] + $this->_getEventData());
+        }
+
 
         return true;
     }

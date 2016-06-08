@@ -59,13 +59,19 @@ class EcomDev_Sphinx_Model_Observer
                 $observer->getControllerAction()
                     ->getRequest()
             );
+
+            Mage::dispatchEvent('ecomdev_sphinx_init_category_view', [
+                'layer' => $this->_layerModel,
+                'category' => Mage::registry('current_category'),
+                'request' => $observer->getControllerAction()->getRequest()
+            ]);
         }
         
         return $this;
     }
 
     /**
-     * Enables sphinx search on category initialization
+     * Enables sphinx breadcrumbs
      *
      * @param Varien_Event_Observer $observer
      * @return $this
@@ -356,16 +362,27 @@ class EcomDev_Sphinx_Model_Observer
         $controller = $observer->getControllerAction();
         $navigationBlock = $controller->getLayout()->getBlock('sphinx.leftnav');
         $loaderBlock = $controller->getLayout()->getBlock('sphinx.loader');
-        $result = array();
+        $result = (object)[];
+
+        Mage::dispatchEvent('ecomdev_sphinx_json_response', [
+            'result' => $result,
+            'layout' => $controller->getLayout(),
+            'controller' => $controller,
+            'navigation' => $navigationBlock,
+            'loader' => $loaderBlock
+        ]);
         
-        if ($navigationBlock && $loaderBlock->getListBlock() && $loaderBlock) {
+        if (!isset($result->products)
+            && $navigationBlock
+            && $loaderBlock->getListBlock()
+            && $loaderBlock) {
             $loaderBlock->toHtml();
-            $result['filters'] = $navigationBlock->toHtml();
-            $result['products'] = $loaderBlock->getListBlock()->toHtml();
+            $result->filters = $navigationBlock->toHtml();
+            $result->products = $loaderBlock->getListBlock()->toHtml();
         }
         
         if ($controller->getLayout()->getBlock('profiler')) {
-            $result['profiler'] = $controller->getLayout()->getBlock('profiler')->toHtml(); 
+            $result->profiler = $controller->getLayout()->getBlock('profiler')->toHtml();
         }
 
         $controller->getResponse()

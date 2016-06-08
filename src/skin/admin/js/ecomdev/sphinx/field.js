@@ -1,4 +1,3 @@
-
 if (!window.EcomDev) {
     window.EcomDev = {};
 }

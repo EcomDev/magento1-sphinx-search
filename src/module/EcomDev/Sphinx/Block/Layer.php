@@ -8,6 +8,7 @@ class EcomDev_Sphinx_Block_Layer
     extends Mage_Core_Block_Template
     implements EcomDev_Sphinx_Block_LayerInterface
 {
+
     /**
      * List of facets
      *
@@ -44,6 +45,26 @@ class EcomDev_Sphinx_Block_Layer
     protected $_renderTypes = array();
 
     /**
+     * Url builder for layered navigation
+     *
+     * @var EcomDev_SphinxSeo_Model_Url_Builder
+     */
+    protected $urlBuilder;
+
+    /**
+     * Initialize factory instance
+     *
+     * @param array $args
+     */
+    public function __construct(array $args)
+    {
+        parent::__construct($args);
+
+        $this->urlBuilder = Mage::getSingleton('ecomdev_sphinx/url_builder');
+    }
+
+
+    /**
      * Configuration model
      *
      * @return EcomDev_Sphinx_Model_Config
@@ -61,13 +82,26 @@ class EcomDev_Sphinx_Block_Layer
     public function getFacets()
     {
         if ($this->_facets === null) {
-            $this->_facets = array();
-            foreach($this->getConfig()->getScope()->getFacets() as $code => $facet) {
-                $this->_facets[$code] = $facet;
-            }
+            $this->initFacets();
         }
         
         return $this->_facets; 
+    }
+
+    protected function initFacets()
+    {
+        $this->_facets = [];
+        $this->_activeFacetFilters = [];
+        foreach($this->getConfig()->getScope()->getFacets() as $code => $facet) {
+            $this->_facets[$code] = $facet;
+            $value = $facet->getFilterValue();
+            if ($value !== false) {
+                $this->_activeFacetFilters[$code] = $value;
+            }
+        }
+
+        $this->urlBuilder->initFacets($this->_facets, $this->_activeFacetFilters);
+        return $this;
     }
 
     /**
@@ -77,51 +111,11 @@ class EcomDev_Sphinx_Block_Layer
      */
     public function getCurrentUrl()
     {
-        $this->initUrl();
-        return $this->_currentUrl;
-    }
-
-    /**
-     * Initializes current url
-     *
-     * @return $this
-     */
-    private function initUrl()
-    {
-        if ($this->_currentUrl !== null) {
-            return $this;
+        if ($this->_facets === null) {
+            $this->initFacets();
         }
 
-        $url = Mage::app()->getStore()->getCurrentUrl();
-        $parsedUrl = parse_url($url);
-        $queryString = '';
-        if (isset($parsedUrl['query'])) {
-            $queryString = $parsedUrl['query'];
-            unset($parsedUrl['query']);
-        }
-
-        if (isset($parsedUrl['fragment'])) {
-            unset($parsedUrl['fragment']);
-        }
-
-        if ($queryString) {
-            parse_str(str_replace('&amp;', '&', $queryString), $queryParams);
-        } else {
-            $queryParams = array();
-        }
-
-        foreach (array('___SID', '___store', '___from_store', 'p') as $field) {
-            if (isset($queryParams[$field])) {
-                unset($queryParams[$field]);
-            }
-        }
-
-        $this->_additionalQuery = $queryParams;
-        $this->_currentUrl = $parsedUrl['scheme'] . '://' . $parsedUrl['host']
-            . (isset($parsedUrl['port']) ? ':' . $parsedUrl['port'] : '')
-            . $parsedUrl['path'];
-
-        return $this;
+        return $this->urlBuilder->getCurrentUrl();
     }
 
     /**
@@ -131,8 +125,11 @@ class EcomDev_Sphinx_Block_Layer
      */
     public function getAdditionalQuery()
     {
-        $this->initUrl();
-        return $this->_additionalQuery;
+        if ($this->_facets === null) {
+            $this->initFacets();
+        }
+
+        return $this->urlBuilder->getAdditionalParams();
     }
 
     /**
@@ -143,16 +140,16 @@ class EcomDev_Sphinx_Block_Layer
      */
     public function getOptionUrl(OptionInterface $option)
     {
-        $baseUrl = $this->getCurrentUrl();
-        $activeFilters = $this->getActiveFilters() + $this->getAdditionalQuery();
         $filter = $option->getFacet()->getFilterValue($option);
+        $without = [];
+        $options = [];
         if ($filter === false || $filter === null || $filter === '') {
-            unset($activeFilters[$option->getFacet()->getFilterField()]);
+            $without = [$option->getFacet()->getFilterField()];
         } else {
-            $activeFilters[$option->getFacet()->getFilterField()] = $filter;
+            $options[$option->getFacet()->getFilterField()] = $filter;
         }
 
-        return $baseUrl . ($activeFilters ? '?' . http_build_query($activeFilters, '', '&amp;') : '');
+        return $this->urlBuilder->getUrl($options, $without);
     }
 
     /**
@@ -163,15 +160,7 @@ class EcomDev_Sphinx_Block_Layer
      */
     public function getClearUrl(FacetInterface $facet)
     {
-        $baseUrl = $this->getCurrentUrl();
-        
-        $activeFilters = $this->getActiveFilters() + $this->_additionalQuery;
-        
-        if (isset($activeFilters[$facet->getFilterField()])) {
-            unset($activeFilters[$facet->getFilterField()]);
-        }
-        
-        return $baseUrl . ($activeFilters ? '?' . http_build_query($activeFilters, '', '&amp;') : '');
+        return $this->urlBuilder->getUrl([], [$facet->getFilterField()]);
     }
     
     /**
@@ -182,13 +171,7 @@ class EcomDev_Sphinx_Block_Layer
     public function getActiveFilters()
     {
         if ($this->_activeFacetFilters === null) {
-            $this->_activeFacetFilters = array();
-            foreach ($this->getFacets() as $code => $facet) {
-                $value = $facet->getFilterValue();
-                if ($value !== false) {
-                    $this->_activeFacetFilters[$code] = $value;
-                }
-            }
+            $this->initFacets();
         }
         
         return $this->_activeFacetFilters;
