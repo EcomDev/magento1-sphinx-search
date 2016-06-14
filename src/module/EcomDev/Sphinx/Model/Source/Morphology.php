@@ -18,25 +18,33 @@ class EcomDev_Sphinx_Model_Source_Morphology
     const STEM_SPANISH = 'libstemmer_spa';
     const STEM_SWEDISH = 'libstemmer_swe';
     const STEM_TURKISH = 'libstemmer_tur';
+    const NGRAM_CJK = 'ngram';
+    const DEFAULT_ENGLISH = 'stem_en';
+    const DEFAULT_RUSSIAN = 'stem_ru';
+    const DEFAULT_CZECH = 'stem_cz';
 
     protected function _initOptions()
     {
         $this->_options = array(
-            self::STEM_DANNISH => $this->__('Danish'),
-            self::STEM_DUTCH => $this->__('Dutch'),
-            self::STEM_ENGLISH => $this->__('English'),
-            self::STEM_FINNISH => $this->__('Finnish'),
-            self::STEM_FRENCH => $this->__('French'),
-            self::STEM_GERMAN => $this->__('German'),
-            self::STEM_HUNGARIAN => $this->__('Hungarian'),
-            self::STEM_ITALIAN => $this->__('Italian'),
-            self::STEM_NORWEGIAN => $this->__('Norwegian'),
-            self::STEM_PORTUGUESE => $this->__('Portuguese'),
-            self::STEM_ROMANIAN => $this->__('Romanian'),
-            self::STEM_RUSSIAN => $this->__('Russian'),
-            self::STEM_SPANISH => $this->__('Spanish'),
-            self::STEM_SWEDISH => $this->__('Swedish'),
-            self::STEM_TURKISH => $this->__('Turkish')
+            self::DEFAULT_ENGLISH => $this->__('English (default)'),
+            self::DEFAULT_RUSSIAN => $this->__('Russian (default)'),
+            self::DEFAULT_CZECH => $this->__('Czech (default)'),
+            self::NGRAM_CJK => $this->__('N-grams (Chinese, Japanese, Korean)'),
+            self::STEM_DANNISH => $this->__('Danish (snowball)'),
+            self::STEM_DUTCH => $this->__('Dutch (snowball)'),
+            self::STEM_ENGLISH => $this->__('English  (snowball)'),
+            self::STEM_FINNISH => $this->__('Finnish (snowball)'),
+            self::STEM_FRENCH => $this->__('French (snowball)'),
+            self::STEM_GERMAN => $this->__('German (snowball)'),
+            self::STEM_HUNGARIAN => $this->__('Hungarian (snowball)'),
+            self::STEM_ITALIAN => $this->__('Italian (snowball)'),
+            self::STEM_NORWEGIAN => $this->__('Norwegian (snowball)'),
+            self::STEM_PORTUGUESE => $this->__('Portuguese (snowball)'),
+            self::STEM_ROMANIAN => $this->__('Romanian (snowball)'),
+            self::STEM_RUSSIAN => $this->__('Russian (snowball)'),
+            self::STEM_SPANISH => $this->__('Spanish (snowball)'),
+            self::STEM_SWEDISH => $this->__('Swedish (snowball)'),
+            self::STEM_TURKISH => $this->__('Turkish (snowball)')
         );
     }
 
