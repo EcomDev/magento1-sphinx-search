@@ -91,8 +91,13 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
 
         $stores = Mage::app()->getStores(false);
 
+        /** @var Mage_Core_Model_Store $store */
         foreach ($stores as $store) {
             $storeId = $store->getId();
+
+            if ($store->getConfig('ecomdev_sphinx/general/disable_indexation')) {
+                continue;
+            }
 
             $config['sources'][sprintf('category_%s : category_base', $storeId)] = $this->getCommandSource(
                 'category', $baseType, $storeId
@@ -129,7 +134,6 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
                 $stemmerConfig = [3 => sprintf('morphology = %s', $morphology)];
             }
 
-            $stemmer = $this->_getConfig()->getConfig('');
             $config['indexes'][sprintf('category_%s', $storeId)] = array(
                 sprintf('source = category_%s', $storeId),
                 sprintf('path = %s/%s_%s', $indexPath, 'category', $storeId)
