@@ -115,7 +115,7 @@ class EcomDev_Sphinx_Model_Resource_Sphinx_Config_Index_Collection
             }
 
             $this->storeIds[] = $store->getId();
-            $this->keywordEnabled[$store->getId()] = $store->getConfig();
+            $this->keywordEnabled[$store->getId()] = (bool)$store->getConfig('ecomdev_sphinx/general/search_active');
         }
 
         return $this;
