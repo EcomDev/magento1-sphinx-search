@@ -89,16 +89,10 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
 
         $config['sources']['keyword_base'] = $this->getBaseIndexSource('keyword', $baseType);
 
-        $stores = Mage::app()->getStores(false);
+        $indexCollection = Mage::getResourceSingleton('ecomdev_sphinx/sphinx_config_index_collection');
 
         /** @var Mage_Core_Model_Store $store */
-        foreach ($stores as $store) {
-            $storeId = $store->getId();
-
-            if ($store->getConfig('ecomdev_sphinx/general/disable_indexation')) {
-                continue;
-            }
-
+        foreach ($indexCollection->getStoreIds() as $storeId) {
             $config['sources'][sprintf('category_%s : category_base', $storeId)] = $this->getCommandSource(
                 'category', $baseType, $storeId
             );
@@ -123,15 +117,23 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
                 'product', $deltaType, $storeId, ['--visibility', 'search'], true
             );
 
-            $config['sources'][sprintf('keyword_%s : keyword_base', $storeId)] = $this->getCommandSource(
-                'keyword', $baseType, $storeId
-            );
+            if ($indexCollection->isKeywordEnabled($storeId)) {
+                $config['sources'][sprintf('keyword_%s : keyword_base', $storeId)] = $this->getCommandSource(
+                    'keyword', $baseType, $storeId
+                );
+            }
 
             $stemmerConfig = [];
 
             if (Mage::getStoreConfigFlag('ecomdev_sphinx/general/stemmer', $storeId)) {
                 $morphology = Mage::getStoreConfig('ecomdev_sphinx/general/stemmer_morphology', $storeId);
                 $stemmerConfig = [3 => sprintf('morphology = %s', $morphology)];
+
+                // Replace morphology with NGRAM for CJK languages.
+                if ($morphology === EcomDev_Sphinx_Model_Source_Morphology::NGRAM_CJK) {
+                    $stemmerConfig[3] = sprintf('ngram_chars = %s', 'U+3000..U+2FA1F');
+                    $stemmerConfig[4] = sprintf('ngram_len = %s', 1);
+                }
             }
 
             $config['indexes'][sprintf('category_%s', $storeId)] = array(
@@ -164,10 +166,12 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
                 sprintf('path = %s/%s_%s', $indexPath, 'product_search_delta', $storeId)
             ) + $stemmerConfig;
 
-            $config['indexes'][sprintf('keyword_%s', $storeId)] = array(
-                sprintf('source = keyword_%s', $storeId),
-                sprintf('path = %s/%s_%s', $indexPath, 'keyword', $storeId)
-            ) + $stemmerConfig;
+            if ($indexCollection->isKeywordEnabled($storeId)) {
+                $config['indexes'][sprintf('keyword_%s', $storeId)] = array(
+                    sprintf('source = keyword_%s', $storeId),
+                    sprintf('path = %s/%s_%s', $indexPath, 'keyword', $storeId)
+                ) + $stemmerConfig;
+            }
         }
 
         return $config;

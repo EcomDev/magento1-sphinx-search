@@ -18,7 +18,7 @@ class EcomDev_Sphinx_Model_Source_Morphology
     const STEM_SPANISH = 'libstemmer_spa';
     const STEM_SWEDISH = 'libstemmer_swe';
     const STEM_TURKISH = 'libstemmer_tur';
-    const RTL_CHINESE = ' stem_en, rlp_chinese_batched';
+    const NGRAM_CJK = 'ngram';
     const DEFAULT_ENGLISH = 'stem_en';
     const DEFAULT_RUSSIAN = 'stem_ru';
     const DEFAULT_CZECH = 'stem_cz';
@@ -29,6 +29,7 @@ class EcomDev_Sphinx_Model_Source_Morphology
             self::DEFAULT_ENGLISH => $this->__('English (default)'),
             self::DEFAULT_RUSSIAN => $this->__('Russian (default)'),
             self::DEFAULT_CZECH => $this->__('Czech (default)'),
+            self::NGRAM_CJK => $this->__('N-grams (Chinese, Japanese, Korean)'),
             self::STEM_DANNISH => $this->__('Danish (snowball)'),
             self::STEM_DUTCH => $this->__('Dutch (snowball)'),
             self::STEM_ENGLISH => $this->__('English  (snowball)'),
