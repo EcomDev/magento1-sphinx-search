@@ -110,7 +110,7 @@ class EcomDev_Sphinx_Model_Resource_Sphinx_Config_Index_Collection
         $this->storeIds = [];
 
         foreach (Mage::app()->getStores(false) as $store) {
-            if (!$store->getConfig('ecomdev_sphinx/general/disable_indexation')) {
+            if ($store->getConfig('ecomdev_sphinx/general/disable_indexation')) {
                 continue;
             }
 
