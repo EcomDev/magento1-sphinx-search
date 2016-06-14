@@ -345,8 +345,7 @@ class EcomDev_Sphinx_Model_Sphinx_Config
 
         // Keywords are enabled only when sphinx search is used
         if ($forceReindex
-            && $indexKeywords
-            && $this->_getConfig()->getConfig('search_active', 'general')) {
+            && $indexKeywords) {
             foreach ($collection as $item) {
                 if ($item->getCode() === self::TYPE_KEYWORD) {
                     $forceReindexList[] = [$this->_types[$item->getCode()][0], (int)$item->getStoreId()];
