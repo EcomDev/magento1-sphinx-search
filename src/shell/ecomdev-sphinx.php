@@ -138,6 +138,8 @@ Defined <action>s:
 
      -s --store         Store
 
+  keyword:import:all  Import keywords on every store view where it is available
+
   console           Opens sphinx console
 USAGE;
     }
@@ -472,7 +474,6 @@ USAGE;
         $this->getSphinxConfig()->controlIndexData(false, $this->getOutput());
     }
 
-
     /**
      * Dumps keywords
      *
@@ -525,6 +526,24 @@ USAGE;
         fwrite($output, "Keywords are imported\n");
     }
 
+
+    public function runKeywordImportAll()
+    {
+        $output = $this->getOutput();
+
+        $collection = Mage::getResourceSingleton('ecomdev_sphinx/sphinx_config_index_collection');
+        foreach ($collection->getStoreIds() as $storeId) {
+            if (!$collection->isKeywordEnabled($storeId)) {
+                fwrite($output, sprintf("Skip keywords for store #%s\n", $storeId));
+                continue;
+            }
+
+            $this->getSphinxConfig()->keywordImport(
+                (int)$storeId
+            );
+            fwrite($output, sprintf("Keywords are imported for store #%s\n", $storeId));
+        }
+    }
 
     /**
      * Validates arguments
