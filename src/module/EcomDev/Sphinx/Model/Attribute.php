@@ -199,7 +199,9 @@ class EcomDev_Sphinx_Model_Attribute
             'is_custom_value_allowed',
             'filter_type',
             'position',
-            'is_sort'
+            'is_sort',
+            'is_child_data',
+            'is_child_data_stock'
         );
         
         if (!$this->getIsSystem()) {

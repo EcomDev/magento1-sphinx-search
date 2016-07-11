@@ -228,13 +228,9 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
 
     private function getMergedAttributeValues($attributeTable, $storeId, $isChild = false)
     {
-        $defaultSelect = $this->getAttributeValueSelect($attributeTable, 0, $isChild);
         $storeSelect = $this->getAttributeValueSelect($attributeTable, $storeId, $isChild);
 
         $data = [];
-        foreach ($this->_getReadAdapter()->query($defaultSelect) as $row) {
-            $data[$row['main_id'] . '_' . $row['attribute_id']] = $row;
-        }
 
         foreach ($this->_getReadAdapter()->query($storeSelect) as $row) {
             $data[$row['main_id'] . '_' . $row['attribute_id']] = $row;
@@ -260,11 +256,37 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
             ->from(['default_value' => $entityValueTable],[]);
 
         if ($isChild) {
-            $select->join(['relation' => $this->getTable('catalog/product_relation')], 'relation.child_id = default_value.entity_id', []);
-            $select->join(['product' => $this->getTable('catalog/product')], 'product.entity_id = relation.parent_id', []);
-            $select->join(['entity_id' => $this->getMainMemoryTable('entity_id')], 'entity_id.id = relation.parent_id', []);
-            $select->join(['product_super' => $this->getTable('catalog/product_super_attribute')], 'product_super.product_id = entity_id.id and product_super.attribute_id = default_value.attribute_id', []);
-            $select->where('product.type_id = ?', Mage_Catalog_Model_Product_Type::TYPE_CONFIGURABLE);
+            $select
+                ->join(
+                    ['attribute' => $this->getTable('ecomdev_sphinx/attribute')],
+                    'default_value.attribute_id = attribute.attribute_id and attribute.is_child_data = 1',
+                    []
+                )
+                ->join(
+                    ['relation' => $this->getTable('catalog/product_relation')],
+                    'relation.child_id = default_value.entity_id',
+                    []
+                )
+                ->join(
+                    ['product' => $this->getTable('catalog/product')],
+                    'product.entity_id = relation.parent_id',
+                    []
+                )
+                ->join( // Filter for in stock child products if option is set on attribute level
+                    ['stock_status' => $this->getTable('cataloginventory/stock_status')],
+                    $this->_getReadAdapter()->quoteInto(
+                        'stock_status.product_id = relation.child_id'
+                            . ' AND stock_status.website_id = ?'
+                            . ' AND stock_status.stock_status IN(1, attribute.is_child_data_stock)',
+                        Mage::app()->getStore($storeId)->getWebsiteId()
+                    ),
+                    []
+                )
+                ->join(
+                    ['entity_id' => $this->getMainMemoryTable('entity_id')],
+                    'entity_id.id = relation.parent_id',
+                    []
+                );
         } else {
             $select->join(['entity_id' => $this->getMainMemoryTable('entity_id')], 'default_value.entity_id = entity_id.id', []);
         }
@@ -276,7 +298,8 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
                 'value' => new Zend_Db_Expr('TRIM(default_value.value)'),
                 'is_multi_value' => new Zend_Db_Expr('LOCATE(\',\', default_value.value)'),
             ])
-            ->where('default_value.store_id = ?', $storeId)
+            ->where('default_value.store_id IN(0, ?)', $storeId)
+            ->order('default_value.store_id ASC')
         ;
 
         if ($isChild) {
@@ -284,6 +307,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
         } else {
             $select->columns(['main_id' => 'entity_id.id']);
         }
+
 
         return $select;
     }

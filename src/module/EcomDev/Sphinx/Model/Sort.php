@@ -83,6 +83,8 @@ class EcomDev_Sphinx_Model_Sort
                 '@i_best_anchor_position' => Mage::helper('ecomdev_sphinx')->__('Best Category Position (Anchor)'),
                 '@i_best_direct_position' => Mage::helper('ecomdev_sphinx')->__('Best Category Position (Direct)'),
                 '@stock_status' => Mage::helper('ecomdev_sphinx')->__('Stock Status'),
+                '@created_at' => Mage::helper('ecomdev_sphinx')->__('Created At'),
+                '@updated_at' => Mage::helper('ecomdev_sphinx')->__('Updated At'),
                 '@type_id' => Mage::helper('ecomdev_sphinx')->__('Type ID (string)'),
                 '@f_stock_qty' => Mage::helper('ecomdev_sphinx')->__('Available Stock Qty'),
                 '@relevance' => Mage::helper('ecomdev_sphinx')->__('Search Relevance (Search Only)')

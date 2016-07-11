@@ -68,9 +68,19 @@ class EcomDev_Sphinx_Block_Adminhtml_Attribute_Edit_Form
             ));
         }
 
-        $this->_addField('is_sort', 'select', $this->__('Use In Sorting Results'), array(
-            'option_model' => 'ecomdev_sphinx/source_yesno'
-        ));
+        $this
+            ->_addField('is_sort', 'select', $this->__('Use In Sorting Results'), array(
+                'option_model' => 'ecomdev_sphinx/source_yesno'
+            ))
+            ->_addField('is_child_data', 'select', $this->__('Use Child Product Data for Export'), array(
+                'option_model' => 'ecomdev_sphinx/source_yesno'
+            ))->_addField('is_child_data_stock', 'select', $this->__('Use Only In Stock Child Product Data'), array(
+                'option_model' => 'ecomdev_sphinx/source_yesno'
+            ))
+            ->_fieldDependence('is_child_data_stock', 'is_child_data', '1')
+        ;
+
+
 
         Mage::dispatchEvent('ecomdev_sphinx_attribute_form_create_fields', ['form' => $this->getForm(), 'block' => $this]);
         return $this;
