@@ -1,4 +1,5 @@
 <?php
+use EcomDev_Sphinx_Model_Source_Level as LevelSource;
 
 class EcomDev_Sphinx_Block_Adminhtml_Scope_Edit_Form
     extends EcomDev_Sphinx_Block_Adminhtml_Edit_Form
@@ -63,10 +64,13 @@ class EcomDev_Sphinx_Block_Adminhtml_Scope_Edit_Form
                         'option_model' => 'ecomdev_sphinx/source_yesno'
                     ) + $nonRequired)
                 ->_addField('label', 'text', $this->__('Category Filter Label'), $nonRequired)
-                ->_addField('max_level_deep', 'text', $this->__('Number of categories to fetch'), $nonRequired)
-                ->_addField('include_same_level', 'select', $this->__('Use Same Level Categories'), array(
-                    'option_model' => 'ecomdev_sphinx/source_yesno'
+                ->_addField('max_level_deep', 'text', $this->__('Category Fetch Level'), $nonRequired)
+                ->_addField('include_same_level', 'select', $this->__('Custom Category Level'), array(
+                    'option_model' => 'ecomdev_sphinx/source_level'
                 ) + $nonRequired)
+                ->_addField('top_category_level', 'text', $this->__('Top Category Level'), $nonRequired)
+                ->_fieldComment('top_category_level', $this->__('Specify level from which tree of categories will be rendered'))
+                ->_fieldDependence('top_category_level', 'include_same_level', LevelSource::LEVEL_CUSTOM)
                 ->_addField('only_direct_products', 'select', $this->__('Show only direct products'), array(
                     'option_model' => 'ecomdev_sphinx/source_yesno'
                 ) + $nonRequired)

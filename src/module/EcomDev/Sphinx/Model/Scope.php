@@ -177,7 +177,9 @@ class EcomDev_Sphinx_Model_Scope
             $this->_getCategoryFilterLabel(),
             $this->_getCategoryData(),
             array($this->getLayer()->getCurrentCategory()->getId()),
-            $this->getLayer()->getCurrentCategory()->getData(),
+            $this->getLayer()->getCurrentCategory()->getData() + [
+                'category_filter' => $this->getConfigurationValue('category_filter')
+            ],
             $this->getConfigurationValue('category_filter/renderer')
         );
     }
@@ -530,22 +532,49 @@ class EcomDev_Sphinx_Model_Scope
 
         $minLevel = $this->getLayer()->getCurrentCategory()->getLevel();
 
-        if ($maxLevel <= 0) {
-            $maxLevel = 2;
-        }
-
-        $maxLevel = $this->getLayer()->getCurrentCategory()->getLevel() + $maxLevel;
-
-        if ((int)$this->getConfigurationValue('category_filter/include_same_level') > 0) {
-            $parentPath = dirname($parentPath);
-            $minLevel -= 1;
+        switch ($this->getConfigurationValue('category_filter/include_same_level')) {
+            case EcomDev_Sphinx_Model_Source_Level::LEVEL_SAME:
+                $parentPath = dirname($parentPath);
+                $minLevel -= 1;
+                $maxLevel = $this->getLayer()->getCurrentCategory()->getLevel() + $maxLevel;
+                break;
+            case EcomDev_Sphinx_Model_Source_Level::LEVEL_CUSTOM:
+                $minLevel = (int)$this->getConfigurationValue('category_filter/top_category_level');
+                if ($minLevel === 0) {
+                    $minLevel = (int)$this->getLayer()->getCurrentCategory()->getLevel();
+                }
+                $parents = explode('/', $parentPath);
+                if (count($parents) > $minLevel) {
+                    $parents = array_slice($parents, 0, $minLevel+1);
+                }
+                $parentPath = implode('/', $parents);
+                break;
+            default:
+                if ($maxLevel <= 0) {
+                    $maxLevel = 2;
+                }
+                $maxLevel = $this->getLayer()->getCurrentCategory()->getLevel() + $maxLevel;
+                break;
         }
 
         $query = $this->_getConfig()->getContainer()->queryBuilder();
+
+        $proxy = (object)['columns' => ['category_id', 'name', 'path', 'request_path', 'include_in_menu']];
+        // Allow to modify select attributes
+        Mage::dispatchEvent('ecomdev_sphinx_scope_category_data_columns', [
+            'proxy' => $proxy,
+            'max_level' => $maxLevel,
+            'min_level' => $minLevel,
+            'parent_path' => $parentPath,
+            'scope' => $this
+        ]);
+
+        call_user_func_array([$query, 'select'], $proxy->columns);
+
         $query
             ->select('category_id', 'name', 'path', 'request_path', 'include_in_menu')
             ->from($this->_getConfig()->getContainer()->getIndexNames('category'))
-            ->where('is_active','=', 1)
+            ->where('is_active', '=', 1)
             ->where('level', '<=', (int)$maxLevel)
             ->where('level', '>', (int)$minLevel)
             ->orderBy('level', 'asc')
@@ -555,7 +584,7 @@ class EcomDev_Sphinx_Model_Scope
             ))
             ->limit(1000);
 
-        $result = array();
+        $result = [];
         foreach ($query->execute() as $row) {
             $result[(int)$row['category_id']] = $row;
         }

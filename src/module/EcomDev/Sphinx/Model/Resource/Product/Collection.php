@@ -188,7 +188,7 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
                     }
 
                     if ($column === '@position' && in_array('j_category_position', $indexFields) && isset($this->_productLimitationFilters['category_id'])) {
-                        $query->orderBy($query->expr('j_category_position.cat_' . $this->_productLimitationFilters['category_id']), $direction);
+                        $query->orderBy($query->expr(sprintf('INTEGER(j_category_position.cat_%d)', $this->_productLimitationFilters['category_id'])), $direction);
                     } elseif ($column === '@relevance') {
                         $query->orderBy($query->expr('weight()'), $direction);
                     } elseif (strpos($column, '@') === 0 && in_array(substr($column, 1), $indexFields)) {
@@ -209,7 +209,7 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
             if ($order === 'position'
                 && isset($indexFields['j_category_position'])
                 && isset($this->_productLimitationFilters['category_id'])) {
-                $query->orderBy($query->expr('j_category_position.cat_' . $this->_productLimitationFilters['category_id']), $direction);
+                $query->orderBy($query->expr(sprintf('INTEGER(j_category_position.cat_%d)', $this->_productLimitationFilters['category_id'])), $direction);
             } elseif ($order && isset($indexFields[sprintf('s_%s_sort', $order)])) {
                 $query->orderBy(sprintf('s_%s_sort', $order), $direction);
             } elseif ($order && isset($indexFields[$order])) {

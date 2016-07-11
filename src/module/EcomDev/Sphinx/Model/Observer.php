@@ -150,17 +150,28 @@ class EcomDev_Sphinx_Model_Observer
 
         $recursionLevel  = max(0, (int) Mage::app()->getStore()->getConfig('catalog/navigation/max_depth'));
         $query = $this->_getConfig()->getContainer()->queryBuilder();
+
+        $proxy = (object)['columns' => [
+            $query->expr('category_id as entity_id'),
+            'path',
+            'name',
+            'is_active',
+            'request_path',
+            'position',
+            'include_in_menu',
+            'level'
+        ]];
+
+        // Allow to modify select attributes
+        Mage::dispatchEvent('ecomdev_sphinx_observer_store_root_category_select_columns', [
+            'proxy' => $proxy,
+            'root_category' => $category,
+            'query' => $query
+        ]);
+
+        call_user_func_array([$query, 'select'], $proxy->columns);
+
         $query
-            ->select(
-                $query->expr('category_id as entity_id'),
-                'path',
-                'name',
-                'is_active',
-                'request_path',
-                'position',
-                'include_in_menu',
-                'level'
-            )
             ->from($indexNames)
             ->where('is_active','=', 1)
             ->orderBy('level', 'asc')
