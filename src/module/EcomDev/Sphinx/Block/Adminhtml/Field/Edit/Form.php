@@ -140,6 +140,8 @@ class EcomDev_Sphinx_Block_Adminhtml_Field_Edit_Form
                 foreach ($values as $name => $value) {
                     $options[$fieldSet . '_' . $name] = $value;
                 }
+            } else {
+                $options[$fieldSet] = $values;
             }
         }
 

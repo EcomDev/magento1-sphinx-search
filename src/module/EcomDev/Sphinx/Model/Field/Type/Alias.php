@@ -40,4 +40,34 @@ class EcomDev_Sphinx_Model_Field_Type_Alias
             $this->getStoreLabel($field->getConfigurationValue('store_name'), $field->getName())
         );
     }
+
+    /**
+     * Returns option hash array of virtual options
+     *
+     * @param VirtualField $field
+     * @return string[]
+     * @throws Mage_Core_Exception
+     */
+    public function getOptionHash(VirtualField $field)
+    {
+        $mappingConfig = $field->getConfigurationValue('field/map');
+        if (!is_array($mappingConfig)) {
+            $mappingConfig = [];
+        }
+
+        $result = [];
+
+        foreach ($field->getRelatedAttribute()
+                     ->getAttribute()->getSource()->getAllOptions() as $option) {
+            if (!$option['value'] || isset($mappingConfig[$option['value']])) {
+                continue;
+            }
+
+            $result[$option['value']] = $option['label'];
+        }
+
+        return $result;
+    }
+
+
 }
