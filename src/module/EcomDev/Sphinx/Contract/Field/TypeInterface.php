@@ -31,4 +31,12 @@ interface EcomDev_Sphinx_Contract_Field_TypeInterface
      * @return string[]|bool
      */
     public function validate(VirtualField $field, $mode);
+
+    /**
+     * Returns option hash array of virtual options
+     *
+     * @param VirtualField $field
+     * @return string[]
+     */
+    public function getOptionHash(VirtualField $field);
 }

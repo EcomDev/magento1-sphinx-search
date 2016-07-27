@@ -73,4 +73,26 @@ class EcomDev_Sphinx_Model_Field_Type_Grouped
             $options
         );
     }
+
+    /**
+     * Returns option hash array of virtual options
+     *
+     * @param VirtualField $field
+     * @return string[]
+     */
+    public function getOptionHash(VirtualField $field)
+    {
+        $mappingConfig = $field->getConfigurationValue('field/map');
+        if (!is_array($mappingConfig)) {
+            $mappingConfig = [];
+        }
+
+        $result = [];
+
+        foreach ($mappingConfig as $uniqueCode => $target) {
+            $result[$uniqueCode] = $target['label'];
+        }
+
+        return $result;
+    }
 }

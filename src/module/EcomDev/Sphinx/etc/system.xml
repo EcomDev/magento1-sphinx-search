@@ -343,6 +343,16 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </active>
+                        <disable_indexation translate="label comment">
+                            <label>Disable Indexation</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>ecomdev_sphinx/source_yesno</source_model>
+                            <comment>Disables Indexation for current store. Useful when you do not use sphinx on particular store views.</comment>
+                            <sort_order>15</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </disable_indexation>
                         <search_active translate="label comment">
                             <label>Search Active</label>
                             <frontend_type>select</frontend_type>

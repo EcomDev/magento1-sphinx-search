@@ -67,22 +67,22 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
                 $names[$row['category_id']] = new CategoryName();
             }
 
-            $data[$row['product_id']]['_category_position']['cat_' . $row['category_id']] = $row['position'];
+            $data[$row['product_id']]['_category_position']['cat_' . $row['category_id']] = (int)$row['position'];
 
 
             if ($row['position'] !== '0' && $row['is_parent']) {
-                $data[$row['product_id']]['_direct_position']['cat_' . $row['category_id']] = $row['position'];
+                $data[$row['product_id']]['_direct_position']['cat_' . $row['category_id']] = (int)$row['position'];
                 if (!isset($data[$row['product_id']]['_best_direct_position'])
                     || $data[$row['product_id']]['_best_direct_position'] > $row['position']) {
-                    $data[$row['product_id']]['_best_direct_position'] = $row['position'];
+                    $data[$row['product_id']]['_best_direct_position'] = (int)$row['position'];
                 }
             }
 
             if ($row['position'] !== '0') {
-                $data[$row['product_id']]['_anchor_position']['cat_' . $row['category_id']] = $row['position'];
+                $data[$row['product_id']]['_anchor_position']['cat_' . $row['category_id']] = (int)$row['position'];
                 if (!isset($data[$row['product_id']]['_best_anchor_position'])
                     || $data[$row['product_id']]['_best_anchor_position'] > $row['position']) {
-                    $data[$row['product_id']]['_best_anchor_position'] = $row['position'];
+                    $data[$row['product_id']]['_best_anchor_position'] = (int)$row['position'];
                 }
             }
 

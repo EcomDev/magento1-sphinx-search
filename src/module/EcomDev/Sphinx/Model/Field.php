@@ -134,6 +134,22 @@ class EcomDev_Sphinx_Model_Field
     }
 
     /**
+     * Returns list of option hash objects
+     *
+     * @return string[]
+     */
+    public function getOptionHash()
+    {
+        $typeModel = $this->getTypeModel();
+
+        if ($typeModel) {
+            return $typeModel->getOptionHash($this);
+        }
+
+        return [];
+    }
+
+    /**
      * Returns index field
      *
      * @return bool|EcomDev_Sphinx_Contract_FieldInterface

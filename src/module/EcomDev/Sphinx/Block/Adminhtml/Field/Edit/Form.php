@@ -50,6 +50,15 @@ class EcomDev_Sphinx_Block_Adminhtml_Field_Edit_Form
                     ]
                 )
                 ->_addField(
+                    'related_attribute',
+                    'select',
+                    $this->__('Attribute'),
+                    [
+                        'option_model' => 'ecomdev_sphinx/source_attribute_active',
+                        'disabled' => true
+                    ]
+                )
+                ->_addField(
                     'is_active', 'select',
                     $this->__('Is Active?'),
                     [
@@ -71,7 +80,11 @@ class EcomDev_Sphinx_Block_Adminhtml_Field_Edit_Form
                     [
                         'required' => false
                     ]
-                );
+                )
+
+
+
+        ;
 
         if ($this->getChild('container')) {
             $this->getChild('container')->setField($this->getDataObject());
@@ -127,6 +140,8 @@ class EcomDev_Sphinx_Block_Adminhtml_Field_Edit_Form
                 foreach ($values as $name => $value) {
                     $options[$fieldSet . '_' . $name] = $value;
                 }
+            } else {
+                $options[$fieldSet] = $values;
             }
         }
 

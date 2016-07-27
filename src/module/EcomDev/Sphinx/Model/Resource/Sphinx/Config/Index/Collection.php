@@ -11,6 +11,20 @@ class EcomDev_Sphinx_Model_Resource_Sphinx_Config_Index_Collection
      */
     private $supportRowCount;
 
+    /**
+     * Store ids on which indexation is enabled
+     *
+     * @var int[]
+     */
+    private $storeIds;
+
+    /**
+     * Stores that support keywords
+     *
+     * @var boolean[]
+     */
+    private $keywordEnabled;
+
     protected function _construct()
     {
         $this->_init('ecomdev_sphinx/sphinx_config_index');
@@ -49,7 +63,62 @@ class EcomDev_Sphinx_Model_Resource_Sphinx_Config_Index_Collection
      */
     public function getSize()
     {
-        return count(Mage::app()->getStores(false))*3;
+        return count($this->getStoreIds())*2 + count(array_filter($this->keywordEnabled));
+    }
+
+    /**
+     * Returns store ids in which index is enabled
+     *
+     * @return int[]
+     */
+    public function getStoreIds()
+    {
+        if ($this->storeIds === null) {
+            $this->initStoreConfig();
+        }
+
+        return $this->storeIds;
+    }
+
+    /**
+     * Keywords flag check
+     *
+     * @param int $storeId
+     * @return bool
+     */
+    public function isKeywordEnabled($storeId)
+    {
+        if ($this->keywordEnabled === null) {
+            $this->initStoreConfig();
+        }
+
+        if (empty($this->keywordEnabled[$storeId])) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Initialises store configuration
+     *
+     * @return $this
+     */
+    private function initStoreConfig()
+    {
+        $this->keywordEnabled = [];
+        $this->storeIds = [];
+
+        foreach (Mage::app()->getStores(false) as $store) {
+            if ($store->getConfig('ecomdev_sphinx/general/disable_indexation')) {
+                continue;
+            }
+
+            $this->storeIds[] = (int)$store->getId();
+            $this->keywordEnabled[(int)$store->getId()] = (bool)$store->getConfig('ecomdev_sphinx/general/search_active');
+        }
+
+        return $this;
     }
 
     /**
@@ -61,19 +130,26 @@ class EcomDev_Sphinx_Model_Resource_Sphinx_Config_Index_Collection
     {
         $missingItems = [];
 
-        foreach (Mage::app()->getStores(false) as $store) {
-            $missingItems[EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT . '_catalog'][$store->getId()] = true;
-            $missingItems[EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT . '_search'][$store->getId()] = true;
-            $missingItems[EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_KEYWORD][$store->getId()] = true;
+        foreach ($this->getStoreIds() as $storeId) {
+            $missingItems[EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT . '_catalog'][$storeId] = true;
+            $missingItems[EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT . '_search'][$storeId] = true;
+
+            if (!$this->isKeywordEnabled($storeId)) {
+                $missingItems[EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_KEYWORD][$storeId] = true;
+            }
         }
 
 
         $id = 1;
         foreach ($this->_data as $index => $item) {
             $this->_data[$index]['id'] = $id++;
-            if (isset($missingItems[$item['code']][$item['store_id']])) {
-                unset($missingItems[$item['code']][$item['store_id']]);
+
+            if (!isset($missingItems[$item['code']][$item['store_id']])) {
+                unset($this->_data[$index]);
+                continue;
             }
+            
+            unset($missingItems[$item['code']][$item['store_id']]);
         }
         
         if ($missingItems) {

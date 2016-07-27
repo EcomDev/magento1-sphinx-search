@@ -27,6 +27,8 @@ class EcomDev_Sphinx_Model_Index_Field_Provider_Product_Attribute_System
             new RegularField(FieldInterface::TYPE_FIELD_STRING, 'description'),
             new RegularField(FieldInterface::TYPE_FIELD_STRING, 'short_description'),
             new RegularField(FieldInterface::TYPE_FIELD_STRING, 'request_path'),
+            new RegularField(FieldInterface::TYPE_ATTRIBUTE_TIMESTAMP, 'created_at'),
+            new RegularField(FieldInterface::TYPE_ATTRIBUTE_TIMESTAMP, 'updated_at'),
             new IntegerField('tax_class_id', 4),
             new IntegerField('visibility', 4),
             new IntegerField('status', 4),
@@ -61,7 +63,8 @@ class EcomDev_Sphinx_Model_Index_Field_Provider_Product_Attribute_System
         $container->attributeCodeByType = [
             'static' => [
                 'entity_id', 'type_id', 'attribute_set_id',
-                'sku', 'has_options', 'required_options'
+                'sku', 'has_options', 'required_options',
+                'created_at', 'updated_at'
             ],
             'varchar' => [
                 'name',
