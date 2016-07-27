@@ -106,18 +106,18 @@ abstract class EcomDev_Sphinx_Model_AbstractModel
                 }
             }
         }
-        
-        if ($errors) {
-            return $errors;
-        }
+
 
         if ($this->_eventPrefix && $this->_eventObject) {
-            $proxy = (object)['result' => true];
+            $proxy = (object)['result' => true, 'errors' => array()];
             Mage::dispatchEvent($this->_eventPrefix . '_validate', ['proxy' => $proxy] + $this->_getEventData());
+            if ($proxy->result === false) {
+                $errors += $proxy->errors;
+            }
         }
 
 
-        return true;
+        return !empty($errors) ? $errors : true;
     }
 
     /**
