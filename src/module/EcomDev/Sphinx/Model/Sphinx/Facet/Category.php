@@ -48,8 +48,7 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Category
         array $excludeCategoryIds = array(),
         array $currentCategoryData = array(),
         $renderType = null
-    )
-    {
+    ) {
         parent::__construct('anchor_category_ids', 'cat', $label);
 
         $this->_categoryData = $categoryData;
@@ -131,12 +130,6 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Category
                 && !in_array($row['value'], $this->_excludeCategoryIds)) {
                 $row['label'] = $this->_categoryData[$row['value']]['name'];
                 $result[array_search($row['value'], $categoryOrder)] = $row;
-
-                if (isset($row['count'])) {
-                    $this->_categoryData[$row['value']]['count'] = $row['count'];
-                } else {
-                    $this->_categoryData[$row['value']]['count'] = 0;
-                }
             }
         }
 

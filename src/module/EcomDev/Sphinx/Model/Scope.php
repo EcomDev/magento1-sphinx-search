@@ -176,7 +176,7 @@ class EcomDev_Sphinx_Model_Scope
         return new $class(
             $this->_getCategoryFilterLabel(),
             $this->_getCategoryData(),
-            array($this->getLayer()->getCurrentCategory()->getId()),
+            [$this->getLayer()->getCurrentCategory()->getId()],
             $this->getLayer()->getCurrentCategory()->getData() + [
                 'category_filter' => $this->getConfigurationValue('category_filter')
             ],
@@ -345,7 +345,15 @@ class EcomDev_Sphinx_Model_Scope
 
         if ($this->getConfigurationValue('category_filter/is_active')) {
             $categoryFacet = $this->_getCategoryFacet();
-            $this->_facets[$categoryFacet->getFilterField()] = $categoryFacet;
+
+            if (is_numeric($this->getConfigurationValue('category_filter/position'))) {
+                $facets[$categoryFacet->getFilterField()] = $categoryFacet;
+                $facetOrder[$categoryFacet->getFilterField()] = (int)$this->getConfigurationValue(
+                    'category_filter/position'
+                );
+            } else {
+                $this->_facets[$categoryFacet->getFilterField()] = $categoryFacet;
+            }
         }
 
         asort($facetOrder);
@@ -529,23 +537,24 @@ class EcomDev_Sphinx_Model_Scope
         Varien_Profiler::start(__METHOD__);
         $parentPath = $this->getLayer()->getCurrentCategory()->getPath();
         $maxLevel = (int)$this->getConfigurationValue('category_filter/max_level_deep');
+        $currentCategory = $this->getLayer()->getCurrentCategory();
 
-        $minLevel = $this->getLayer()->getCurrentCategory()->getLevel();
+        $minLevel = $currentCategory->getLevel();
 
         switch ($this->getConfigurationValue('category_filter/include_same_level')) {
             case EcomDev_Sphinx_Model_Source_Level::LEVEL_SAME:
                 $parentPath = dirname($parentPath);
                 $minLevel -= 1;
-                $maxLevel = $this->getLayer()->getCurrentCategory()->getLevel() + $maxLevel;
+                $maxLevel = $currentCategory->getLevel() + $maxLevel + 1;
                 break;
             case EcomDev_Sphinx_Model_Source_Level::LEVEL_CUSTOM:
                 $minLevel = (int)$this->getConfigurationValue('category_filter/top_category_level');
                 if ($minLevel === 0) {
-                    $minLevel = (int)$this->getLayer()->getCurrentCategory()->getLevel();
+                    $minLevel = (int)$currentCategory->getLevel();
                 }
                 $parents = explode('/', $parentPath);
                 if (count($parents) > $minLevel) {
-                    $parents = array_slice($parents, 0, $minLevel+1);
+                    $parents = array_slice($parents, 0, $minLevel + 1);
                 }
                 $parentPath = implode('/', $parents);
                 break;
@@ -553,13 +562,25 @@ class EcomDev_Sphinx_Model_Scope
                 if ($maxLevel <= 0) {
                     $maxLevel = 2;
                 }
-                $maxLevel = $this->getLayer()->getCurrentCategory()->getLevel() + $maxLevel;
+                $maxLevel = $currentCategory->getLevel() + $maxLevel + 1;
                 break;
         }
 
-        $query = $this->_getConfig()->getContainer()->queryBuilder();
+        $parentIds = explode('/', $parentPath);
 
-        $proxy = (object)['columns' => ['category_id', 'name', 'path', 'request_path', 'include_in_menu']];
+        $proxy = (object)[
+            'columns' => [
+                'category_id',
+                'name',
+                'path',
+                'request_path',
+                'include_in_menu'
+            ],
+            'conditions' => [
+                'level' => ['>', (int)$minLevel]
+            ]
+        ];
+        
         // Allow to modify select attributes
         Mage::dispatchEvent('ecomdev_sphinx_scope_category_data_columns', [
             'proxy' => $proxy,
@@ -569,24 +590,31 @@ class EcomDev_Sphinx_Model_Scope
             'scope' => $this
         ]);
 
-        call_user_func_array([$query, 'select'], $proxy->columns);
-
-        $query
-            ->select('category_id', 'name', 'path', 'request_path', 'include_in_menu')
-            ->from($this->_getConfig()->getContainer()->getIndexNames('category'))
-            ->where('is_active', '=', 1)
-            ->where('level', '<=', (int)$maxLevel)
-            ->where('level', '>', (int)$minLevel)
-            ->orderBy('level', 'asc')
-            ->orderBy('position', 'asc')
-            ->match('path', $query->expr(
-                '"^' . $query->escapeMatch($parentPath) . '"'
-            ))
-            ->limit(1000);
-
         $result = [];
-        foreach ($query->execute() as $row) {
+        /* @var $source EcomDev_Sphinx_Model_Sphinx_Category */
+        $source = Mage::getModel('ecomdev_sphinx/sphinx_category', [
+            'container' => $this->_getConfig()->getContainer()
+        ]);
+
+
+        $productCount = [];
+        $rootId = end($parentIds);
+
+        if ($this->getConfigurationValue('category_filter/include_product_count')) {
+            $productCount = $source->getProductCount($rootId);
+        }
+
+        foreach ($source->getCategoriesData($parentPath, $maxLevel, $proxy->columns, $proxy->conditions) as $row) {
+            $row['count'] = 0;
+            if (isset($productCount[$row['category_id']])) {
+                $row['count'] = $productCount[$row['category_id']];
+            }
+
             $result[(int)$row['category_id']] = $row;
+        }
+
+        if (isset($productCount[$rootId])) {
+            $currentCategory->setRootProductCount($productCount[$rootId]);
         }
 
         Varien_Profiler::stop(__METHOD__);

@@ -25,7 +25,7 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Option
      * @param OptionInterface $option
      * @param string[] $without
      * @param bool $withRel
-     * @return string
+     * @return string|string[]
      */
     public function getOptionUrl(OptionInterface $option, $without = [], $withRel = false)
     {

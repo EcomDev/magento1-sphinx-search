@@ -183,6 +183,37 @@ class EcomDev_Sphinx_Model_Url_Builder
     }
 
     /**
+     * Init by category
+     *
+     * @param Mage_Catalog_Model_Category $category
+     * @param string[] $facetCodes
+     * @return $this
+     */
+    public function initByCategory($category, array $facetCodes = [])
+    {
+        $this->currentFilters = [];
+        $this->facetOrder = array_combine($facetCodes, array_keys($facetCodes));
+        
+        $this->processFacetCodes($facetCodes);
+        
+        $categoryUrl = Mage::helper('catalog/category')->getCategoryUrl($category);
+        $this->initUrl($categoryUrl);
+        return $this;
+    }
+
+    /**
+     * Callback for processing facet codes
+     *
+     * @param string[] $facetCodes
+     *
+     * @return $this
+     */
+    protected function processFacetCodes($facetCodes)
+    {
+        return $this;
+    }
+
+    /**
      * Returns current url without query params
      *
      * @return string

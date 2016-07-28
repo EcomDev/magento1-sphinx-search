@@ -11,6 +11,13 @@ use EcomDev_Sphinx_Model_Sphinx_FacetInterface as FacetInterface;
 class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Link
     extends EcomDev_Sphinx_Block_Layer_Facet_AbstractRenderer
 {
+    public function getTotalCount()
+    {
+        $currentCategory = $this->getFacet()->getCurrentCategoryData();
+        
+        return isset($currentCategory['root_product_count']) ? $currentCategory['root_product_count'] : 0;
+    }
+    
     public function getCategoryTree()
     {
         if ($this->hasData('category_tree')) {
@@ -18,7 +25,6 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Link
         }
 
         $categoryData = $this->getFacet()->getCurrentCategoryData();
-        $this->getFacet()->getOptions();
         $categoryPathFilter = false;
 
         if (isset($categoryData['category_filter'])) {

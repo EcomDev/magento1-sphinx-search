@@ -1,5 +1,6 @@
 <?php
 use EcomDev_Sphinx_Model_Source_Level as LevelSource;
+use EcomDev_Sphinx_Model_Sphinx_FacetInterface as FacetInterface;
 
 class EcomDev_Sphinx_Block_Adminhtml_Scope_Edit_Form
     extends EcomDev_Sphinx_Block_Adminhtml_Edit_Form
@@ -65,18 +66,23 @@ class EcomDev_Sphinx_Block_Adminhtml_Scope_Edit_Form
                     ) + $nonRequired)
                 ->_addField('label', 'text', $this->__('Category Filter Label'), $nonRequired)
                 ->_addField('max_level_deep', 'text', $this->__('Category Fetch Level'), $nonRequired)
+                ->_addField('position', 'text', $this->__('Facet Position'), $nonRequired)
                 ->_addField('include_same_level', 'select', $this->__('Custom Category Level'), array(
                     'option_model' => 'ecomdev_sphinx/source_level'
                 ) + $nonRequired)
                 ->_addField('top_category_level', 'text', $this->__('Top Category Level'), $nonRequired)
                 ->_fieldComment('top_category_level', $this->__('Specify level from which tree of categories will be rendered'))
                 ->_fieldDependence('top_category_level', 'include_same_level', LevelSource::LEVEL_CUSTOM)
-                ->_addField('only_direct_products', 'select', $this->__('Show only direct products'), array(
+                ->_addField('only_direct_products', 'select', $this->__('Limit direct products'), array(
                     'option_model' => 'ecomdev_sphinx/source_yesno'
                 ) + $nonRequired)
                 ->_addField('renderer', 'select', $this->__('Filter Renderer'), array(
                     'option_model' => 'ecomdev_sphinx/source_category_filter_type'
                 ) + $nonRequired)
+                ->_addField('include_product_count', 'select', $this->__('Add Product Count'), array(
+                    'option_model' => 'ecomdev_sphinx/source_yesno'
+                ) + $nonRequired)
+                ->_fieldDependence('include_product_count', 'renderer', FacetInterface::RENDER_TYPE_LINK)
                 ->_fieldComment('label', $this->__('Override to change a text next to the categories tree'))
                 ->_fieldComment('renderer', $this->__('Specifies which renderer should be used on category filter'))
             ->_setUpFieldset('price_filter', $this->__('Price Filter Options'))

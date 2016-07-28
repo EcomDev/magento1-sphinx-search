@@ -130,79 +130,44 @@ class EcomDev_Sphinx_Model_Observer
 
         return false;
     }
-    
+
+    /**
+     * Returns store categories tree via sphinx source model
+     *
+     * @return array|static
+     */
     protected function _getStoreCategoriesTree()
     {
-        $query = $this->_getConfig()->getContainer()->queryBuilder();
-        $indexNames = $this->_getConfig()->getContainer()->getIndexNames('category');
-        $result = $query->select('path', 'level')
-            ->from($indexNames)
-            ->where('id', (int)Mage::app()->getStore()->getRootCategoryId())
-            ->limit(1)
-            ->execute()
-            ->store();
+        /** @var EcomDev_Sphinx_Model_Sphinx_Category $categorySource */
+        $categorySource = Mage::getModel('ecomdev_sphinx/sphinx_category', [
+            'container' => $this->_getConfig()->getContainer()
+        ]);
 
-        if ($result->getCount() === 0) {
-            return [];
-        }
-
-        $category = $result[0];
-
-        $recursionLevel  = max(0, (int) Mage::app()->getStore()->getConfig('catalog/navigation/max_depth'));
-        $query = $this->_getConfig()->getContainer()->queryBuilder();
-
-        $proxy = (object)['columns' => [
-            $query->expr('category_id as entity_id'),
-            'path',
-            'name',
-            'is_active',
-            'request_path',
-            'position',
-            'include_in_menu',
-            'level'
-        ]];
+        $proxy = (object)[
+            'columns' => [
+                'entity_id' => 'category_id',
+                'path',
+                'name',
+                'is_active',
+                'request_path',
+                'position',
+                'include_in_menu',
+                'level'
+            ],
+            'conditions' => []
+        ];
 
         // Allow to modify select attributes
         Mage::dispatchEvent('ecomdev_sphinx_observer_store_root_category_select_columns', [
-            'proxy' => $proxy,
-            'root_category' => $category,
-            'query' => $query
+            'proxy' => $proxy
         ]);
 
-        call_user_func_array([$query, 'select'], $proxy->columns);
-
-        $query
-            ->from($indexNames)
-            ->where('is_active','=', 1)
-            ->orderBy('level', 'asc')
-            ->orderBy('position', 'asc')
-            ->match('path', $query->expr(
-                '"^' . $query->escapeMatch($category['path']) . '"'
-            ))
-            ->limit(2000);
-            
-        if ($recursionLevel > 0) {
-            $query->where('level', '<', $category['level'] + $recursionLevel);
-        }
-        
-        $result = array();
-        $parents = array();
-
-        foreach ($query->execute() as $item) {
-            if (dirname($item['path']) === $category['path']) {
-                $item['children'] = array();
-                $index = count($result);
-                $result[$index] = $item;
-                $parents[$item['path']] = &$result[$index];
-            } elseif (isset($parents[dirname($item['path'])])) {
-                $item['children'] = array();
-                $index = count($parents[dirname($item['path'])]['children']); 
-                $parents[dirname($item['path'])]['children'][$index] = $item; 
-                $parents[$item['path']] = &$parents[dirname($item['path'])]['children'][$index];
-            }
-        }
-        
-        return $result;
+        return $categorySource->getCategoryTree(
+            Mage::app()->getStore()->getRootCategoryId(),
+            (int)Mage::app()->getStore()->getConfig('catalog/navigation/max_depth'),
+            $proxy->columns,
+            $proxy->conditions
+        );
     }
 
     /**
@@ -237,7 +202,18 @@ class EcomDev_Sphinx_Model_Observer
                 'include_in_menu' => $categoryModel->getIncludeInMenu()
             );
 
-            $categoryNode = new Varien_Data_Tree_Node($categoryData, 'id', $parentCategoryNode->getTree(), $parentCategoryNode);
+            $categoryNode = new Varien_Data_Tree_Node(
+                $categoryData,
+                'id',
+                $parentCategoryNode->getTree(),
+                $parentCategoryNode
+            );
+
+            Mage::dispatchEvent('ecomdev_sphinx_observer_add_categories_to_menu_node_data', [
+                'category' => $categoryModel,
+                'menu_node' => $categoryData
+            ]);
+
             $parentCategoryNode->addChild($categoryNode);
 
             if ($data['children']) {
