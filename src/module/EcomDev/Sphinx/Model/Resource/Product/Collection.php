@@ -74,8 +74,10 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
             }
 
             $query->match(
-                's_' . $filterName ,
-                sprintf('"cat_%d"', (int)$this->_productLimitationFilters['category_id']),
+                's_' . $filterName,
+                sprintf('"%s"', Mage::helper('ecomdev_sphinx')->getCategoryMatch(
+                    (int)$this->_productLimitationFilters['category_id']
+                )),
                 true
             );
         }
@@ -137,7 +139,10 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
 
         if (isset($this->_productLimitationFilters['category_id'])) {
             $this->_fieldsToSelect['request_path'] = $query->exprFormat(
-                'IF(s_category_url.cat_%1$s <> NULL, s_category_url.cat_%1$s, request_path)', $this->_productLimitationFilters['category_id']
+                'IF(s_category_url.%1$s <> NULL, s_category_url.%1$s, request_path)',
+                Mage::helper('ecomdev_sphinx')->getCategoryMatch(
+                    (int)$this->_productLimitationFilters['category_id']
+                )
             );
         } else {
             $this->_fieldsToSelect['request_path'] = 'request_path';
@@ -187,8 +192,18 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
                         $column = 'price_index_min_price_' . $this->getCustomerGroupId();
                     }
 
-                    if ($column === '@position' && in_array('j_category_position', $indexFields) && isset($this->_productLimitationFilters['category_id'])) {
-                        $query->orderBy($query->expr(sprintf('INTEGER(j_category_position.cat_%d)', $this->_productLimitationFilters['category_id'])), $direction);
+                    if ($column === '@position'
+                        && in_array('j_category_position', $indexFields)
+                        && isset($this->_productLimitationFilters['category_id'])) {
+                        $query->orderBy(
+                            $query->exprFormat(
+                                'INTEGER(j_category_position.%s)',
+                                Mage::helper('ecomdev_sphinx')->getCategoryMatch(
+                                    (int)$this->_productLimitationFilters['category_id']
+                                )
+                            ),
+                            $direction
+                        );
                     } elseif ($column === '@relevance') {
                         $query->orderBy($query->expr('weight()'), $direction);
                     } elseif (strpos($column, '@') === 0 && in_array(substr($column, 1), $indexFields)) {
@@ -209,7 +224,15 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
             if ($order === 'position'
                 && isset($indexFields['j_category_position'])
                 && isset($this->_productLimitationFilters['category_id'])) {
-                $query->orderBy($query->expr(sprintf('INTEGER(j_category_position.cat_%d)', $this->_productLimitationFilters['category_id'])), $direction);
+                $query->orderBy(
+                    $query->exprFormat(
+                        'INTEGER(j_category_position.%s)',
+                        Mage::helper('ecomdev_sphinx')->getCategoryMatch(
+                            (int)$this->_productLimitationFilters['category_id']
+                        )
+                    ),
+                    $direction
+                );
             } elseif ($order && isset($indexFields[sprintf('s_%s_sort', $order)])) {
                 $query->orderBy(sprintf('s_%s_sort', $order), $direction);
             } elseif ($order && isset($indexFields[$order])) {

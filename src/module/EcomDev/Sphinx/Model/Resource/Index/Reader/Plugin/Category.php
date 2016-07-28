@@ -11,7 +11,19 @@ use EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_CategoryName as CategoryNa
 class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
     extends EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_AbstractPlugin
 {
+    /**
+     * Id of category name attribute
+     *
+     * @var int
+     */
     private $nameAttributeId;
+
+    /**
+     * Helper
+     *
+     * @var EcomDev_Sphinx_Helper_Data
+     */
+    private $helper;
 
     /**
      * Resource initialization
@@ -19,8 +31,9 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
      */
     protected function _construct()
     {
-         parent::_construct();
-         $this->nameAttributeId = Mage::getSingleton('eav/config')->getAttribute(Mage_Catalog_Model_Category::ENTITY, 'name')->getId();
+        parent::_construct();
+        $this->nameAttributeId = Mage::getSingleton('eav/config')->getAttribute(Mage_Catalog_Model_Category::ENTITY, 'name')->getId();
+        $this->helper = Mage::helper('ecomdev_sphinx');
     }
 
 
@@ -67,11 +80,13 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
                 $names[$row['category_id']] = new CategoryName();
             }
 
-            $data[$row['product_id']]['_category_position']['cat_' . $row['category_id']] = (int)$row['position'];
+            $categoryMatch = $this->helper->getCategoryMatch($row['category_id']);
+
+            $data[$row['product_id']]['_category_position'][$categoryMatch] = (int)$row['position'];
 
 
             if ($row['position'] !== '0' && $row['is_parent']) {
-                $data[$row['product_id']]['_direct_position']['cat_' . $row['category_id']] = (int)$row['position'];
+                $data[$row['product_id']]['_direct_position'][$categoryMatch] = (int)$row['position'];
                 if (!isset($data[$row['product_id']]['_best_direct_position'])
                     || $data[$row['product_id']]['_best_direct_position'] > $row['position']) {
                     $data[$row['product_id']]['_best_direct_position'] = (int)$row['position'];
@@ -79,7 +94,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
             }
 
             if ($row['position'] !== '0') {
-                $data[$row['product_id']]['_anchor_position']['cat_' . $row['category_id']] = (int)$row['position'];
+                $data[$row['product_id']]['_anchor_position'][$categoryMatch] = (int)$row['position'];
                 if (!isset($data[$row['product_id']]['_best_anchor_position'])
                     || $data[$row['product_id']]['_best_anchor_position'] > $row['position']) {
                     $data[$row['product_id']]['_best_anchor_position'] = (int)$row['position'];
@@ -87,17 +102,17 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
             }
 
             if ($row['is_parent']) {
-                $data[$row['product_id']]['_direct_category_ids']['cat_' . $row['category_id']] = $row['category_id'];
+                $data[$row['product_id']]['_direct_category_ids'][$categoryMatch] = $row['category_id'];
             }
 
-            $data[$row['product_id']]['_anchor_category_ids']['cat_' . $row['category_id']] = $row['category_id'];
+            $data[$row['product_id']]['_anchor_category_ids'][$categoryMatch] = $row['category_id'];
 
             if ($row['level'] > 1) {
                 if ($row['is_parent']) {
-                    $data[$row['product_id']]['_direct_category_names']['cat_' . $row['category_id']] = $names[$row['category_id']];
+                    $data[$row['product_id']]['_direct_category_names'][$categoryMatch] = $names[$row['category_id']];
                 }
 
-                $data[$row['product_id']]['_anchor_category_names']['cat_' . $row['category_id']] = $names[$row['category_id']];
+                $data[$row['product_id']]['_anchor_category_names'][$categoryMatch] = $names[$row['category_id']];
             }
         }
 
@@ -115,7 +130,10 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
 
             $nameData = [];
             foreach ([$scope->getFilter('store_id')->getValue(), 0] as $storeId) {
-                $nameData += $this->_getReadAdapter()->fetchPairs($select, ['store_id' => $storeId, 'attribute_id' => $this->nameAttributeId]);
+                $nameData += $this->_getReadAdapter()->fetchPairs($select, [
+                    'store_id' => $storeId,
+                    'attribute_id' => $this->nameAttributeId
+                ]);
             }
 
             foreach ($nameData as $categoryId => $name) {
@@ -134,7 +152,11 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
             )
             ->join(
                 ['category_index' => $this->getTable('catalog/category_product_index')],
-                'category_index.product_id = entity_id.id and category_index.category_id = url.category_id and category_index.store_id = url.store_id',
+                implode(' and ', [
+                    'category_index.product_id = entity_id.id',
+                    'category_index.category_id = url.category_id',
+                    'category_index.store_id = url.store_id',
+                ]),
                 []
             )
             ->where('url.is_system = ?', 1);
@@ -142,7 +164,8 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
         $scope->getFilter('store_id')->render('url', $select);
 
         foreach ($this->_getReadAdapter()->query($select) as $row) {
-            $data[$row['product_id']]['_category_url']['cat_' . $row['category_id']] = $row['request_path'];
+            $categoryMatch = $this->helper->getCategoryMatch($row['category_id']);
+            $data[$row['product_id']]['_category_url'][$categoryMatch] = $row['request_path'];
         }
 
         return $data;

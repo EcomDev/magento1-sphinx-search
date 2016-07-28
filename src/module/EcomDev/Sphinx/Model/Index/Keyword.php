@@ -86,7 +86,7 @@ class EcomDev_Sphinx_Model_Index_Keyword
             return false;
         }
 
-        // Remove forms that are bigger smaller 3 chars and non unique
+        // Remove forms that are smaller 3 chars and non unique
         if (strlen($keyword) < 3 && $frequency > 1) {
             return false;
         }
@@ -102,7 +102,7 @@ class EcomDev_Sphinx_Model_Index_Keyword
         }
 
         // Internal category mapping
-        if (preg_match('/^cat_[0-9]+$/', $keyword)) {
+        if (preg_match(sprintf('/^%s$/', Mage::helper('ecomdev_sphinx')->getCategoryMatch('[0-9]+')), $keyword)) {
             return false;
         }
 
