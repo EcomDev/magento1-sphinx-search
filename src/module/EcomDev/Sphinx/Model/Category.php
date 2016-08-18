@@ -13,7 +13,9 @@ class EcomDev_Sphinx_Model_Category
             $pathIds = array_map('intval', array_reverse(explode(',', $this->getPathInStore())));
             $items = $query
                 ->select(
-                    'name', 'request_path', $query->expr('category_id as entity_id')
+                    'name', 'request_path',
+                    $query->expr('category_id as entity_id'),
+                    $query->expr('EXIST(\'sphinx_scope\', 0)')
                 )
                 ->from($container->getIndexNames('category'))
                 ->where('category_id', 'IN', $pathIds)
@@ -28,5 +30,25 @@ class EcomDev_Sphinx_Model_Category
         }
         
         return $this->_getData('parent_categories');
+    }
+
+    /**
+     * Returns a sphinx scope id assigned to the current category
+     *
+     * @return int
+     */
+    public function getSphinxScope()
+    {
+        if ($this->_getData('sphinx_scope')) {
+            return $this->_getData('sphinx_scope');
+        }
+
+        foreach ($this->getParentCategories() as $category) {
+            if ($category->getSphinxScope()) {
+                return $category->getSphinxScope();
+            }
+        }
+
+        return null;
     }
 }
