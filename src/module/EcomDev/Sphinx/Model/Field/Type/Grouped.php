@@ -14,8 +14,6 @@ class EcomDev_Sphinx_Model_Field_Type_Grouped
             $mappingConfig = [];
         }
 
-        uasort($mappingConfig, $this->cmpPositionClosure());
-
         $map = [
             'reverse_map' => []
         ];

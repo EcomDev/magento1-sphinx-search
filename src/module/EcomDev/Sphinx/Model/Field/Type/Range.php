@@ -13,9 +13,7 @@ class EcomDev_Sphinx_Model_Field_Type_Range
         if (!is_array($mappingConfig)) {
             $mappingConfig = [];
         }
-
-        uasort($mappingConfig, $this->cmpPositionClosure());
-
+        
         $map = [
             'sorted_ranges' => []
         ];
