@@ -351,6 +351,11 @@ abstract class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_AbstractIndexer
 
                     if ($code !== $currentTriggers[$table][$type]) {
                         $toRemove[] = $currentTriggers[$table][$type]['name'];
+                        $toCreate[] = [
+                            'table' => $table,
+                            'type' => $type,
+                            'code' => $this->_generateTriggerCode($entityType, $triggerInfo, '')
+                        ];
                     }
                 } else {
                     $toCreate[] = [

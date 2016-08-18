@@ -133,8 +133,9 @@ class EcomDev_Sphinx_Model_Resource_Sphinx_Config_Index_Collection
         foreach ($this->getStoreIds() as $storeId) {
             $missingItems[EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT . '_catalog'][$storeId] = true;
             $missingItems[EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_PRODUCT . '_search'][$storeId] = true;
+            $missingItems[EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_CATEGORY][$storeId] = true;
 
-            if (!$this->isKeywordEnabled($storeId)) {
+            if ($this->isKeywordEnabled($storeId)) {
                 $missingItems[EcomDev_Sphinx_Model_Sphinx_Config_Index::INDEX_KEYWORD][$storeId] = true;
             }
         }
