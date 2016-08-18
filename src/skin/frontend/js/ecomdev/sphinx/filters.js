@@ -113,14 +113,14 @@ EcomDev.Sphinx.OptionsStorage = $H({});
 EcomDev.Sphinx.Options = Class.create({
     initialize: function (container, options) {
         this.container = $(container);
-        this.attributes = options;
-        this.id = this.attributes.id;
+        this.options = options;
+        this.id = this.options.id;
         this.onExpandClick = this.handleClick.bind(this, true);
         this.onCollapseClick = this.handleClick.bind(this, false);
         this.bindListener();
         this.animation = false;
         this.updateVisibility();
-        this.animation = this.attributes.animation;
+        this.animation = this.options.animation;
     },
     isExpanded: function () {
         return !!this.storage().isExpanded;
@@ -136,24 +136,24 @@ EcomDev.Sphinx.Options = Class.create({
         if (this.hiddenItems && this.collapseBtn && this.expandBtn) {
             for (var i = 0, l = this.hiddenItems.length; i < l; i ++) {
                 var element = this.hiddenItems[i];
-                if (element.hasClassName(this.attributes.activeClass)) {
+                if (element.hasClassName(this.options.activeClass)) {
                     continue;
                 }
 
                 if (this.animation) {
                     this.animate(element, true);
                 } else {
-                    element.removeClassName(this.attributes.hiddenClass);
+                    element.removeClassName(this.options.hiddenClass);
                 }
             }
 
-            this.collapseBtn.removeClassName(this.attributes.hiddenClass);
-            this.expandBtn.addClassName(this.attributes.hiddenClass);
+            this.collapseBtn.removeClassName(this.options.hiddenClass);
+            this.expandBtn.addClassName(this.options.hiddenClass);
         }
     },
     animate: function (element, toShow) {
         var elementOpacity = false;
-        if (!element.hasClassName(this.attributes.hiddenClass)) {
+        if (!element.hasClassName(this.options.hiddenClass)) {
             elementOpacity = element.getOpacity();
         }
 
@@ -166,15 +166,15 @@ EcomDev.Sphinx.Options = Class.create({
             },
             beforeSetup: function(effect) {
                 if (toShow) {
-                    effect.element.removeClassName(this.attributes.hiddenClass);
+                    effect.element.removeClassName(this.options.hiddenClass);
                 }
-                effect.element.setOpacity(effect.attributes.from);
+                effect.element.setOpacity(effect.options.from);
             }.bind(this)
         };
 
         if (!toShow) {
             options.afterFinish = function() {
-                element.addClassName(this.attributes.hiddenClass);
+                element.addClassName(this.options.hiddenClass);
             }.bind(this);
         }
 
@@ -193,19 +193,19 @@ EcomDev.Sphinx.Options = Class.create({
         if (this.hiddenItems && this.collapseBtn && this.expandBtn) {
             for (var i = 0, l = this.hiddenItems.length; i < l; i ++) {
                 var element = this.hiddenItems[i];
-                if (element.hasClassName(this.attributes.activeClass)) {
+                if (element.hasClassName(this.options.activeClass)) {
                     continue;
                 }
 
                 if (this.animation) {
                     this.animate(element, false);
                 } else {
-                    element.addClassName(this.attributes.hiddenClass);
+                    element.addClassName(this.options.hiddenClass);
                 }
             }
 
-            this.expandBtn.removeClassName(this.attributes.hiddenClass);
-            this.collapseBtn.addClassName(this.attributes.hiddenClass);
+            this.expandBtn.removeClassName(this.options.hiddenClass);
+            this.collapseBtn.addClassName(this.options.hiddenClass);
         }
     },
     handleClick: function (flag, evt) {
@@ -221,21 +221,21 @@ EcomDev.Sphinx.Options = Class.create({
         return EcomDev.Sphinx.OptionsStorage.get(this.id);
     },
     bindListener: function () {
-        this.collapseBtn = this.container.down(this.attributes.collapseCssRule);
-        this.expandBtn = this.container.down(this.attributes.expandCssRule);
+        this.collapseBtn = this.container.down(this.options.collapseCssRule);
+        this.expandBtn = this.container.down(this.options.expandCssRule);
 
-        var sortedItems = this.container.select(this.attributes.itemCssRule);
+        var sortedItems = this.container.select(this.options.itemCssRule);
 
         var topActive = function (left, right) {
             // Move active elements to top
-            if (left.hasClassName('active') && !right.hasClassName('active')) {
+            if (left.hasClassName(this.options.activeClass) && !right.hasClassName(this.options.activeClass)) {
                 return -1;
-            } else if (!left.hasClassName('active') && right.hasClassName('active')) {
+            } else if (!left.hasClassName(this.options.activeClass) && right.hasClassName(this.options.activeClass)) {
                 return 1;
             }
 
             return 0;
-        };
+        }.bind(this);
 
         var topCount = function (left, right) {
             var orderLeft = parseInt(left.readAttribute('data-option-count'));
@@ -257,14 +257,14 @@ EcomDev.Sphinx.Options = Class.create({
         };
 
 
-        if (this.attributes.optionByCount) {
+        if (this.options.optionByCount) {
             sortedItems = sortedItems.sort(topCount);
         } else {
             sortedItems = sortedItems.sort(topActive);
         }
 
-        if (this.attributes.optionLimit > 0 && sortedItems.length > this.attributes.optionLimit) {
-            this.hiddenItems = sortedItems.slice(this.attributes.optionLimit, sortedItems.length);
+        if (this.options.optionLimit > 0 && sortedItems.length > this.options.optionLimit) {
+            this.hiddenItems = sortedItems.slice(this.options.optionLimit, sortedItems.length);
         } else {
             this.hiddenItems = false;
         }

@@ -25,6 +25,7 @@ class EcomDev_Sphinx_Model_Index_Field_Provider_Category
             new RegularField(FieldInterface::TYPE_ATTRIBUTE_BOOL, 'include_in_menu'),
             new RegularField(FieldInterface::TYPE_ATTRIBUTE_INT, 'position'),
             new RegularField(FieldInterface::TYPE_ATTRIBUTE_INT, 'level'),
+            new RegularField(FieldInterface::TYPE_ATTRIBUTE_INT, 'sphinx_scope'),
             new RegularField(FieldInterface::TYPE_FIELD_STRING, 'request_path')
         ];
 
@@ -48,7 +49,7 @@ class EcomDev_Sphinx_Model_Index_Field_Provider_Category
                 'name', 'image', 'thumbnail'
             ],
             'int' => [
-                'is_active', 'include_in_menu'
+                'is_active', 'include_in_menu', 'sphinx_scope'
             ],
             'text' => [
                 'description'

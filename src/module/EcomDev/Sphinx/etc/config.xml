@@ -134,6 +134,11 @@
                         <price_index>
                             <table>catalog/product_index_price</table>
                             <field>entity_id</field>
+                            <types>
+                                <delete>0</delete>
+                                <insert>1</insert>
+                                <update>1</update>
+                            </types>
                             <update>
                                 <price>1</price>
                                 <min_price>1</min_price>
@@ -144,24 +149,47 @@
                             <table>cataloginventory/stock_status</table>
                             <field>product_id</field>
                             <types>
+                                <delete>0</delete>
+                                <insert>1</insert>
                                 <update>1</update>
-                                <delete>1</delete>
                             </types>
                             <update>
                                 <stock_status>1</stock_status>
                             </update>
                         </stock_index>
+                        <product_website>
+                            <table>catalog/product_website</table>
+                            <field>product_id</field>
+                            <types>
+                                <insert>1</insert>
+                                <delete>1</delete>
+                                <update>0</update>
+                            </types>
+                        </product_website>
                         <category_product>
                             <table>catalog/category_product</table>
                             <field>product_id</field>
                             <types>
                                 <insert>1</insert>
                                 <delete>1</delete>
-                                <update>
-                                    <position>1</position>
-                                </update>
+                                <update>1</update>
                             </types>
+                            <update>
+                                <position>1</position>
+                            </update>
                         </category_product>
+                        <category_product_index>
+                            <table>catalog/category_product_index</table>
+                            <field>product_id</field>
+                            <types>
+                                <insert>0</insert>
+                                <delete>0</delete>
+                                <update>1</update>
+                            </types>
+                            <update>
+                                <position>1</position>
+                            </update>
+                        </category_product_index>
                     </trigger>
                 </product>
                 <category>
