@@ -1,0 +1,41 @@
+<?php $_imageHelper = $this->helper('catalog/image'); ?>
+<?php $_coreHelper = $this->helper('core/string'); ?>
+<div class="search-autocomplete">
+    <dl>
+        <?php $_suggestions = $this->getSuggestions(5);?>
+        <?php if ($_suggestions):?>
+            <dt><?php echo $this->__('Search suggestions'); ?></dt>
+            <dd>
+                <ul>
+                    <?php foreach ($_suggestions as $_suggestion):?>
+                        <li title="<?php echo $this->escapeHtml($_suggestion);?>">
+                            <a href="#" onclick="$('search').value = '<?php echo $this->escapeHtml($_suggestion)?>';$('search_mini_form').submit();return false;" title="<?php echo $this->escapeHtml($_suggestion);?>">
+                                <?php echo $this->escapeHtml($_suggestion);?>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </dd>
+        <?php endif;?>
+        <?php $_products = $this->getProducts(3);?>
+        <?php if ($_products):?>
+            <dt><?php echo $this->__('Popular search results'); ?></dt>
+            <dd>
+                <ul>
+                    <?php foreach ($_products as $_product):?>
+                        <li class="clearfix" data-query="<?php echo $this->escapeHtml($_product->getProductUrl(false));?>">
+                            <a href="<?php echo $this->escapeHtml($_product->getProductUrl(false));?>" title="<?php echo $this->escapeHtml($_product->getName());?>">
+                                <div class="column small-6 medium-4 search-product-thumbnail">
+                                    <img src="<?php echo $_imageHelper->init($_product, 'small_image')->resize(50, 50);?>" alt="<?php echo $this->escapeHtml($_product->getName());?>"/>
+                                </div>
+                                <div class="column small-18 medium-20 search-product-name">
+                                    <?php echo $this->escapeHtml($_product->getName());?><br/><?php echo $this->escapeHtml($_coreHelper->truncate($_product->getShortDescription()));?>
+                                </div>
+                            </a>
+                        </li>
+                    <?php endforeach ;?>
+                </ul>
+            </dd>
+        <?php endif;?>
+    </dl>
+</div>

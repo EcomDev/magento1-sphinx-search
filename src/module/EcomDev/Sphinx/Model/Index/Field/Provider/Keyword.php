@@ -17,7 +17,9 @@ class EcomDev_Sphinx_Model_Index_Field_Provider_Keyword
         $container->fields = [
             new RegularField(FieldInterface::TYPE_FIELD_STRING, 'keyword'),
             new RegularField(FieldInterface::TYPE_FIELD, 'trigram_list'),
+            new RegularField(FieldInterface::TYPE_ATTRIBUTE_JSON, 'category_info'),
             new RegularField(FieldInterface::TYPE_ATTRIBUTE_INT, 'length'),
+            new RegularField(FieldInterface::TYPE_ATTRIBUTE_INT, 'word_count'),
             new RegularField(FieldInterface::TYPE_ATTRIBUTE_INT, 'frequency')
         ];
 

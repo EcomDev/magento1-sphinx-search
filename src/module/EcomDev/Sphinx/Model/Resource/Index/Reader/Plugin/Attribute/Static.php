@@ -64,11 +64,27 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Static
             array_unshift($attributeCodes, 'entity_id');
         }
 
-        $select = $this->_getReadAdapter()->select();
-        $select->from($this->table, $attributeCodes)
-            ->where('entity_id IN(?)', $identifiers);
+        if (!$this->entityMemoryTable) {
+            $this->fillMemoryTable('entity_id', $identifiers);
+        }
 
-        return $this->_getReadAdapter()->fetchAssoc($select);
+        $select = $this->_getReadAdapter()->select();
+        $select
+            ->from(
+                ['main' => $this->table],
+                $attributeCodes
+            )
+            ->join(
+                ['entity_id' => $this->getMainMemoryTable('entity_id')],
+                'entity_id.id = main.entity_id',
+                []
+            )
+            ;
+
+
+        $data = $this->_getReadAdapter()->fetchAssoc($select);
+
+        return $data;
     }
 
 }

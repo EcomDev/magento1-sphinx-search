@@ -6,6 +6,7 @@ use EcomDev_Sphinx_Contract_Reader_ProviderInterface as ProviderInterface;
 use EcomDev_Sphinx_Contract_Reader_PluginInterface as PluginInterface;
 use EcomDev_Sphinx_Contract_DataRowFactoryInterface as DataRowFactoryInterface;
 use EcomDev_Sphinx_Contract_DataRowInterface as DataRowInterface;
+use EcomDev_Sphinx_Contract_Reader_SnapshotAwareInterface as SnapshotAwareInterface;
 
 /**
  * Sphinx reader interface
@@ -183,13 +184,28 @@ class EcomDev_Sphinx_Model_Index_Reader
         unset($this->dataRow);
 
         $rows = $this->provider->getRows($this->scope, $this->nextIdentifier, $this->maxIdentifier, $this->batchSize);
+        $entityIdentifiers = array_keys($rows);
 
-        if ($rows) {
-            $entityIdentifiers = array_keys($rows);
-            $this->nextIdentifier = max($entityIdentifiers) + 1;
+        $snapshot = null;
+        if ($this->provider instanceof SnapshotAwareInterface) {
+            $snapshot = $this->provider->getSnapshot();
+        }
+
+        if ($snapshot && $entityIdentifiers) {
+            $snapshot->createSnapshot(
+                $this->scope
+            );
+        }
+
+        if ($entityIdentifiers) {
+            $this->nextIdentifier = end($entityIdentifiers) + 1;
             $additionalData = $this->pluginContainer->read($entityIdentifiers, $this->scope);
             $this->dataRow = $this->dataRowFactory->createDataRow($rows, $additionalData);
             return true;
+        }
+
+        if ($snapshot) {
+            $snapshot->destroySnapshot();
         }
 
         // In case there is no more data for batch we returns nothing

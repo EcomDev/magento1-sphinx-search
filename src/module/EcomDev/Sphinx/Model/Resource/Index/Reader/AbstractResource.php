@@ -39,6 +39,97 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractResource
     }
 
     /**
+     * Enables index switch
+     *
+     * @return $this
+     */
+    protected function enableIndexSwitch()
+    {
+        $this->getReadConnection()->query(
+            'SET optimizer_switch=:switch',
+            ['switch' => 'use_index_extensions=on']
+        );
+        return $this;
+    }
+
+    /**
+     * Disables index switch back to default configuration server
+     *
+     * @return $this
+     */
+    protected function disableIndexSwitch()
+    {
+        $this->getReadConnection()->query(
+            'SET optimizer_switch=:switch',
+            ['switch' => 'use_index_extensions=default']
+        );
+        return $this;
+    }
+
+    /**
+     * Creates a memory table for faster export of identifiers
+     *
+     * @param Varien_Db_Select $select
+     * @param string[][] $indexes
+     * @throws Zend_Db_Exception
+     * @return $this
+     */
+    protected function createTemporaryTableFromSelect($select, array $indexes)
+    {
+        $name = uniqid('ecomdev_sphinx_' . crc32((string)$select));
+
+        $indexStatements = [];
+        foreach ($indexes as $indexName => $columns) {
+            $renderedColumns = implode(',', array_map([$select->getAdapter(), 'quoteIdentifier'], $columns));
+
+            $indexType = sprintf('INDEX %s', $select->getAdapter()->quoteIdentifier($indexName));
+
+            if ($indexName === 'PRIMARY') {
+                $indexType = 'UNIQUE';
+            } elseif (strpos($indexName, 'UNQ_') === 0) {
+                $indexType = sprintf('UNIQUE %s', $select->getAdapter()->quoteIdentifier($indexName));
+            }
+
+            $indexStatements[] = sprintf('%s(%s)', $indexType, $renderedColumns);
+        }
+
+        foreach ($indexes as $indexName => $columns) {
+            if ($indexName === 'PRIMARY') {
+                continue;
+            }
+        }
+
+        $statement = sprintf(
+            'CREATE TEMPORARY TABLE %s %s IGNORE (%s)',
+            $select->getAdapter()->quoteIdentifier($name),
+            $indexStatements ? '(' . implode(',', $indexStatements) . ')' : '',
+            (string)$select
+        );
+
+        $select->getAdapter()->query(
+            $statement,
+            $select->getBind()
+        );
+
+        return $name;
+    }
+
+    /**
+     * Drops a temporary table
+     *
+     * @param string $table
+     * @return $this
+     * @throws Zend_Db_Exception
+     */
+    protected function dropTemporaryTable($tableName)
+    {
+        $this->_getReadAdapter()->dropTemporaryTable($tableName);
+        return $this;
+    }
+
+
+
+    /**
      * Memory table for identifiers
      *
      * @param string $tableName
@@ -57,19 +148,46 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractResource
      * Fills memory table with data
      *
      * @param string $tableName
-     * @param int[] $identifiers
+     * @param int[]|Varien_Db_Select $identifiers
      * @return $this
      */
     protected function fillMemoryTable($tableName, $identifiers)
     {
         $this->_getReadAdapter()->truncateTable($this->getMemoryTableName($tableName));
-        $this->_getReadAdapter()->insertArray(
-            $this->getMemoryTableName($tableName),
-            ['id'],
-            $identifiers
-        );
+
+        if ($identifiers instanceof Varien_Db_Select) {
+            $this->_getReadAdapter()->query(
+                $identifiers->insertFromSelect($this->getMemoryTableName($tableName), ['id']),
+                $identifiers->getBind()
+            );
+        } else {
+            $this->_getReadAdapter()->insertArray(
+                $this->getMemoryTableName($tableName),
+                ['id'],
+                $identifiers
+            );
+        }
 
         return $this;
+    }
+
+    protected function findIndexHint($table, $columns)
+    {
+        $indexes = $this->_getReadAdapter()->getIndexList($table);
+        $expectedColumns = array_combine($columns, $columns);
+        $byMatchCount = [];
+        foreach ($indexes as $index) {
+            $indexColumns = array_combine($index['COLUMNS_LIST'], $index['COLUMNS_LIST']);
+            if ($matched = array_intersect_key($indexColumns, $expectedColumns)) {
+                $byMatchCount[count($matched)] = $index['KEY_NAME'];
+            }
+        }
+
+        if (isset($byMatchCount[count($columns)])) {
+            return $byMatchCount[count($columns)];
+        }
+
+        return false;
     }
 
     /**

@@ -3,7 +3,8 @@ use EcomDev_Sphinx_Contract_Reader_ScopeInterface as ScopeInterface;
 
 class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
     extends EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_AbstractPlugin
-    implements EcomDev_Sphinx_Contract_Reader_PluginInterface
+    implements EcomDev_Sphinx_Contract_Reader_PluginInterface,
+        EcomDev_Sphinx_Contract_Reader_SnapshotAwareInterface
 {
     /**
      * Eav entity type for reference
@@ -39,6 +40,13 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
     private $entityTypeId;
 
     /**
+     * Snapshot
+     *
+     * @var EcomDev_Sphinx_Contract_Reader_SnapshotInterface
+     */
+    private $snapshot;
+
+    /**
      * List of known table prefixes
      *
      * @var string[]
@@ -65,6 +73,17 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
         }
 
         parent::__construct();
+    }
+
+    public function setSnapshot(EcomDev_Sphinx_Contract_Reader_SnapshotInterface $snapshot)
+    {
+        $this->snapshot = $snapshot;
+        return $this;
+    }
+
+    public function getSnapshot()
+    {
+        return $this->snapshot;
     }
 
 
@@ -102,8 +121,6 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
 
         $this->attributeCache['info'] = [];
         $this->attributeCache['has_multiple'] = false;
-        $attributeIds = [];
-        $multiValueAttributeIds = [];
 
         foreach ($this->_getReadAdapter()->query($select, [
             'source_table' => 'eav/entity_attribute_source_table',
@@ -114,18 +131,9 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
         ]) as $row) {
             $this->attributeCache['info'][$row['attribute_id']] = $row;
 
-            $attributeIds[] = $row['attribute_id'];
-
             if ($row['is_multiple']) {
-                $multiValueAttributeIds[] = $row['attribute_id'];
                 $this->attributeCache['has_multiple'] = true;
             }
-        }
-
-        $this->fillMemoryTable('attribute_id', $attributeIds);
-
-        if ($this->attributeCache['has_multiple']) {
-            $this->fillMemoryTable('attribute_id_multiple', $multiValueAttributeIds);
         }
 
         return $this;
@@ -142,7 +150,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
     {
         $attributeCodes = $scope->getConfiguration()->getAttributeCodes($this->backendType);
 
-        if (!$attributeCodes || !$scope->hasFilter('store_id') || !$identifiers) {
+        if (!$attributeCodes || !$scope->hasFilter('store_id') || !$this->getSnapshot() || !$identifiers) {
             return [];
         }
 
@@ -152,18 +160,15 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
             $this->fillMemoryTable('entity_id', $identifiers);
         }
 
-        $storeId = $scope->getFilter('store_id')->getValue();
-
         $data = [];
 
         $options = Mage::getResourceModel('ecomdev_sphinx/index_reader_plugin_attribute_eav_option_hash');
 
-        foreach ($this->getMergedAttributeValues('attribute_id', $storeId) as $row) {
-            $isMultiple = $this->attributeCache['info'][$row['attribute_id']]['is_multiple'];
+        foreach ($this->getMergedAttributeValues() as $row) {
             $attributeCode = $this->attributeCache['info'][$row['attribute_id']]['attribute_code'];
 
-            if ($isMultiple) {
-                if ($row['is_multi_value'] !== '0') {
+            if ($this->attributeCache['info'][$row['attribute_id']]['is_multiple']) {
+                if ($row['has_comma'] !== '0') {
                     $value = array_filter(explode(',', $row['value']));
                     $value = array_combine($value, $value);
                 } else {
@@ -176,41 +181,31 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
             } else {
                 $data[$row['entity_id']][$attributeCode] = $row['value'];
             }
-
-
         }
 
         if (!$this->attributeCache['has_multiple'] || $this->entityType !== Mage_Catalog_Model_Product::ENTITY) {
             return $data;
         }
 
-        foreach ($this->getMergedAttributeValues('attribute_id_multiple', $storeId, true) as $row) {
+        foreach ($this->getMergedAttributeValues(true) as $row) {
             $attributeCode = $this->attributeCache['info'][$row['attribute_id']]['attribute_code'];
 
-            if ($row['is_multi_value'] !== '0') {
+            if ($row['has_comma'] !== '0') {
                 $value = array_filter(explode(',', $row['value']));
                 $value = array_combine($value, $value);
             } else {
                 $value = $row['value'];
             }
 
-            $data[$row['entity_id']]['_' . $attributeCode . '_labels'] = $options;
-            $options->addOptionValues($value, $attributeCode);
+            if ($this->attributeCache['info'][$row['attribute_id']]['is_multiple']) {
+                $options->addOptionValues($value, $attributeCode);
+            }
+
+            $data[$row['entity_id']]['_' . $attributeCode . '_label'] = $options;
 
             if (isset($data[$row['entity_id']][$attributeCode])) {
-                $existingValue = $data[$row['entity_id']][$attributeCode];
-
-                if (!is_array($existingValue) && empty($existingValue)) {
-                    $existingValue = [];
-                } elseif (!is_array($existingValue)) {
-                    $existingValue = [$existingValue => $existingValue];
-                }
-
-                if (!is_array($value) && !empty($value)) {
-                    $value = [$value => $value];
-                } elseif (!empty($value)) {
-                    $value = [];
-                }
+                $existingValue = $this->normalizeArrayValue($data[$row['entity_id']][$attributeCode]);
+                $value = $this->normalizeArrayValue($value);
 
                 if (empty($value) && empty($existingValue)) {
                     $data[$row['entity_id']][$attributeCode] = [];
@@ -222,13 +217,24 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
             }
         }
 
-        $options->loadOptions($storeId);
+        $options->loadOptions($scope->getFilter('store_id')->getValue());
         return $data;
     }
 
-    private function getMergedAttributeValues($attributeTable, $storeId, $isChild = false)
+    private function normalizeArrayValue($value)
     {
-        $storeSelect = $this->getAttributeValueSelect($attributeTable, $storeId, $isChild);
+        if (!is_array($value) && !empty($value)) {
+            $value = [$value => $value];
+        } elseif (!empty($value)) {
+            $value = [];
+        }
+
+        return $value;
+    }
+
+    private function getMergedAttributeValues($isChild = false)
+    {
+        $storeSelect = $this->getAttributeValueSelect($isChild);
 
         $data = [];
 
@@ -242,72 +248,51 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
     /**
      * Returns attribute value select
      *
-     * @param string $attributeTable
-     * @param int $storeId
      * @param bool $isChild
      *
      * @return Varien_Db_Select
      */
-    private function getAttributeValueSelect($attributeTable, $storeId, $isChild = false)
+    private function getAttributeValueSelect($isChild = false)
     {
-        $entityValueTable = $this->getTable([$this->entityTable, $this->backendType]);
+        $table = $this->getSnapshot()->getSnapshotTable($this->backendType);
+
         $select = $this->_getReadAdapter()->select();
         $select
-            ->from(['default_value' => $entityValueTable],[]);
+            ->from(['value' => $table], []);
 
         if ($isChild) {
             $select
                 ->join(
-                    ['attribute' => $this->getTable('ecomdev_sphinx/attribute')],
-                    'default_value.attribute_id = attribute.attribute_id and attribute.is_child_data = 1',
-                    []
-                )
-                ->join(
                     ['relation' => $this->getTable('catalog/product_relation')],
-                    'relation.child_id = default_value.entity_id',
-                    []
-                )
-                ->join(
-                    ['product' => $this->getTable('catalog/product')],
-                    'product.entity_id = relation.parent_id',
-                    []
-                )
-                ->join( // Filter for in stock child products if option is set on attribute level
-                    ['stock_status' => $this->getTable('cataloginventory/stock_status')],
-                    $this->_getReadAdapter()->quoteInto(
-                        'stock_status.product_id = relation.child_id'
-                            . ' AND stock_status.website_id = ?'
-                            . ' AND stock_status.stock_status IN(1, attribute.is_child_data_stock)',
-                        Mage::app()->getStore($storeId)->getWebsiteId()
-                    ),
+                    'relation.child_id = value.entity_id',
                     []
                 )
                 ->join(
                     ['entity_id' => $this->getMainMemoryTable('entity_id')],
                     'entity_id.id = relation.parent_id',
                     []
-                );
+                )
+            ;
+            $select->where('value.is_child_data = ?', 1);
+            $select->where('value.is_child_data_stock = ?', 1);
         } else {
-            $select->join(['entity_id' => $this->getMainMemoryTable('entity_id')], 'default_value.entity_id = entity_id.id', []);
+            $select->join(
+                ['entity_id' => $this->getMainMemoryTable('entity_id')],
+                'value.entity_id = entity_id.id',
+                []
+            );
         }
 
-        $select->join(['attribute_id' => $this->getMemoryTableName($attributeTable)], 'default_value.attribute_id = attribute_id.id', [])
+        $select
             ->columns([
                 'entity_id' => 'entity_id.id',
-                'attribute_id' => 'default_value.attribute_id',
-                'value' => new Zend_Db_Expr('TRIM(default_value.value)'),
-                'is_multi_value' => new Zend_Db_Expr('LOCATE(\',\', default_value.value)'),
+                'attribute_id' => 'value.attribute_id',
+                'value' => new Zend_Db_Expr('TRIM(value.value)'),
+                'has_comma' => new Zend_Db_Expr('LOCATE(\',\', value.value)')
             ])
-            ->where('default_value.store_id IN(0, ?)', $storeId)
-            ->order('default_value.store_id ASC')
         ;
 
-        if ($isChild) {
-            $select->columns(['main_id' => 'relation.child_id']);
-        } else {
-            $select->columns(['main_id' => 'entity_id.id']);
-        }
-
+        $select->columns(['main_id' => 'value.entity_id']);
 
         return $select;
     }

@@ -15,6 +15,9 @@ class EcomDev_Sphinx_Model_Index_Service
             'ecomdev_sphinx/index_field_provider_product_attribute_regular',
             'ecomdev_sphinx/index_field_provider_product_attribute_virtual'
         ],
+        'keyword_product' => [
+            'ecomdev_sphinx/index_field_provider_product_keyword_system'
+        ],
         'category' => [
             'ecomdev_sphinx/index_field_provider_category'
         ],
@@ -25,8 +28,16 @@ class EcomDev_Sphinx_Model_Index_Service
 
     protected $readerProviders = [
         'product' => 'ecomdev_sphinx/index_reader_provider_product',
+        'keyword_product' => 'ecomdev_sphinx/index_reader_provider_product',
         'category' => 'ecomdev_sphinx/index_reader_provider_category',
         'keyword' => 'ecomdev_sphinx/index_reader_provider_keyword'
+    ];
+
+    protected $entityTypeCode = [
+        'product' => Mage_Catalog_Model_Product::ENTITY,
+        'keyword_product' => Mage_Catalog_Model_Product::ENTITY,
+        'category' => Mage_Catalog_Model_Category::ENTITY,
+        'keyword' => Mage_Catalog_Model_Product::ENTITY
     ];
 
     protected $readerPlugins = [
@@ -41,6 +52,13 @@ class EcomDev_Sphinx_Model_Index_Service
             [80, 'ecomdev_sphinx/index_reader_plugin_price'],
             [90, 'ecomdev_sphinx/index_reader_plugin_stock', [1]],
             [100, 'ecomdev_sphinx/index_reader_plugin_url', ['product/%d']]
+        ],
+        'keyword_product' => [
+            [10, 'ecomdev_sphinx/index_reader_plugin_attribute_static', [Product::ENTITY]],
+            [20, 'ecomdev_sphinx/index_reader_plugin_attribute_eav', [Product::ENTITY, 'int']],
+            [30, 'ecomdev_sphinx/index_reader_plugin_attribute_eav', [Product::ENTITY, 'varchar']],
+            [40, 'ecomdev_sphinx/index_reader_plugin_attribute_eav', [Product::ENTITY, 'text']],
+            [70, 'ecomdev_sphinx/index_reader_plugin_category'],
         ],
         'category' => [
             [10, 'ecomdev_sphinx/index_reader_plugin_attribute_static', [Category::ENTITY]],
@@ -76,7 +94,9 @@ class EcomDev_Sphinx_Model_Index_Service
     public function getConfiguration($type)
     {
         if (!isset($this->configuration[$type])) {
-            $this->configuration[$type] = $this->createModel('ecomdev_sphinx/index_configuration');
+            $entityType = isset($this->entityTypeCode[$type]) ? $this->entityTypeCode[$type] : '';
+
+            $this->configuration[$type] = $this->createModel('ecomdev_sphinx/index_configuration', [$entityType]);
             foreach ($this->getConfigurationProviders($type) as $provider) {
                 /** @var EcomDev_Sphinx_Contract_FieldProviderInterface $provider */
                 $provider = $this->createModel($provider, [Mage::getSingleton('ecomdev_sphinx/config')]);
@@ -189,9 +209,10 @@ class EcomDev_Sphinx_Model_Index_Service
      * @param int $storeId
      * @param int[] $visibility
      * @param null|string $updatedAt
+     * @param string $code
      * @return EcomDev_Sphinx_Model_Index_Reader_Scope
      */
-    public function getProductScope($storeId, $visibility, $updatedAt = null)
+    public function getProductScope($storeId, $visibility, $updatedAt = null, $code = 'product')
     {
         $filters = [];
         $filters[] = $this->createResourceModel(
@@ -212,7 +233,7 @@ class EcomDev_Sphinx_Model_Index_Service
 
         $scope = $this->createModel(
             'ecomdev_sphinx/index_reader_scope',
-            [$filters, $this->getConfiguration('product')]
+            [$filters, $this->getConfiguration($code)]
         );
 
         return $scope;
@@ -270,6 +291,28 @@ class EcomDev_Sphinx_Model_Index_Service
         );
 
         return $scope;
+    }
+
+    /**
+     * Returns keyword generator for store
+     *
+     * @param $storeId
+     * @return EcomDev_Sphinx_Model_Index_Keyword_Generator
+     */
+    public function getKeywordGenerator($storeId)
+    {
+        $scope = $this->getProductScope(
+            $storeId,
+            [
+                Mage_Catalog_Model_Product_Visibility::VISIBILITY_BOTH,
+                Mage_Catalog_Model_Product_Visibility::VISIBILITY_IN_SEARCH
+            ],
+            null,
+            'keyword_product'
+        );
+
+        $reader = $this->getReader('keyword_product');
+        return $this->createModel('ecomdev_sphinx/index_keyword_generator', [$reader, $scope]);
     }
 
     /**

@@ -39,4 +39,11 @@ interface EcomDev_Sphinx_Contract_ConfigurationInterface
      * @return string[][]
      */
     public function getAttributeCodesGroupedByType();
+
+    /**
+     * Returns attributes grouped by code and type
+     *
+     * @return int[][]
+     */
+    public function getAttributeIdsGroupedByType();
 }

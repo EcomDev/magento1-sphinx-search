@@ -71,6 +71,39 @@ class EcomDev_Sphinx_Model_Sphinx_Category
     }
 
     /**
+     * Returns top categories
+     *
+     * @param int $limit
+     * @param string[] $columns
+     * @return array
+     */
+    public function getTopCategories($limit, $columns = ['category_id', 'path', 'name', 'request_path'])
+    {
+        $category = $this->getCategoryInfo(
+            (int)Mage::app()->getStore()->getRootCategoryId(),
+            ['path', 'level']
+        );
+
+        if (!$category) {
+            return [];
+        }
+
+        return array_slice(
+            $this->fetchTree(
+                $this->getCategoriesData(
+                    $category['path'],
+                    $category['level'] + 2,
+                    $columns,
+                    []
+                ),
+                $category['path']
+            ),
+            0,
+            $limit
+        );
+    }
+
+    /**
      * @param int $parentCategoryId
      * @param bool $isDirect
      * @return int
@@ -167,6 +200,7 @@ class EcomDev_Sphinx_Model_Sphinx_Category
 
         return $query->execute();
     }
+
 
     /**
      * Applies conditions to query

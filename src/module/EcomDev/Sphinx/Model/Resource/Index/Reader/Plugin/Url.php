@@ -42,6 +42,9 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Url
             return [];
         }
 
+
+        $this->getMainMemoryTable('entity_id');
+
         $idPathList = array_map(
             function ($identifier) {
                 return sprintf($this->idPathFormat, $identifier);

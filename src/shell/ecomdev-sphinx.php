@@ -54,6 +54,11 @@ class EcomDev_Sphinx_Shell extends Mage_Shell_Abstract
             'format' => 'f',
             'output' => 'o'
         ),
+        'export:keyword:product' => array(
+            'store' => 's',
+            'format' => 'f',
+            'output' => 'o'
+        ),
         'console' => array(),
         'notify:category' => array(),
         'notify:product' => array(),
@@ -65,18 +70,17 @@ class EcomDev_Sphinx_Shell extends Mage_Shell_Abstract
         ),
         'keyword:dump' => array(
             'store' => 's',
-            'index' => 'i',
             'output' => 'o'
         ),
         'keyword:import' => array(
-            'store' => 's',
-            'index' => 'i',
-            'output' => 'o'
+            'store' => 's'
         ),
+        'keyword:import:all' => array(),
         'index:all' => array(
             'ignore-keyword' => 'i'
         ),
-        'index:delta' => array()
+        'index:delta' => array(),
+        'index:validate' => array()
     );
 
     /**
@@ -92,8 +96,8 @@ Defined <action>s:
 
   export:product    Exports product index
 
-    -s --store          Store identifier for index                      [required]
-    -v --visibility     Visibility, possible values: category, search   [required]
+    -s --store          Store identifier for index                           [required]
+    -v --visibility     Visibility, possible values: category, search        [required]
     -d --delta          Is it a delta index?
     -f --format         Format of the output, allowed values: csv, tsv, xml  [required]
     -o --output         Output filename, by default outputs to STDOUT
@@ -101,7 +105,7 @@ Defined <action>s:
 
   export:category   Exports category index
 
-    -s --store          Store identifier for index                      [required]
+    -s --store          Store identifier for index                           [required]
     -d --delta          Is it a delta index?
     -f --format         Format of the output, allowed values: csv, tsv, xml  [required]
     -o --output         Output file, by default outputs to STDOUT
@@ -109,10 +113,15 @@ Defined <action>s:
 
   export:keyword    Export keyword index
 
-    -s --store          Store identifier for index                      [required]
+    -s --store          Store identifier for index                           [required]
     -f --format         Format of the output, allowed values: csv, tsv, xml  [required]
     -o --output         Output file, by default outputs to STDOUT
 
+  export:keyword:product    Export keyword product index base
+
+    -s --store          Store identifier for index                           [required]
+    -f --format         Format of the output, allowed values: csv, tsv, xml  [required]
+    -o --output         Output file, by default outputs to STDOUT
 
   notify:category   Notifies changes in category entities to indexer
 
@@ -137,8 +146,10 @@ Defined <action>s:
   keyword:import    Imports keywords from product_search index
 
      -s --store         Store
+     
+  keyword:import:all Imports all keywords for a store
 
-  keyword:import:all  Import keywords on every store view where it is available
+  index:validate    Validates index configuration and updates it if needed. 
 
   console           Opens sphinx console
 USAGE;
@@ -348,6 +359,32 @@ USAGE;
         $writer->process($reader, $scope);
     }
 
+    protected function runExportKeywordProduct()
+    {
+        $this->validateArgs([
+            'store' => 'Store argument is missing',
+            'format' => 'Format argument is missing'
+        ]);
+
+        $output = $this->getOutput(false);
+
+        $store = Mage::app()->getStore($this->getArg('store'))->getId();
+
+        $reader = $this->getService()->getReader('keyword_product');
+        $scope = $this->getService()->getProductScope(
+            $store,
+            [Visibility::VISIBILITY_BOTH, Visibility::VISIBILITY_IN_SEARCH],
+            null,
+            'keyword_product'
+        );
+
+        $writer = $this->getService()->getWriter($this->getArg('format'), $output);
+        if ($writer instanceof EcomDev_Sphinx_Contract_Writer_HeaderAwareInterface && $this->getArg('header')) {
+            $writer->setOutputHeaders(true);
+        }
+        $writer->process($reader, $scope);
+    }
+
     protected function runExportProduct()
     {
         $this->validateArgs([
@@ -475,6 +512,19 @@ USAGE;
     }
 
     /**
+     * Reindex all sphinx data
+     */
+    public function runIndexValidate()
+    {
+        if (!$this->_getLock()->lock()) {
+            fwrite($this->getOutput(), 'Index process is running at the moment, please try again later');
+            exit(1);
+        }
+
+        $this->getSphinxConfig()->controlIndex();
+    }
+
+    /**
      * Dumps keywords
      *
      *
@@ -490,7 +540,6 @@ USAGE;
         $tmpFile = tempnam(Mage::getConfig()->getVarDir('sphinx'), 'keyword');
 
         $this->getSphinxConfig()->keywordDump(
-            $this->getArg('index', 'product_search'),
             (int)$this->getArg('store'),
             $tmpFile
         );

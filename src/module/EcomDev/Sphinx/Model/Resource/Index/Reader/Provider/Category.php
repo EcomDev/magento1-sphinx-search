@@ -7,13 +7,13 @@ use Mage_Catalog_Model_Product_Visibility as Visibility;
 class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_Category
     extends EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_AbstractProvider
 {
-
     /**
      * Resource initialization
      */
     protected function _construct()
     {
         $this->_init('ecomdev_sphinx/index_category', 'category_id');
+        $this->snapshot = Mage::getResourceSingleton('ecomdev_sphinx/index_reader_snapshot_category');
     }
 
 
@@ -69,6 +69,15 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_Category
             $select,
             [':start' => $nextIdentifier, ':end' => min($maximumIdentifier, $lastIdentifier)]
         );
+
+        if ($this->pluginContainer) {
+            $select->reset(Varien_Db_Select::COLUMNS)
+                ->columns('index.category_id')
+                ->bind(['start' => $nextIdentifier, 'end' =>  min($maximumIdentifier, $lastIdentifier)]);
+
+            $this->fillMemoryTable('entity_id', $select);
+            $this->configurePlugins($this->getMemoryTableName('entity_id'));
+        }
 
         if ($lastIdentifier >= $maximumIdentifier) {
             $this->endProcess($scope);

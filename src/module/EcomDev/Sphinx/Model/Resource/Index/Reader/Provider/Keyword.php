@@ -34,7 +34,15 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_Keyword
         $select = $this->_getReadAdapter()->select();
         $select->from(
             ['index' => $this->getMainTable()],
-            ['keyword_id', 'keyword', 'trigram_list', 'length' => 'LENGTH(keyword)', 'frequency']
+            [
+                'keyword_id',
+                'keyword',
+                'trigram_list',
+                'length' => 'LENGTH(keyword)',
+                'category_info',
+                'word_count' => 'LENGTH(keyword) - LENGTH(REPLACE(keyword, :space, :empty)) + 1',
+                'frequency'
+            ]
         );
 
         foreach ($scope->getFilters() as $filter) {
@@ -54,7 +62,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_Keyword
             $lastIdentifier = $nextIdentifier + ($batchSize * $multiply);
             $currentSize = $this->_getReadAdapter()->fetchOne(
                 $totalSelect,
-                [':start' => $nextIdentifier, ':end' => min($maximumIdentifier, $lastIdentifier)]
+                ['start' => $nextIdentifier, 'end' => min($maximumIdentifier, $lastIdentifier)]
             );
             $multiply += 1;
         } while ($currentSize < $batchSize && $lastIdentifier <= $maximumIdentifier);
@@ -64,7 +72,12 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_Keyword
 
         $data = $this->_getReadAdapter()->fetchAssoc(
             $select,
-            [':start' => $nextIdentifier, ':end' => min($maximumIdentifier, $lastIdentifier)]
+            [
+                'start' => $nextIdentifier,
+                'end' => min($maximumIdentifier, $lastIdentifier),
+                'space' => ' ',
+                'empty' => ''
+            ]
         );
 
         if ($lastIdentifier >= $maximumIdentifier) {

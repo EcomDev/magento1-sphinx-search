@@ -104,4 +104,12 @@
     <catalogsearch_result_index_ecomdev_sphinx_json>
         <update handle="remove_all_elements" />
     </catalogsearch_result_index_ecomdev_sphinx_json>
+
+    <sphinx_autocomplete_index>
+        <block name="root"
+               output="toHtml"
+               type="ecomdev_sphinx/autocomplete_result"
+               template="ecomdev/sphinx/autocomplete.phtml" />
+    </sphinx_autocomplete_index>
+
 </layout>

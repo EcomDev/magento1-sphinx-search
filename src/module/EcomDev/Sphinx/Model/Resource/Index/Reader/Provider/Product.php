@@ -7,13 +7,14 @@ use Mage_Catalog_Model_Product_Visibility as Visibility;
 class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_Product
     extends EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_AbstractProvider
 {
-
+    
     /**
      * Resource initialization
      */
     protected function _construct()
     {
         $this->_init('ecomdev_sphinx/index_product', 'product_id');
+        $this->snapshot = Mage::getResourceSingleton('ecomdev_sphinx/index_reader_snapshot_product');
     }
 
     /**
@@ -32,14 +33,6 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_Product
         }
 
         $this->_validateConnection($this->_getReadAdapter());
-
-        if ($this->pluginContainer) {
-            foreach ($this->pluginContainer->get() as $plugin) {
-                if ($plugin instanceof EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_MemoryTableAwareInterface) {
-                    $plugin->setEntityTableName($this->getMemoryTableName('entity_id'));
-                }
-            }
-        }
 
         $select = $this->_getReadAdapter()->select();
         $select->from(['index' => $this->getMainTable()], ['product_id', 'status', 'visibility']);
@@ -74,14 +67,19 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_Product
             [':start' => $nextIdentifier, ':end' => min($maximumIdentifier, $lastIdentifier)]
         );
 
+        if ($this->pluginContainer) {
+            $select->reset(Varien_Db_Select::COLUMNS)
+                ->columns('index.product_id')
+                ->bind(['start' => $nextIdentifier, 'end' =>  min($maximumIdentifier, $lastIdentifier)]);
+
+            $this->fillMemoryTable('entity_id', $select);
+            $this->configurePlugins($this->getMemoryTableName('entity_id'));
+        }
+
         if ($lastIdentifier >= $maximumIdentifier) {
             $this->endProcess($scope);
         }
-
-        if ($this->pluginContainer) {
-            $this->fillMemoryTable('entity_id', array_keys($data));
-        }
-
+        
         return $data;
     }
 

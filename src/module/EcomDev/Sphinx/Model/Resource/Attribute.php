@@ -44,4 +44,29 @@ class EcomDev_Sphinx_Model_Resource_Attribute
         
         return $this->_systemAttributes;
     }
+
+    /**
+     * Returns list of attribute identifiers by attribute code
+     *
+     * @param string[] $attributeCodes
+     * @return int[]
+     */
+    public function fetchAttributeIdsByCodes(array $attributeCodes, $entityType)
+    {
+        $select = $this->_getReadAdapter()->select();
+        $select
+            ->from(
+                ['attribute' => $this->getTable('eav/attribute')],
+                ['attribute_code', 'attribute_id']
+            )
+            ->join(
+                ['entity_type' => $this->getTable('eav/entity_type')],
+                'attribute.entity_type_id = entity_type.entity_type_id',
+                []
+            )
+            ->where('entity_type.entity_type_code = ?', $entityType)
+            ->where('attribute_code IN(?)', $attributeCodes);
+
+        return $this->_getReadAdapter()->fetchPairs($select);
+    }
 }

@@ -23,8 +23,10 @@ class EcomDev_Sphinx_Frontend_AutocompleteController extends Mage_Core_Controlle
             return;
         }
 
-        $keywords = trim($this->getRequest()->getParam('q'));
-        $keywords = array_filter(array_map('trim', explode(' ', $keywords)));
+
+        $keywordModel = Mage::getModel('ecomdev_sphinx/index_keyword');
+
+        $keywords = $keywordModel->extractKeywords($this->getRequest()->getParam('q'));
 
         $format = $this->getRequest()->getParam('format');
 
@@ -40,22 +42,23 @@ class EcomDev_Sphinx_Frontend_AutocompleteController extends Mage_Core_Controlle
             return;
         }
 
-        $keywordModel = Mage::getModel('ecomdev_sphinx/index_keyword');
 
         $layer = Mage::getSingleton('ecomdev_sphinx/search_layer');
         $scope = $layer->getScope();
-        $scope->setPageSize(5);
+        $scope->setPageSize(10);
         $scope->activateSearchMode();
 
-        $suggestions = $keywordModel->suggestions($keywords, $scope);
+        $suggestions = $keywordModel->suggestions($keywords, $scope, 10);
 
         $collection = $layer->getProductCollection();
 
         if ($suggestions) {
-            $firstOption = current($suggestions);
-            $collection->addSearchFilter($firstOption);
-            $scope->fetchCollection($collection);
+            $collection->addSearchFilter(current($suggestions));
+        } else {
+            $collection->addSearchFilter(implode(' ', $keywords));
         }
+
+        $scope->fetchCollection($collection);
 
         if ($format === 'json') {
             $products = [];
@@ -77,6 +80,9 @@ class EcomDev_Sphinx_Frontend_AutocompleteController extends Mage_Core_Controlle
         $result = new Varien_Object();
         $result->setSuggestions($suggestions);
         $result->setProducts($collection);
+        $result->setScope($scope);
+        $result->setKeywordModel($keywordModel);
+        $result->setKeywords($keywords);
 
         Mage::register('search_result', $result);
         $this->loadLayout(false);

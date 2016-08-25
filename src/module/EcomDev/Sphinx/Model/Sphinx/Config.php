@@ -500,21 +500,53 @@ class EcomDev_Sphinx_Model_Sphinx_Config
      * @param string|resource $filePath
      * @return bool
      */
-    public function keywordDump($type, $storeId, $filePath, $limit = 100000)
+    public function keywordDump($storeId, $filePath, $limit = 100000)
     {
-        $indexPrefix = $this->_types[$type][0];
+        $indexName = sprintf('product_%s', $storeId);
 
-        $indexName = sprintf('%s_%s', $indexPrefix, $storeId);
+        $tmpConfiguration = tempnam(Mage::getConfig()->getVarDir('sphinx'), 'index-config');
+        $originalKeywordsFile = tempnam(Mage::getConfig()->getVarDir('sphinx'), 'keyword');
+
+        file_put_contents(
+            $tmpConfiguration,
+            Mage::getSingleton('ecomdev_sphinx/sphinx_config_keyword_index')->render()
+        );
 
         $outputFile = $filePath;
         if (is_resource($filePath)) {
-            $outputFile = tempnam(Mage::getConfig()->getVarDir('sphinx'), 'keyword');
+            $outputFile = tempnam(Mage::getConfig()->getVarDir('sphinx'), 'result_keyword');
         }
 
-        $this->executeIndexerCommand(sprintf('--buildstops %s %d --buildfreqs %s', $outputFile, $limit, $indexName));
+        $this->executeIndexerCommand(
+            sprintf('--buildstops %s %d --buildfreqs %s', $originalKeywordsFile, $limit, $indexName),
+            false,
+            $tmpConfiguration
+        );
 
-        if (!file_exists($outputFile)) {
+        unlink($tmpConfiguration);
+
+        if (!file_exists($originalKeywordsFile)) {
             new RuntimeException('There was an issue with keyword dump');
+        }
+
+        $keywordModel = Mage::getSingleton('ecomdev_sphinx/index_keyword');
+        
+        $reader = \League\Csv\Reader::createFromPath($originalKeywordsFile);
+        $reader->setDelimiter(' ');
+        $reader->addFilter(function ($row) use ($keywordModel) {
+            return $keywordModel->validateKeyword($row[0], $row[1]);
+        });
+        
+        $generator = Mage::getSingleton('ecomdev_sphinx/index_service')->getKeywordGenerator($storeId);
+        $generator->setKeywords($reader);
+        unset($reader);
+        unlink($originalKeywordsFile);
+        $generator->setAttributeCodes(['category_names', 'name', 'manufacturer']);
+
+        $writer = \League\Csv\Writer::createFromPath($outputFile, 'w');
+
+        foreach ($generator->generate(2, 4, true) as $keyword => $info) {
+            $writer->insertOne([$keyword, $info['count'], json_encode((object)$info['category_ids'])]);
         }
 
         if (is_resource($filePath)) {
@@ -544,14 +576,11 @@ class EcomDev_Sphinx_Model_Sphinx_Config
             $limit = 5000;
         }
 
-        $type = self::TYPE_PRODUCT_SEARCH;
-
         $outputFile = tempnam(Mage::getConfig()->getVarDir('sphinx'), 'keyword_import');
 
-        $this->keywordDump($type, $storeId, $outputFile, $limit);
-
+        $this->keywordDump($storeId, $outputFile, $limit);
+        
         $csv = \League\Csv\Reader::createFromPath($outputFile);
-        $csv->setDelimiter(' ');
 
         /** @var EcomDev_Sphinx_Model_Index_Keyword $keyword */
         $keyword = Mage::getModel('ecomdev_sphinx/index_keyword');
@@ -714,11 +743,20 @@ class EcomDev_Sphinx_Model_Sphinx_Config
      * 
      * @param string $command
      * @param bool $returnExitCode
+     * @param string $customConfigFile
      * @return string|string[]
      */
-    protected function executeIndexerCommand($command, $returnExitCode = false)
+    protected function executeIndexerCommand($command, $returnExitCode = false, $customConfigFile = null)
     {
         $prefix = $this->_getConfig()->getConfig('indexer_command');
+
+        if ($customConfigFile !== null) {
+            $prefix = str_replace(
+                $this->_getConfig()->getConfig('daemon_config_path'),
+                $customConfigFile,
+                $prefix
+            );
+        }
 
         if ($returnExitCode) {
             return $this->_execWithExitCode(sprintf('%s %s', $prefix, $command));

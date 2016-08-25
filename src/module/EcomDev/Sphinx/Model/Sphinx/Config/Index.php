@@ -123,18 +123,7 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
                 );
             }
 
-            $stemmerConfig = [];
-
-            if (Mage::getStoreConfigFlag('ecomdev_sphinx/general/stemmer', $storeId)) {
-                $morphology = Mage::getStoreConfig('ecomdev_sphinx/general/stemmer_morphology', $storeId);
-                $stemmerConfig = [3 => sprintf('morphology = %s', $morphology)];
-
-                // Replace morphology with NGRAM for CJK languages.
-                if ($morphology === EcomDev_Sphinx_Model_Source_Morphology::NGRAM_CJK) {
-                    $stemmerConfig[3] = sprintf('ngram_chars = %s', 'U+3000..U+2FA1F');
-                    $stemmerConfig[4] = sprintf('ngram_len = %s', 1);
-                }
-            }
+            $stemmerConfig = $this->getStemmerConfig($storeId);
 
             $config['indexes'][sprintf('category_%s', $storeId)] = array(
                 sprintf('source = category_%s', $storeId),
@@ -177,12 +166,29 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
         return $config;
     }
 
+    protected function getStemmerConfig($storeId)
+    {
+        $stemmerConfig = [];
+        if (Mage::getStoreConfigFlag('ecomdev_sphinx/general/stemmer', $storeId)) {
+            $morphology = Mage::getStoreConfig('ecomdev_sphinx/general/stemmer_morphology', $storeId);
+            $stemmerConfig = [3 => sprintf('morphology = %s', $morphology)];
+
+            // Replace morphology with NGRAM for CJK languages.
+            if ($morphology === EcomDev_Sphinx_Model_Source_Morphology::NGRAM_CJK) {
+                $stemmerConfig[3] = sprintf('ngram_chars = %s', 'U+3000..U+2FA1F');
+                $stemmerConfig[4] = sprintf('ngram_len = %s', 1);
+            }
+        }
+
+        return $stemmerConfig;
+    }
+
     /**
      * Service instance
      *
      * @return EcomDev_Sphinx_Model_Index_Service
      */
-    private function getService()
+    protected function getService()
     {
         return Mage::getSingleton('ecomdev_sphinx/index_service');
     }
@@ -192,7 +198,7 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
      * @param bool $includeType
      * @return string
      */
-    private function getPrefixToFormat($format, $includeType = false)
+    protected function getPrefixToFormat($format, $includeType = false)
     {
         if ($format === 'xml') {
             $prefix = 'xmlpipe';
@@ -221,7 +227,7 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
      * @param $format
      * @return array
      */
-    private function getBaseIndexSource($type, $format)
+    protected function getBaseIndexSource($type, $format)
     {
         $configuration = $this->getService()->getConfiguration($type);
 
@@ -254,7 +260,7 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
      * @param string[] $additionalArguments
      * @return string[]
      */
-    private function getCommandSource($type, $format, $storeId, array $additionalArguments = [], $isDelta = false)
+    protected function getCommandSource($type, $format, $storeId, array $additionalArguments = [], $isDelta = false)
     {
         $reflectionClass = new ReflectionClass('Mage');
 

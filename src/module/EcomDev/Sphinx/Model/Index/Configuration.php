@@ -39,6 +39,31 @@ class EcomDev_Sphinx_Model_Index_Configuration
     private $attributeCodesByType;
 
     /**
+     * Attribute identifiers grouped by type
+     *
+     * @var int[][]
+     */
+    private $attributeIdsByType;
+
+    /**
+     * Entity type code for fields attribute code retrieval
+     *
+     * @var string
+     */
+    private $entityType;
+
+    /**
+     * Entity type related configuration constructor
+     *
+     * @param string $entityType
+     */
+    public function __construct($entityType = '')
+    {
+        $this->entityType = $entityType;
+    }
+
+
+    /**
      * Returns fields from field providers grouped by name
      *
      * @return FieldInterface[]
@@ -133,6 +158,21 @@ class EcomDev_Sphinx_Model_Index_Configuration
     }
 
     /**
+     * Returns attributes grouped by code and type
+     *
+     * @return string[][]
+     */
+    public function getAttributeIdsGroupedByType()
+    {
+        if ($this->attributeIdsByType === null) {
+            $this->initializeAttributeIds();
+        }
+
+        return $this->attributeIdsByType;
+    }
+
+
+    /**
      * Initializes attributes
      *
      * @return $this
@@ -164,4 +204,31 @@ class EcomDev_Sphinx_Model_Index_Configuration
         return $this;
     }
 
+    /**
+     * Initializes attribute identifiers
+     *
+     * @return $this
+     */
+    private function initializeAttributeIds()
+    {
+        $this->attributeIdsByType = [];
+        $attributeIds = Mage::getResourceSingleton('ecomdev_sphinx/attribute')
+            ->fetchAttributeIdsByCodes(
+                $this->getAttributeCodes(),
+                $this->entityType
+            );
+        
+        foreach ($this->getAttributeCodesGroupedByType() as $groupType => $attributeCodes) {
+            $this->attributeIdsByType[$groupType] = [];
+            foreach ($attributeCodes as $code) {
+                if (isset($attributeIds[$code])) {
+                    $this->attributeIdsByType[$groupType][] = $attributeIds[$code];
+                }
+            }
+
+            sort($this->attributeIdsByType[$groupType]);
+        }
+
+        return $this;
+    }
 }

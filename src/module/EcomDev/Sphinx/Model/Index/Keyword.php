@@ -40,11 +40,11 @@ class EcomDev_Sphinx_Model_Index_Keyword
 
         $rows = [];
         foreach ($data as $row) {
-            if (count($row) < 2) {
+            if (count($row) < 3) {
                 continue;
             }
 
-            list($keyword, $frequency) = $row;
+            list($keyword, $frequency, $categoryInfo) = $row;
 
             if (!$this->validateKeyword($keyword, $frequency)) {
                 continue;
@@ -56,7 +56,8 @@ class EcomDev_Sphinx_Model_Index_Keyword
                 'keyword' => $keyword,
                 'store_id' => $storeId,
                 'trigram_list' => $trigram,
-                'frequency' => $frequency
+                'frequency' => $frequency,
+                'category_info' => $categoryInfo
             ];
 
             if (count($rows) > $batchSize) {
@@ -80,14 +81,14 @@ class EcomDev_Sphinx_Model_Index_Keyword
      * @param int $frequency
      * @return bool
      */
-    private function validateKeyword($keyword, $frequency = 999)
+    public function validateKeyword($keyword, $frequency = 999)
     {
         if (trim($keyword) === '') {
             return false;
         }
 
-        // Remove forms that are smaller 3 chars and non unique
-        if (strlen($keyword) < 3 && $frequency > 1) {
+        // Remove forms that are smaller 2 chars and unique
+        if (mb_strlen($keyword, 'UTF-8') < 2 && $frequency < 4) {
             return false;
         }
 
@@ -117,16 +118,32 @@ class EcomDev_Sphinx_Model_Index_Keyword
      */
     public function createTrigram($keyword)
     {
-        if (strlen($keyword) < 3) {
+        if (strpos($keyword, ' ') !== false) {
+            $trigrams = [];
+
+            foreach (explode(' ', $keyword) as $word) {
+                // In case of non trivial word, we just keep it in trigram as full one
+                if (!$this->validateKeyword($word)) {
+                    $trigrams[] = $word;
+                    continue;
+                }
+
+                $trigrams = array_merge($trigrams, $this->createTrigram($word));
+            }
+
+            return $trigrams;
+        }
+
+        if (mb_strlen($keyword, 'UTF-8') < 3) {
             return [$keyword];
         }
 
         $trigramBase = '__' . $keyword . '__';
-        $length = strlen($trigramBase);
+        $length = mb_strlen($trigramBase, 'UTF-8');
 
         $trigrams = [];
         for ($i = 0; $i < ($length - 2); $i ++) {
-            $trigrams[] = substr($trigramBase, $i, 3);
+            $trigrams[] = mb_substr($trigramBase, $i, 3, 'UTF-8');
         }
 
         return $trigrams;
@@ -137,53 +154,15 @@ class EcomDev_Sphinx_Model_Index_Keyword
      *
      * @param string $keywords
      * @param EcomDev_Sphinx_Model_Scope $scope
+     * @param int $maximum
+     * @param int $categoryId
      * @return string[]
      */
-    public function suggestions($keywords, $scope)
+    public function suggestions($keywords, $scope, $maximum, $categoryId = null)
     {
-        $keyword = array_pop($keywords);
-
-        $suggestedKeyword = $this->completeKeyword($keyword, $scope);
-        $suggestedKeyword = $this->findKeywordByTrigram($suggestedKeyword, $scope);
-
-        $result = [];
-
-        foreach ($suggestedKeyword as $keyword) {
-            $result[] = implode(' ', array_merge($keywords, [$keyword]));
-        }
-
-        return $result;
-    }
-
-    /**
-     * Find keyword by starting letters
-     *
-     * @param string $keyword
-     * @param EcomDev_Sphinx_Model_Scope $scope
-     * @return string[]
-     */
-    protected function completeKeyword($keyword, $scope)
-    {
-        if (strlen($keyword) > 5) {
-            return $keyword;
-        }
-
-        $query = $scope->getQueryBuilder();
-
-        $query->select('keyword')
-            ->from($scope->getContainer()->getIndexNames('keyword'))
-            ->match([], $query->expr(sprintf('%s*', $query->escapeMatch($keyword))))
-            ->where('length', 'BETWEEN', [strlen($keyword), strlen($keyword) + 5])
-            ->orderBy($query->expr('weight()'), 'desc')
-            ->orderBy('frequency', 'desc')
-            ->limit(1);
-
-        $result = [];
-        foreach ($query->execute()->store() as $item) {
-            return $item['keyword'];
-        }
-
-        return $keyword;
+        $keyword = implode(' ', $keywords);
+        $suggestedKeyword = $this->findKeywordByTrigram($keyword, $scope, $maximum, $categoryId);
+        return $suggestedKeyword;
     }
 
     /**
@@ -191,37 +170,80 @@ class EcomDev_Sphinx_Model_Index_Keyword
      *
      * @param string $keyword
      * @param EcomDev_Sphinx_Model_Scope $scope
+     * @param int $categoryId
      * @return string[]
      */
-    protected function findKeywordByTrigram($keyword, $scope)
+    protected function findKeywordByTrigram($keyword, $scope, $limit, $categoryId)
     {
         $trigrams = implode(' ', $this->createTrigram($keyword));
         $keywordLength = strlen($keyword);
         $query = $scope->getQueryBuilder();
         $query
-            ->select('keyword', $query->exprFormat('weight()+2-abs(length-%d) as rank', $keywordLength))
+            ->select('keyword', $query->exprFormat('weight() as rank', $keywordLength))
             ->from($scope->getContainer()->getIndexNames('keyword'))
             ->match('trigram_list', $query->expr(sprintf('"%s"/2', $query->escapeMatch($trigrams))))
-            ->where('length', 'BETWEEN', [$keywordLength - 2, $keywordLength + 5])
+            ->where('length', 'BETWEEN', [$keywordLength - 2, $keywordLength + 20])
             ->orderBy('rank', 'desc')
             ->orderBy('frequency', 'desc')
-            ->option('ranker', 'wordcount')
             ->option('field_weights', ['trigram_list' => 2])
-            ->limit(30);
+            ->limit($limit + 20);
+
+        if ($categoryId !== null) {
+            $query->select($query->exprFormat(
+                'INTEGER(category_info.%s) as category_frequency',
+                Mage::helper('ecomdev_sphinx')->getCategoryMatch((int)$categoryId)
+            ));
+
+            $query->where(
+                'category_frequency',
+                '>',
+                0
+            );
+
+            $query->orderBy('category_frequency', 'asc');
+        }
 
         $result = [];
+        $keywordCount = count(explode(' ', $keyword));
         foreach ($query->execute()->store() as $item) {
-            $levenstein = levenshtein($item['keyword'], $keyword);
+            $matched = $this->extractKeywords($item['keyword']);
+
+            if (count($matched) > $keywordCount) {
+                $matchedStart = array_slice($matched, 0, $keywordCount);
+                $matchedEnd = array_slice($matched, -$keywordCount);
+
+                $levenstein = min(
+                    levenshtein(implode(' ', $matchedStart), $keyword),
+                    levenshtein(implode(' ', $matchedEnd), $keyword)
+                );
+            } else {
+                $levenstein = levenshtein(implode(' ', $matched), $keyword);
+            }
+
             $result[$item['keyword']] = $levenstein;
         }
 
         asort($result);
 
-        if ($result > 10) {
-            array_slice($result, 0, 10);
+        if (count($result) > $limit) {
+            $result = array_slice($result, 0, $limit);
         }
 
         return array_keys($result);
+    }
+
+    /**
+     * Extracts keywords from phrase
+     *
+     * @param string $phrase
+     *
+     * @return array|string
+     */
+    public function extractKeywords($phrase)
+    {
+        $keywords = mb_strtolower(trim($phrase), 'UTF-8');
+        $keywords = array_unique(array_filter(array_map('trim', preg_split('/[\s\\-_#!\.]/', $keywords))));
+        return $keywords;
     }
 
     /**

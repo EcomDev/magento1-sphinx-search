@@ -48,6 +48,43 @@ class EcomDev_Sphinx_Block_Autocomplete_Result
         return $suggestions;
     }
 
+
+    /**
+     * Number of suggestions per category
+     *
+     * @param int $limit
+     * @param int $categoryLimit
+     * @return Varien_Object[]
+     */
+    public function getTopCategorySuggestions($limit, $categoryLimit)
+    {
+        if (!$this->getResult()) {
+            return [];
+        }
+
+        /* @var $keywordModel EcomDev_Sphinx_Model_Index_Keyword */
+        $keywordModel = $this->getResult()->getKeywordModel();
+        $keywords = $this->getResult()->getKeywords();
+
+        /* @var $scope EcomDev_Sphinx_Model_Scope */
+        $scope = $this->getResult()->getScope();
+
+        $topCategories = Mage::getSingleton('ecomdev_sphinx/sphinx_category', [
+            'container' => $scope->getContainer()
+        ])->getTopCategories($categoryLimit);
+
+        $result = [];
+
+        foreach ($topCategories as $category) {
+            $suggestions = $keywordModel->suggestions($keywords, $scope, $limit, $category['category_id']);
+            if ($suggestions) {
+                $result[] = new Varien_Object($category + ['suggestions' => $suggestions]);
+            }
+        }
+
+        return $result;
+    }
+
     /**
      * Returns result object
      *

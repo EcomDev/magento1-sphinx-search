@@ -54,7 +54,9 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
             $this->fillMemoryTable('entity_id', $identifiers);
         }
 
-        $select = $this->_getReadAdapter()->select();
+        $this->enableIndexSwitch();
+
+        $select = new EcomDev_Sphinx_Model_Resource_Index_Reader_Select($this->_getReadAdapter());
         $select
             ->from(['index' => $this->getTable('catalog/category_product_index')], [
                 'product_id', 'category_id', 'position', 'is_parent'
@@ -71,10 +73,13 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
             )
         ;
 
+
+
         $scope->getFilter('store_id')->render('index', $select);
         $data = [];
 
         $names = [];
+        
         foreach ($this->_getReadAdapter()->query($select) as $row) {
             if (!isset($names[$row['category_id']]) && $row['level'] > 1) {
                 $names[$row['category_id']] = new CategoryName();
@@ -119,55 +124,83 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
         if ($names) {
             $this->fillMemoryTable('category_id', array_keys($names));
 
-            $select->reset()
+            $select->reset();
+            $select
+                ->indexHint(
+                    'name',
+                    $this->findIndexHint(
+                        $this->getTable(['catalog/category', 'varchar']),
+                        ['entity_id', 'attribute_id', 'store_id']
+                    )
+                )
                 ->from(
                     ['name' => $this->getTable(['catalog/category', 'varchar'])],
                     ['entity_id', 'value']
                 )
                 ->join(['entity_id' => $this->getMemoryTableName('category_id')], 'entity_id.id = name.entity_id', [])
-                ->where('name.store_id = :store_id')
-                ->where('name.attribute_id = :attribute_id');
+                ->where('name.store_id IN(0, :store_id)')
+                ->where('name.attribute_id = :attribute_id')
+                ->order('name.store_id ASC');
 
-            $nameData = [];
-            foreach ([$scope->getFilter('store_id')->getValue(), 0] as $storeId) {
-                $nameData += $this->_getReadAdapter()->fetchPairs($select, [
-                    'store_id' => $storeId,
-                    'attribute_id' => $this->nameAttributeId
-                ]);
-            }
+
+            $nameData = $this->_getReadAdapter()->fetchPairs($select, [
+                'store_id' => $scope->getFilter('store_id')->getValue(),
+                'attribute_id' => $this->nameAttributeId
+            ]);
 
             foreach ($nameData as $categoryId => $name) {
                 if (isset($names[$categoryId])) {
                     $names[$categoryId]->setName($name);
                 }
             }
+
+            $select
+                ->reset()
+                ->from(
+                    ['entity_id' => $this->getMainMemoryTable('entity_id')],
+                    []
+                )
+                ->joinCross(
+                    ['category_id' => $this->getMemoryTableName('category_id')],
+                    []
+                )
+                ->join(
+                    ['category_index' => $this->getTable('catalog/category_product_index')],
+                    implode(' and ', [
+                        'category_index.product_id = entity_id.id',
+                        'category_index.category_id = category_id.id'
+                    ]),
+                    []
+                )
+                ->columns([
+                    'id_path' => 'CONCAT(:product_path, category_index.product_id, :slash, category_index.category_id)'
+                ])
+                ->bind([
+                    'product_path' => 'product/',
+                    'slash' => '/'
+                ])
+            ;
+
+            $scope->getFilter('store_id')->render('category_index', $select);
+
+            $idPathFilter = $this->createTemporaryTableFromSelect($select, ['PRIMARY' => ['id_path']]);
+
+            $select->reset()
+                ->from(['url' => $this->getTable('core/url_rewrite')], ['product_id', 'category_id', 'request_path'])
+                ->join(['id_path' => $idPathFilter], 'url.id_path = id_path.id_path', [])
+                ->where('url.is_system = ?', 1);
+
+            $scope->getFilter('store_id')->render('url', $select);
+
+            foreach ($this->_getReadAdapter()->query($select) as $row) {
+                $categoryMatch = $this->helper->getCategoryMatch($row['category_id']);
+                $data[$row['product_id']]['_category_url'][$categoryMatch] = $row['request_path'];
+            }
+
+            $this->dropTemporaryTable($idPathFilter);
         }
 
-        $select->reset()
-            ->from(['url' => $this->getTable('core/url_rewrite')], ['product_id', 'category_id', 'request_path'])
-            ->join(
-                ['entity_id' => $this->getMainMemoryTable('entity_id')],
-                'entity_id.id = url.product_id',
-                []
-            )
-            ->join(
-                ['category_index' => $this->getTable('catalog/category_product_index')],
-                implode(' and ', [
-                    'category_index.product_id = entity_id.id',
-                    'category_index.category_id = url.category_id',
-                    'category_index.store_id = url.store_id',
-                ]),
-                []
-            )
-            ->where('url.is_system = ?', 1);
-
-        $scope->getFilter('store_id')->render('url', $select);
-
-        foreach ($this->_getReadAdapter()->query($select) as $row) {
-            $categoryMatch = $this->helper->getCategoryMatch($row['category_id']);
-            $data[$row['product_id']]['_category_url'][$categoryMatch] = $row['request_path'];
-        }
-
+        $this->disableIndexSwitch();
         return $data;
     }
 }

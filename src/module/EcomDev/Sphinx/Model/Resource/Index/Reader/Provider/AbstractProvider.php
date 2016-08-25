@@ -2,11 +2,13 @@
 
 use EcomDev_Sphinx_Contract_Reader_ScopeInterface as ScopeInterface;
 use EcomDev_Sphinx_Model_Resource_Index_Reader_Filter_Date as FilterDate;
+use EcomDev_Sphinx_Contract_Reader_SnapshotInterface as SnapshotInterface;
 
 abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_AbstractProvider
     extends EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractResource
     implements EcomDev_Sphinx_Contract_Reader_ProviderInterface,
-        EcomDev_Sphinx_Contract_Reader_Provider_PluginContainerAwareInterface
+        EcomDev_Sphinx_Contract_Reader_Provider_PluginContainerAwareInterface,
+        EcomDev_Sphinx_Contract_Reader_SnapshotAwareInterface
 {
     /**
      * Date time filter
@@ -19,6 +21,13 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_AbstractProvi
      * @var EcomDev_Sphinx_Contract_Reader_PluginContainerInterface
      */
     protected $pluginContainer;
+
+    /**
+     * Snapshot instance
+     *
+     * @var EcomDev_Sphinx_Contract_Reader_SnapshotInterface
+     */
+    protected $snapshot;
 
     /**
      * Returns type of the record
@@ -205,5 +214,56 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_AbstractProvi
         }
 
         return $statement;
+    }
+
+    /**
+     * Configure plugins
+     *
+     * @param string $memoryTable
+     *
+     * @return $this
+     */
+    protected function configurePlugins($memoryTable)
+    {
+        if ($this->pluginContainer) {
+            foreach ($this->pluginContainer->get() as $plugin) {
+                if ($plugin instanceof EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_MemoryTableAwareInterface) {
+                    $plugin->setEntityTableName($memoryTable);
+                }
+
+                if ($this->snapshot && $plugin instanceof EcomDev_Sphinx_Contract_Reader_SnapshotAwareInterface) {
+                    $plugin->setSnapshot($this->snapshot);
+                }
+            }
+        }
+        
+        if ($this->snapshot) {
+            $this->snapshot->setEntityTableName($memoryTable);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Sets a snapshot model to a provider model
+     *
+     * @param SnapshotInterface $snapshot
+     *
+     * @return $this
+     */
+    public function setSnapshot(SnapshotInterface $snapshot)
+    {
+        $this->snapshot = $snapshot;
+        return $this;
+    }
+
+    /**
+     * Returns snapshot model
+     *
+     * @return EcomDev_Sphinx_Contract_Reader_SnapshotInterface
+     */
+    public function getSnapshot()
+    {
+        return $this->snapshot;
     }
 }
