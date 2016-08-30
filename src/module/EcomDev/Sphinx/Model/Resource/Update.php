@@ -40,6 +40,7 @@ class EcomDev_Sphinx_Model_Resource_Update extends Mage_Core_Model_Resource_Db_A
 
         $stmt = $this->_getReadAdapter()->query($select);
         $ids = [];
+        
         while ($id = $stmt->fetchColumn()) {
             $ids[] = $id;
             if (count($ids) > $limit) {
@@ -54,6 +55,30 @@ class EcomDev_Sphinx_Model_Resource_Update extends Mage_Core_Model_Resource_Db_A
 
         return $this;
     }
+
+    /**
+     * Updates records
+     *
+     * @param DateTime $timeStamp
+     * @param string $type
+     * @return $this
+     */
+    public function cleanupUpdatedEntityIds(DateTime $timeStamp, $type)
+    {
+        // Tranform date to UTC timezone
+        $timeStamp->setTimezone(new DateTimeZone('UTC'));
+
+        $this->_getWriteAdapter()->delete(
+            $this->getMainTable(),
+            [
+                'updated_at < ?' => $timeStamp->format('Y-m-d H:i:s'),
+                'type = ?' => $type
+            ]
+        );
+
+        return $this;
+    }
+
 
     /**
      * Returns date time instance with latest updated at items

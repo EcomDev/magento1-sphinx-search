@@ -289,7 +289,7 @@ abstract class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_AbstractIndexer
 
             $currentTriggers[$row['Table']][strtolower($row['Event'])] = [
                 'additional_code' => $this->_getAdditionalTriggerCode($row),
-                'code' => preg_replace('/^\s*begin\s*(.*?)\s*end\s*$/mi', '\\1', $row['Statement']),
+                'code' => trim(preg_replace('/^\s*begin\s*(.*)\s*end\s*$/si', '\\1', $row['Statement'])),
                 'name' => $row['Trigger']
             ];
         }
@@ -349,12 +349,12 @@ abstract class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_AbstractIndexer
                         $currentTriggers[$table][$type]['additional_code']
                     );
 
-                    if ($code !== $currentTriggers[$table][$type]) {
+                    if ($code !== $currentTriggers[$table][$type]['code']) {
                         $toRemove[] = $currentTriggers[$table][$type]['name'];
                         $toCreate[] = [
                             'table' => $table,
                             'type' => $type,
-                            'code' => $this->_generateTriggerCode($entityType, $triggerInfo, '')
+                            'code' => $code
                         ];
                     }
                 } else {
