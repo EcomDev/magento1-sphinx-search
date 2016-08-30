@@ -26,7 +26,7 @@ class EcomDev_Sphinx_Model_Index_Writer_Csv
      *
      * @var string
      */
-    protected $escape = "\\";
+    protected $escape = '\\';
 
     /**
      * Output headers flag
@@ -42,7 +42,9 @@ class EcomDev_Sphinx_Model_Index_Writer_Csv
      */
     protected function getCsvWriter()
     {
+        \Ajgl\Csv\Rfc\CsvRfcWriteStreamFilter::register();
         $csvWriter = League\Csv\Writer::createFromPath($this->getPath(), 'w');
+        $csvWriter->appendStreamFilter(\Ajgl\Csv\Rfc\CsvRfcWriteStreamFilter::FILTERNAME_DEFAULT);
         $csvWriter->setDelimiter($this->delimiter);
         $csvWriter->setEscape($this->escape);
         $csvWriter->setEnclosure($this->enclosure);

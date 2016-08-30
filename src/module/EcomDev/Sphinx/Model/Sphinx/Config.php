@@ -530,7 +530,7 @@ class EcomDev_Sphinx_Model_Sphinx_Config
         }
 
         $keywordModel = Mage::getSingleton('ecomdev_sphinx/index_keyword');
-        
+
         $reader = \League\Csv\Reader::createFromPath($originalKeywordsFile);
         $reader->setDelimiter(' ');
         $reader->addFilter(function ($row) use ($keywordModel) {
@@ -543,7 +543,9 @@ class EcomDev_Sphinx_Model_Sphinx_Config
         unlink($originalKeywordsFile);
         $generator->setAttributeCodes(['category_names', 'name', 'manufacturer']);
 
+        \Ajgl\Csv\Rfc\CsvRfcWriteStreamFilter::register();
         $writer = \League\Csv\Writer::createFromPath($outputFile, 'w');
+        $writer->appendStreamFilter($writer);
 
         foreach ($generator->generate(2, 4, true) as $keyword => $info) {
             $writer->insertOne([$keyword, $info['count'], json_encode((object)$info['category_ids'])]);

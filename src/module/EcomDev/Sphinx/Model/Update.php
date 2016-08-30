@@ -38,6 +38,11 @@ class EcomDev_Sphinx_Model_Update extends Mage_Core_Model_Abstract
             500
         );
 
+        $this->getResource()->cleanupUpdatedEntityIds(
+            $updatedAfter,
+            $type
+        );
+
         return $this;
     }
 }

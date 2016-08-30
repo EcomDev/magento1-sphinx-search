@@ -242,7 +242,7 @@ class EcomDev_Sphinx_Model_Index_Keyword
     public function extractKeywords($phrase)
     {
         $keywords = mb_strtolower(trim($phrase), 'UTF-8');
-        $keywords = array_unique(array_filter(array_map('trim', preg_split('/[\s\\-_#!\.]/', $keywords))));
+        $keywords = array_unique(array_filter(array_map('trim', preg_split('/[\s\\_#!\.]/', $keywords))));
         return $keywords;
     }
 
