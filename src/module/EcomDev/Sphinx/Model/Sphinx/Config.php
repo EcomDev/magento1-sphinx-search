@@ -373,14 +373,16 @@ class EcomDev_Sphinx_Model_Sphinx_Config
 
             if (!$forceReindex && $isOutOfSync && $pendingRows < ($indexedRows / 2)) {
                 $deltaList[] = [$indexName . '_delta', $indexName, $storeId];
-            } elseif ($forceReindex || $isOutOfSync) {
+            } else {
                 $forceReindexList[] = [$indexName, $storeId];
             }
         }
 
         if ($deltaList) {
             $additionalFullReindex = $this->mergeIndexes(
-                $deltaList, $additionalArgs, $output
+                $deltaList,
+                $additionalArgs,
+                $output
             );
 
             if ($additionalFullReindex) {
