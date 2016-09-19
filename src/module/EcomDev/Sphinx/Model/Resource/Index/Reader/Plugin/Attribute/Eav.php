@@ -133,6 +133,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
 
             if ($row['is_multiple']) {
                 $this->attributeCache['has_multiple'] = true;
+
             }
         }
 
@@ -168,7 +169,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
             $attributeCode = $this->attributeCache['info'][$row['attribute_id']]['attribute_code'];
 
             if ($this->attributeCache['info'][$row['attribute_id']]['is_multiple']) {
-                if ($row['has_comma'] !== '0') {
+                if ($row['has_comma'] === '1') {
                     $value = array_filter(explode(',', $row['value']));
                     $value = array_combine($value, $value);
                 } else {
@@ -190,7 +191,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
         foreach ($this->getMergedAttributeValues(true) as $row) {
             $attributeCode = $this->attributeCache['info'][$row['attribute_id']]['attribute_code'];
 
-            if ($row['has_comma'] !== '0') {
+            if ($row['has_comma'] === '1') {
                 $value = array_filter(explode(',', $row['value']));
                 $value = array_combine($value, $value);
             } else {
@@ -225,7 +226,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
     {
         if (!is_array($value) && !empty($value)) {
             $value = [$value => $value];
-        } elseif (!empty($value)) {
+        } elseif (!is_array($value)) {
             $value = [];
         }
 
@@ -287,8 +288,8 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
             ->columns([
                 'entity_id' => 'entity_id.id',
                 'attribute_id' => 'value.attribute_id',
-                'value' => new Zend_Db_Expr('TRIM(value.value)'),
-                'has_comma' => new Zend_Db_Expr('LOCATE(\',\', value.value)')
+                'value' => new Zend_Db_Expr('TRIM(IFNULL(value.value, \'\'))'),
+                'has_comma' => new Zend_Db_Expr('LOCATE(\',\', IFNULL(value.value, \'\'))')
             ])
         ;
 

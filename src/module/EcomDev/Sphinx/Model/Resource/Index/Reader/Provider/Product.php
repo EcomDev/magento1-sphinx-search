@@ -69,10 +69,10 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Provider_Product
 
         if ($this->pluginContainer) {
             $select->reset(Varien_Db_Select::COLUMNS)
-                ->columns('index.product_id')
+                ->columns(['id' => 'index.product_id'])
                 ->bind(['start' => $nextIdentifier, 'end' =>  min($maximumIdentifier, $lastIdentifier)]);
 
-            $this->fillMemoryTable('entity_id', $select);
+            $this->createMemoryTableFromSelect($select, 'entity_id');
             $this->configurePlugins($this->getMemoryTableName('entity_id'));
         }
 

@@ -19,7 +19,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Snapshot_Product
     /**
      * Stock table
      *
-     * @var Table
+     * @var string
      */
     private $stockTable;
 
@@ -51,21 +51,13 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Snapshot_Product
 
         parent::createSnapshot($scope);
 
-        $this->_getReadAdapter()->dropTemporaryTable($this->stockTable->getName());
+        $this->_getReadAdapter()->dropTemporaryTable($this->stockTable);
 
         return $this;
     }
 
     private function createStockSnapshot($scope)
     {
-        $this->stockTable = $this->_getReadAdapter()->newTable(uniqid('tmp_eav_data_stock'));
-
-        $this->stockTable
-            ->addColumn('entity_id', Table::TYPE_INTEGER, null, ['primary' => true, 'unsigned' => true])
-            ->addColumn('stock_status', Table::TYPE_INTEGER, null, ['unsigned' => true]);
-
-        $this->_getReadAdapter()->createTemporaryTable($this->stockTable);
-
         $select = $this->_getReadAdapter()->select();
         $select
             ->from(['relation' => $this->getTable('catalog/product_relation')], [])
@@ -85,13 +77,11 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Snapshot_Product
             ->group('relation.child_id')
         ;
 
-        $this->_getReadAdapter()->query(
-            $this->_getReadAdapter()->insertFromSelect(
-                $select,
-                $this->stockTable->getName()
-            )
+        $this->stockTable = $this->createTemporaryTableFromSelect(
+            $select,
+            ['PRIMARY' => ['entity_id'], 'status' => ['stock_status']]
         );
-
+        
         return $this;
     }
 
@@ -187,7 +177,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Snapshot_Product
         return function ($select, $columns) {
             $select
                 ->join(
-                    ['stock' => $this->stockTable->getName()],
+                    ['stock' => $this->stockTable],
                     'stock.entity_id = main_table.entity_id',
                     []
                 )

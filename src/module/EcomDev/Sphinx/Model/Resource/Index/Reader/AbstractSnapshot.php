@@ -214,13 +214,13 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractSnapshot
         $select->columns($selectColumns);
 
         
-        foreach ([0, $storeId] as $filterStoreId) {
+        foreach ([$storeId, 0] as $filterStoreId) {
             $this->_getReadAdapter()->query(
                 $this->_getReadAdapter()->insertFromSelect(
                     $select,
                     $table,
                     array_keys($selectColumns),
-                    Varien_Db_Adapter_Interface::INSERT_ON_DUPLICATE
+                    Varien_Db_Adapter_Interface::INSERT_IGNORE
                 ),
                 [
                     'store_id' => (int)$filterStoreId

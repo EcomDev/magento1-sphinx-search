@@ -33,7 +33,7 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractResource
 
         $tableDdl->setOption('type', 'MEMORY');
 
-        $this->_getReadAdapter()->createTable($tableDdl);
+        $this->_getReadAdapter()->createTemporaryTable($tableDdl);
         $this->memoryTables[$tableName] = $name;
         return $this;
     }
@@ -71,10 +71,11 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractResource
      *
      * @param Varien_Db_Select $select
      * @param string[][] $indexes
+     * @param string $type
      * @throws Zend_Db_Exception
      * @return $this
      */
-    protected function createTemporaryTableFromSelect($select, array $indexes)
+    protected function createTemporaryTableFromSelect($select, array $indexes, $type = 'MEMORY')
     {
         $name = uniqid('ecomdev_sphinx_' . crc32((string)$select));
 
@@ -85,7 +86,7 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractResource
             $indexType = sprintf('INDEX %s', $select->getAdapter()->quoteIdentifier($indexName));
 
             if ($indexName === 'PRIMARY') {
-                $indexType = 'UNIQUE';
+                $indexType = 'PRIMARY KEY';
             } elseif (strpos($indexName, 'UNQ_') === 0) {
                 $indexType = sprintf('UNIQUE %s', $select->getAdapter()->quoteIdentifier($indexName));
             }
@@ -100,9 +101,10 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractResource
         }
 
         $statement = sprintf(
-            'CREATE TEMPORARY TABLE %s %s IGNORE (%s)',
+            'CREATE TEMPORARY TABLE %s %s ENGINE=%s IGNORE (%s)',
             $select->getAdapter()->quoteIdentifier($name),
             $indexStatements ? '(' . implode(',', $indexStatements) . ')' : '',
+            $type,
             (string)$select
         );
 
@@ -112,6 +114,28 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractResource
         );
 
         return $name;
+    }
+
+    /**
+     * Creates a memory table for faster export of identifiers
+     *
+     * @param Varien_Db_Select $select
+     * @param string $tableName
+     * @throws Zend_Db_Exception
+     * @return $this
+     */
+    protected function createMemoryTableFromSelect($select, $tableName)
+    {
+        if (isset($this->memoryTables[$tableName])) {
+            $this->dropTemporaryTable($this->memoryTables[$tableName]);
+        }
+
+        $this->memoryTables[$tableName] = $this->createTemporaryTableFromSelect(
+            $select,
+            ['PRIMARY' => ['id']]
+        );
+
+        return $this;
     }
 
     /**
@@ -153,7 +177,7 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractResource
      */
     protected function fillMemoryTable($tableName, $identifiers)
     {
-        $this->_getReadAdapter()->truncateTable($this->getMemoryTableName($tableName));
+        $this->_getReadAdapter()->delete($this->getMemoryTableName($tableName));
 
         if ($identifiers instanceof Varien_Db_Select) {
             $this->_getReadAdapter()->query(
