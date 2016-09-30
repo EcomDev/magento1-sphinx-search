@@ -169,7 +169,7 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
             $attributeCode = $this->attributeCache['info'][$row['attribute_id']]['attribute_code'];
 
             if ($this->attributeCache['info'][$row['attribute_id']]['is_multiple']) {
-                if ($row['has_comma'] === '1') {
+                if ($row['has_comma'] !== '0') {
                     $value = array_filter(explode(',', $row['value']));
                     $value = array_combine($value, $value);
                 } else {

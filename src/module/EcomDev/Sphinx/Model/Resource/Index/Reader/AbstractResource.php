@@ -26,9 +26,9 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractResource
         $tableDdl->setName($name);
 
         if ($this->memoryTableIsString) {
-            $tableDdl->addColumn('id', Varien_Db_Ddl_Table::TYPE_VARCHAR, 255, ['primary' => true]);
+            $tableDdl->addColumn('id', Varien_Db_Ddl_Table::TYPE_VARCHAR, 255, ['primary' => true, 'nullable' => false]);
         } else {
-            $tableDdl->addColumn('id', Varien_Db_Ddl_Table::TYPE_INTEGER, null, ['primary' => true]);
+            $tableDdl->addColumn('id', Varien_Db_Ddl_Table::TYPE_INTEGER, null, ['primary' => true, 'nullable' => false]);
         }
 
         $tableDdl->setOption('type', 'MEMORY');
