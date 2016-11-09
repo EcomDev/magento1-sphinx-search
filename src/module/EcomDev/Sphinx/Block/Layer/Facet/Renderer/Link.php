@@ -25,30 +25,11 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Link
         }
 
         $categoryData = $this->getFacet()->getCurrentCategoryData();
+        $options = $this->getFacet()->getOptions();
         $categoryPathFilter = false;
 
         if (isset($categoryData['category_filter'])) {
-            switch ($categoryData['category_filter']['include_same_level']) {
-                case EcomDev_Sphinx_Model_Source_Level::LEVEL_CUSTOM:
-                    $minLevel = (int)$categoryData['category_filter']['top_category_level'];
-                    if ($minLevel === 0) {
-                        $minLevel = (int)$categoryData['level'];
-                    }
-                    $parents = explode('/', $categoryData['path']);
-                    if (count($parents) > $minLevel) {
-                        $parents = array_slice($parents, 0, $minLevel+1);
-                    }
-                    $categoryPathFilter = implode('/', $parents);
-                    break;
-
-                case EcomDev_Sphinx_Model_Source_Level::LEVEL_SAME:
-                    $categoryPathFilter = dirname($categoryData['path']);
-                    break;
-                default:
-                    $categoryPathFilter = $categoryData['path'];
-                    break;
-
-            }
+            $categoryPathFilter = $this->extractCategoryPathFilter($categoryData);
         } elseif (isset($categoryData['path'])) {
             $categoryPathFilter = $categoryData['path'];
         }
@@ -58,13 +39,7 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Link
         $categories = array();
 
         foreach ($this->getFacet()->getCategoryData() as $category) {
-            $proxy = (object)['visible' => (bool)$category['include_in_menu']];
-            Mage::dispatchEvent(
-                'ecomdev_sphinx_facet_renderer_category_tree_is_visible',
-                ['proxy' => $proxy, 'category_data' => $category]
-            );
-
-            if (!$proxy->visible) {
+            if (!$this->isCategoryVisible($category)) {
                 continue;
             }
 
@@ -72,18 +47,9 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Link
                 ->setData($category)
                 ->setId($category['category_id']);
 
-            if (isset($map[dirname($category['path'])])) {
-                $parentCategory = $map[dirname($category['path'])];
-                $allNodes = $parentCategory->getData('child_nodes');
-                if (!is_array($allNodes)) {
-                    $allNodes = [];
-                }
-
-                $allNodes[] = $map[$category['path']];
-                $parentCategory->setData('child_nodes', $allNodes);
-            } elseif (!$categoryPathFilter ||
-                $categoryPathFilter === dirname($category['path']) ||
-                dirname($categoryPathFilter) === dirname($category['path'])) {
+            if ($this->isParentNodeLoaded($map, $category)) {
+                $this->assignChildNode($map, $category, $options);
+            } elseif ($this->isRootCategoryNode($categoryPathFilter, $category)) {
                 $categories[] = $map[$category['path']];
             }
         }
@@ -116,6 +82,116 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Link
     public function isVisible(FacetInterface $facet)
     {
         return count($facet->getCategoryData()) > 1;
+    }
+
+    /**
+     * @param $categoryData
+     *
+     * @return string
+     */
+    private function extractCategoryPathFilter($categoryData)
+    {
+        switch ($categoryData['category_filter']['include_same_level']) {
+            case EcomDev_Sphinx_Model_Source_Level::LEVEL_CUSTOM:
+                $minLevel = (int)$categoryData['category_filter']['top_category_level'];
+                if ($minLevel === 0) {
+                    $minLevel = (int)$categoryData['level'];
+                }
+                $parents = explode('/', $categoryData['path']);
+                if (count($parents) > $minLevel) {
+                    $parents = array_slice($parents, 0, $minLevel + 1);
+                }
+                $categoryPathFilter = implode('/', $parents);
+                break;
+
+            case EcomDev_Sphinx_Model_Source_Level::LEVEL_SAME:
+                $categoryPathFilter = dirname($categoryData['path']);
+                break;
+            default:
+                $categoryPathFilter = $categoryData['path'];
+                break;
+
+        }
+        return $categoryPathFilter;
+    }
+
+    /**
+     * @param $category
+     *
+     * @return bool
+     */
+    private function isCategoryVisible($category)
+    {
+        $proxy = (object)['visible' => (bool)$category['include_in_menu']];
+        Mage::dispatchEvent(
+            'ecomdev_sphinx_facet_renderer_category_tree_is_visible',
+            ['proxy' => $proxy, 'category_data' => $category]
+        );
+
+        return $proxy->visible;
+    }
+
+    /**
+     * @param $map
+     * @param $category
+     * @param $options
+     *
+     */
+    private function assignChildNode($map, $category, $options)
+    {
+        $this->setChildNodeToParentNode($map, $category);
+
+        if (isset($options[$category['category_id']])) {
+            $parentPath = $category['path'];
+
+            do {
+                if (isset($map[$parentPath])) {
+                    $map[$parentPath]->setIsAvailable(true);
+                }
+
+                $parentPath = dirname($parentPath);
+            } while(isset($map[$parentPath]));
+        }
+    }
+
+    /**
+     * @param $categoryPathFilter
+     * @param $category
+     *
+     * @return bool
+     */
+    private function isRootCategoryNode($categoryPathFilter, $category)
+    {
+        return !$categoryPathFilter ||
+            $categoryPathFilter === dirname($category['path']) ||
+            dirname($categoryPathFilter) === dirname($category['path']);
+    }
+
+    /**
+     * @param $map
+     * @param $category
+     *
+     * @return bool
+     */
+    private function isParentNodeLoaded($map, $category)
+    {
+        return isset($map[dirname($category['path'])]);
+    }
+
+    /**
+     * @param $map
+     * @param $category
+     *
+     */
+    private function setChildNodeToParentNode($map, $category)
+    {
+        $parentCategory = $map[dirname($category['path'])];
+
+        if (!$parentCategory->getData('child_nodes')) {
+            $parentCategory->setData('child_nodes', new ArrayObject());
+        }
+
+        $parentCategory->getChildNodes()[] = $map[$category['path']];
     }
 
 }

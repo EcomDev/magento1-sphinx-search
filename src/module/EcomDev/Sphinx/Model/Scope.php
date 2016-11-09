@@ -550,7 +550,7 @@ class EcomDev_Sphinx_Model_Scope
             case EcomDev_Sphinx_Model_Source_Level::LEVEL_CUSTOM:
                 $minLevel = (int)$this->getConfigurationValue('category_filter/top_category_level');
                 if ($minLevel === 0) {
-                    $minLevel = (int)$currentCategory->getLevel();
+                    $minLevel = 4;
                 }
                 $parents = explode('/', $parentPath);
                 if (count($parents) > $minLevel) {
@@ -580,7 +580,7 @@ class EcomDev_Sphinx_Model_Scope
                 'level' => ['>', (int)$minLevel]
             ]
         ];
-        
+
         // Allow to modify select attributes
         Mage::dispatchEvent('ecomdev_sphinx_scope_category_data_columns', [
             'proxy' => $proxy,
