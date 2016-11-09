@@ -15,7 +15,7 @@ class EcomDev_Sphinx_Model_Category
                 ->select(
                     'name', 'request_path',
                     $query->expr('category_id as entity_id'),
-                    $query->expr('EXIST(\'sphinx_scope\', 0)')
+                    'sphinx_scope'
                 )
                 ->from($container->getIndexNames('category'))
                 ->where('category_id', 'IN', $pathIds)
@@ -48,6 +48,8 @@ class EcomDev_Sphinx_Model_Category
                 return $category->getSphinxScope();
             }
         }
+
+
 
         return null;
     }
