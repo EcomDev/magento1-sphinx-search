@@ -148,8 +148,8 @@ class EcomDev_Sphinx_Model_Sphinx_Facet_Category
     protected function _serializableData()
     {
         return parent::_serializableData()
-        + array('_categoryData' => $this->_categoryData,
-            '_excludeCategoryIds' => $this->_excludeCategoryIds);
+            + array('_categoryData' => $this->_categoryData,
+                '_excludeCategoryIds' => $this->_excludeCategoryIds);
     }
 
 }
