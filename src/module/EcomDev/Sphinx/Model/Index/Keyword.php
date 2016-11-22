@@ -134,11 +134,11 @@ class EcomDev_Sphinx_Model_Index_Keyword
             return $trigrams;
         }
 
-        if (mb_strlen($keyword, 'UTF-8') < 3) {
+        if (mb_strlen($keyword, 'UTF-8') <= 3) {
             return [$keyword];
         }
 
-        $trigramBase = '__' . $keyword . '__';
+        $trigramBase = $keyword;
         $length = mb_strlen($trigramBase, 'UTF-8');
 
         $trigrams = [];
@@ -181,8 +181,8 @@ class EcomDev_Sphinx_Model_Index_Keyword
         $query
             ->select('keyword', $query->exprFormat('weight() as rank', $keywordLength))
             ->from($scope->getContainer()->getIndexNames('keyword'))
-            ->match('trigram_list', $query->expr(sprintf('"%s"/2', $query->escapeMatch($trigrams))))
-            ->where('length', 'BETWEEN', [$keywordLength - 2, $keywordLength + 20])
+            ->match('*', $query->expr(sprintf('"%s"/2', $query->escapeMatch($trigrams))))
+            ->where('length', 'BETWEEN', [$keywordLength - 3, $keywordLength + 20])
             ->orderBy('rank', 'desc')
             ->orderBy('frequency', 'desc')
             ->option('field_weights', ['trigram_list' => 2])

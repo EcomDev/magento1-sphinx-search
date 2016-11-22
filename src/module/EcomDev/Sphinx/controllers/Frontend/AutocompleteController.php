@@ -50,15 +50,18 @@ class EcomDev_Sphinx_Frontend_AutocompleteController extends Mage_Core_Controlle
 
         $suggestions = $keywordModel->suggestions($keywords, $scope, 10);
 
-        $collection = $layer->getProductCollection();
+        $collection = clone $layer->getProductCollection();
 
-        if ($suggestions) {
-            $collection->addSearchFilter(current($suggestions));
-        } else {
-            $collection->addSearchFilter(implode(' ', $keywords));
-        }
+
+        $collection->addSearchFilter(implode(' ', $keywords));
 
         $scope->fetchCollection($collection);
+
+        if ($collection->count() === 0 && $suggestions) {
+            $collection = clone $layer->getProductCollection();
+            $collection->addSearchFilter(current($suggestions));
+            $scope->fetchCollection($collection);
+        }
 
         if ($format === 'json') {
             $products = [];
