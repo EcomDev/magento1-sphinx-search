@@ -49,7 +49,7 @@ class EcomDev_Sphinx_Block_Layer_Facet_Renderer_Link
 
             if ($this->isParentNodeLoaded($map, $category)) {
                 $this->assignChildNode($map, $category, $options);
-            } elseif ($this->isRootCategoryNode($categoryPathFilter, $category)) {
+            } elseif ($this->isRootCategoryNode($categoryPathFilter, $category, $map)) {
                 $categories[] = $map[$category['path']];
             }
         }
