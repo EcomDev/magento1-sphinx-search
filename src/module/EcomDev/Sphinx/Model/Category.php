@@ -18,8 +18,9 @@ class EcomDev_Sphinx_Model_Category
                     'sphinx_scope'
                 )
                 ->from($container->getIndexNames('category'))
-                ->where('category_id', 'IN', $pathIds)
+                ->where('id', 'IN', $pathIds)
                 ->where('is_active','=', 1)
+                ->orderBy('level', 'asc')
                 ->execute();
             
             $result = array();
