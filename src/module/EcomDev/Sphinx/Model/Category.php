@@ -6,27 +6,12 @@ class EcomDev_Sphinx_Model_Category
     public function getParentCategories()
     {
         if (!$this->hasData('parent_categories')) {
-            $container = Mage::getSingleton('ecomdev_sphinx/config')
-                ->getContainer();
-            $query = $container->queryBuilder();
-            
-            $pathIds = array_map('intval', array_reverse(explode(',', $this->getPathInStore())));
-            $items = $query
-                ->select(
-                    'name', 'request_path',
-                    $query->expr('category_id as entity_id'),
-                    'sphinx_scope'
-                )
-                ->from($container->getIndexNames('category'))
-                ->where('id', 'IN', $pathIds)
-                ->where('is_active','=', 1)
-                ->orderBy('level', 'asc')
-                ->execute();
-            
-            $result = array();
-            foreach ($items as $data) {
-                $result[$data['entity_id']] = Mage::getModel('catalog/category')->setData($data);
-            }
+            $pathInStore = explode(',', $this->getPathInStore());
+
+            array_shift($pathInStore);
+            $pathIds = array_map('intval', array_reverse($pathInStore));
+
+            $result = $this->fetchCategoriesByIdentifiers($pathIds);
             $this->setData('parent_categories', $result);
         }
         
@@ -50,8 +35,40 @@ class EcomDev_Sphinx_Model_Category
             }
         }
 
-
-
         return null;
+    }
+
+    /**
+     * @param $pathIds
+     *
+     * @return array
+     */
+    private function fetchCategoriesByIdentifiers($pathIds)
+    {
+        if (empty($pathIds)) {
+            return [];
+        }
+
+        $container = Mage::getSingleton('ecomdev_sphinx/config')
+            ->getContainer();
+
+        $query = $container->queryBuilder();
+        $items = $query
+            ->select(
+                'name', 'request_path',
+                $query->expr('category_id as entity_id'),
+                'sphinx_scope'
+            )
+            ->from($container->getIndexNames('category'))
+            ->where('id', 'IN', $pathIds)
+            ->where('is_active', '=', 1)
+            ->orderBy('level', 'desc')
+            ->execute();
+
+        $result = [];
+        foreach ($items as $data) {
+            $result[$data['entity_id']] = Mage::getModel('catalog/category')->setData($data);
+        }
+        return $result;
     }
 }

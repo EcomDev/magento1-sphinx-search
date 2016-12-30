@@ -54,6 +54,10 @@ class EcomDev_Sphinx_Model_Resource_Scope
      */
     public function getOptionNames($optionIds, $storeId)
     {
+        if (empty($optionIds)) {
+            return [];
+        }
+
         $select = $this->_getReadAdapter()->select();
         $select
             ->from(

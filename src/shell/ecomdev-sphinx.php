@@ -77,7 +77,8 @@ class EcomDev_Sphinx_Shell extends Mage_Shell_Abstract
         ),
         'keyword:import:all' => array(),
         'index:all' => array(
-            'ignore-keyword' => 'i'
+            'ignore-keyword' => 'i',
+            'prefix' => 'p'
         ),
         'index:delta' => array(),
         'index:validate' => array()
@@ -134,6 +135,7 @@ Defined <action>s:
   index:all         Indexes all sphinx data
 
      -i --ignore-keyword No keywords flag
+     -p --prefix         Reindex only indexes starting with specified prefix
 
   index:delta       Indexes changes to sphinx data
 
@@ -495,7 +497,12 @@ USAGE;
         }
 
         $withKeywords = !$this->getArg('ignore-keyword', false);
-        $this->getSphinxConfig()->controlIndexData(true, $this->getOutput(), $withKeywords);
+        $this->getSphinxConfig()->controlIndexData(
+            true,
+            $this->getOutput(),
+            $withKeywords,
+            $this->getArg('prefix', '')
+        );
     }
 
     /**

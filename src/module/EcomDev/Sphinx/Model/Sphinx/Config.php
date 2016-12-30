@@ -330,53 +330,35 @@ class EcomDev_Sphinx_Model_Sphinx_Config
      *
      * @param bool $forceReindex
      * @param null|resource $output
+     * @param bool $indexKeywords
+     * @param string $prefixFilter
      * @return $this
      */
-    public function controlIndexData($forceReindex = false, $output = null, $indexKeywords = true)
-    {
+    public function controlIndexData($forceReindex = false,
+                                     $output = null,
+                                     $indexKeywords = true,
+                                     $prefixFilter = ''
+    ) {
         $additionalArgs = '';
         if ($this->isRunning()) {
             $additionalArgs .= '--rotate';
         }
 
         $collection = Mage::getResourceModel('ecomdev_sphinx/sphinx_config_index_collection');
-        $forceReindexList = [];
-        $deltaList = [];
 
         // Keywords are enabled only when sphinx search is used
-        if ($forceReindex
-            && $indexKeywords) {
-            foreach ($collection as $item) {
-                if ($item->getCode() === self::TYPE_KEYWORD) {
-                    $forceReindexList[] = [$this->_types[$item->getCode()][0], (int)$item->getStoreId()];
-                }
-                $this->keywordImport((int)$item->getStoreId());
-            }
+        if ($forceReindex && $indexKeywords) {
+            $forceReindexList = $this->collectKeywordIndexerCodesAndImportKeywordData($collection);
         }
 
-        foreach ($collection as $item) {
-            if (!isset($this->_types[$item->getCode()])) {
-                continue;
-            }
+        list($forceReindexList, $deltaList) = $this->collectDeltaAndFullReindexBasedOnIndexSyncStatus(
+            $forceReindex,
+            $collection,
+            $forceReindexList
+        );
 
-            if ($item->getCode() === self::TYPE_KEYWORD) {
-                continue;
-            }
-
-            list($indexName, $type) = $this->_types[$item->getCode()];
-            $configLimit = (int)$this->_getConfig()->getConfig(sprintf('index_%s_merge_limit', $type));
-            $indexedRows = $item->getData('indexed_rows');
-            $pendingRows = $item->getData('pending_rows');
-            $storeId = (int)$item->getStoreId();
-
-            $isOutOfSync = ($pendingRows > 0 && $configLimit > 0 && $pendingRows < $configLimit);
-
-            if (!$forceReindex && $isOutOfSync && $pendingRows < ($indexedRows / 2)) {
-                $deltaList[] = [$indexName . '_delta', $indexName, $storeId];
-            } else {
-                $forceReindexList[] = [$indexName, $storeId];
-            }
-        }
+        $forceReindexList = $this->filterIndexList($forceReindexList, $prefixFilter);
+        $deltaList = $this->filterIndexList($deltaList, $prefixFilter);
 
         if ($deltaList) {
             $additionalFullReindex = $this->mergeIndexes(
@@ -871,4 +853,87 @@ class EcomDev_Sphinx_Model_Sphinx_Config
         return $this;
     }
 
+    /**
+     * @param $collection
+     *
+     * @return array
+     */
+    private function collectKeywordIndexerCodesAndImportKeywordData($collection)
+    {
+        $forceReindexList = [];
+        foreach ($collection as $index) {
+            if ($index->getCode() === self::TYPE_KEYWORD) {
+                $forceReindexList[] = [$this->_types[$index->getCode()][0], (int)$index->getStoreId()];
+            }
+            $this->keywordImport((int)$index->getStoreId());
+        }
+        return $forceReindexList;
+    }
+
+    /**
+     * @param $type
+     * @param $item
+     *
+     * @return bool
+     */
+    private function calculateSphinxDeltaUpdatePossibilities($type, $item)
+    {
+        $configLimit = (int)$this->_getConfig()->getConfig(sprintf('index_%s_merge_limit', $type));
+        $indexedRows = $item->getData('indexed_rows');
+        $pendingRows = $item->getData('pending_rows');
+
+        $isOutOfSync = ($pendingRows > 0 && $configLimit > 0 && $pendingRows < $configLimit);
+        $isCheaperFullReindex = $pendingRows < ($indexedRows / 2);
+
+        return [$isOutOfSync, $isCheaperFullReindex];
+    }
+
+    /**
+     * @param $forceReindex
+     * @param $collection
+     * @param $forceReindexList
+     * @return array
+     */
+    private function collectDeltaAndFullReindexBasedOnIndexSyncStatus($forceReindex, $collection, $forceReindexList)
+    {
+        $deltaList = [];
+
+        foreach ($collection as $item) {
+            if (!isset($this->_types[$item->getCode()])) {
+                continue;
+            }
+
+            if ($item->getCode() === self::TYPE_KEYWORD) {
+                continue;
+            }
+
+            list($indexName, $type) = $this->_types[$item->getCode()];
+
+            $storeId = (int)$item->getStoreId();
+
+            list($isOutOfSync, $isCheaperFullReindex) = $this->calculateSphinxDeltaUpdatePossibilities($type, $item);
+
+            if ($forceReindex || ($isOutOfSync && $isCheaperFullReindex)) {
+                $forceReindexList[] = [$indexName, $storeId];
+                continue;
+            }
+
+            if ($isOutOfSync) {
+                $deltaList[] = [$indexName . '_delta', $indexName, $storeId];
+            }
+        }
+        return array($forceReindexList, $deltaList);
+    }
+
+
+    private function filterIndexList($indexList, $prefixFilter)
+    {
+        if (!$prefixFilter) {
+            return $indexList;
+        }
+
+        return array_filter($indexList, function ($item) use ($prefixFilter) {
+            return strpos($item[0], $prefixFilter) === 0;
+        });
+    }
 }
