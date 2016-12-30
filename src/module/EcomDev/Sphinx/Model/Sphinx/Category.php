@@ -88,19 +88,25 @@ class EcomDev_Sphinx_Model_Sphinx_Category
             return [];
         }
 
-        return array_slice(
-            $this->fetchTree(
-                $this->getCategoriesData(
-                    $category['path'],
-                    $category['level'] + 2,
-                    $columns,
-                    []
-                ),
-                $category['path']
+        $topCategories = $this->fetchTree(
+            $this->getCategoriesData(
+                $category['path'],
+                $category['level'] + 2,
+                $columns,
+                []
             ),
-            0,
-            $limit
+            $category['path']
         );
+
+        if ($limit > 0) {
+            return array_slice(
+                $topCategories,
+                0,
+                $limit
+            );
+        }
+
+        return $topCategories;
     }
 
     /**
@@ -115,14 +121,79 @@ class EcomDev_Sphinx_Model_Sphinx_Category
             $prefix = 'direct';
         }
 
+        return $this->getTopFacetValuesByItemCount(
+            $parentCategoryId, sprintf('%s_category_ids', $prefix), 'COUNT(*)'
+        );
+    }
+
+    /**
+     * @param string $path
+     * @param string $countField
+     * @return string[][]
+     */
+    public function getTopAnchorCategoryListByItemCount($path, $countField = null, $values = null, $columns = ['category_id', 'path', 'name', 'request_path'])
+    {
+        $paths = explode('/', $path);
+        $id = end($paths);
+
+        $categoryCount = $this->getTopFacetValuesByItemCount(
+            $id,
+            'anchor_category_ids',
+            $countField ? sprintf('SUM(%s)', $countField) : 'COUNT(*)',
+            $values
+        );
+
+        if (!$categoryCount) {
+            return $categoryCount;
+        }
+
+        array_unshift($columns, 'id');
+
+        $childCategories = $this->getCategoriesData(
+            $path,
+            0,
+            $columns,
+            ['id' => ['in', array_map('intval', array_keys($categoryCount))]]
+        );
+
+        return array_map(function ($category) use ($categoryCount) {
+            $category['count'] = $categoryCount[$category['id']];
+            return $category;
+        }, array_filter(
+            iterator_to_array($childCategories),
+            function($item) use ($path) {
+                return strpos($item['path'], $path . '/') === 0;
+            }
+        ));
+    }
+
+    /**
+     * Returns top facet value counts for parent category
+     *
+     * @param int $parentCategoryId
+     * @param string $groupField
+     * @param string $countExpression
+     * @param int|null $limit
+     * @param array|null $values
+     *
+     * @return int[]
+     */
+    public function getTopFacetValuesByItemCount(
+        $parentCategoryId,
+        $groupField,
+        $countExpression,
+        $limit = null,
+        array $values = null,
+        $exclude = false
+    ) {
         $query = $this->container->queryBuilder();
         $query->select(
-            $query->exprFormat('GROUPBY() as %s', $query->quoteIdentifier('category_id')),
-            $query->exprFormat('COUNT(*) as %s', $query->quoteIdentifier('count'))
+            $query->exprFormat('GROUPBY() as %s', $query->quoteIdentifier('facet_value')),
+            $query->exprFormat('%s as %s', $countExpression, $query->quoteIdentifier('count'))
         );
 
         $query->from($this->container->getIndexNames('product'))
-            ->groupBy(sprintf('%s_category_ids', $prefix))
+            ->groupBy($groupField)
             ->orderBy('count', 'desc')
             ->match(
                 's_anchor_category_ids', // Match is always against anchor category ids
@@ -131,13 +202,21 @@ class EcomDev_Sphinx_Model_Sphinx_Category
                 )),
                 true
             )
-            ->limit($this->treeLimit);
+            ->limit($limit ?: $this->treeLimit);
+
+        if ($values) {
+            $query->where(
+                $groupField,
+                ($exclude ? 'not in' : 'in'),
+                array_map('intval', $values) // IN works only with int types
+            );
+        }
 
         $result = [];
         foreach ($query->execute() as $row) {
-            $result[$row['category_id']] = $row['count'];
+            $result[$row['facet_value']] = $row['count'];
         }
-        
+
         return $result;
     }
 
