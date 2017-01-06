@@ -282,13 +282,15 @@ class EcomDev_Sphinx_Model_Scope
         if (Mage::app()->useCache('sphinx') && $data = Mage::app()->loadCache($cacheKey)) {
             $facets = unserialize($data);
 
-            $categoryData = [];
             if ($this->getConfigurationValue('category_filter/is_active')) {
                 $categoryFacet = $this->_getCategoryFacet();
-                $categoryData = [$categoryFacet->getFilterField() => $categoryFacet];
+
+                if (isset($facets[$categoryFacet->getFilterField()])) {
+                    $facets[$categoryFacet->getFilterField()] = $categoryFacet;
+                }
             }
 
-            $this->_facets = $categoryData + $facets;
+            $this->_facets = array_filter($facets);
             return $this;
         }
 
@@ -365,8 +367,8 @@ class EcomDev_Sphinx_Model_Scope
         if (Mage::app()->useCache('sphinx')) {
             $toSave = $this->_facets;
 
-            if (isset($categoryFacet)) {
-                unset($toSave[$categoryFacet->getFilterField()]);
+            if (isset($categoryFacet) && isset($toSave[$categoryFacet->getFilterField()])) {
+                $toSave[$categoryFacet->getFilterField()] = false;
             }
 
             Mage::app()->saveCache(
