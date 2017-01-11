@@ -7,8 +7,6 @@ class EcomDev_Sphinx_Model_Category
     {
         if (!$this->hasData('parent_categories')) {
             $pathInStore = explode(',', $this->getPathInStore());
-
-            array_shift($pathInStore);
             $pathIds = array_map('intval', array_reverse($pathInStore));
 
             $result = $this->fetchCategoriesByIdentifiers($pathIds);
@@ -29,7 +27,10 @@ class EcomDev_Sphinx_Model_Category
             return $this->_getData('sphinx_scope');
         }
 
-        foreach ($this->getParentCategories() as $category) {
+        $parentCategories = $this->getParentCategories();
+        array_pop($parentCategories);
+
+        foreach ($parentCategories as $category) {
             if ($category->getSphinxScope()) {
                 return $category->getSphinxScope();
             }
