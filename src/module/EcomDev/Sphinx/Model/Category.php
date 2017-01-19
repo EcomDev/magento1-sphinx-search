@@ -28,7 +28,8 @@ class EcomDev_Sphinx_Model_Category
         }
 
         $parentCategories = $this->getParentCategories();
-        array_pop($parentCategories);
+
+        array_shift($parentCategories);
 
         foreach ($parentCategories as $category) {
             if ($category->getSphinxScope()) {
