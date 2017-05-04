@@ -395,7 +395,7 @@
 
                         <charset_table>
                             <label>Charset Table</label>
-                            <frontend_type>text</frontend_type>
+                            <frontend_type>textarea</frontend_type>
                             <comment>Every line is a character map like (U+00->U+01 or A..Z->a-z).</comment>
                             <sort_order>35</sort_order>
                             <show_in_default>1</show_in_default>
