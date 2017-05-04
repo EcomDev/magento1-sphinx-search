@@ -206,7 +206,7 @@ class EcomDev_Sphinx_Model_Index_Keyword_Generator
         return $this->result;
     }
 
-    private function generateVariations($keywords, $categoryIds, $minWordCount, $maxWordCount)
+    protected function generateVariations($keywords, $categoryIds, $minWordCount, $maxWordCount)
     {
         foreach (array_keys($keywords) as $index) {
             foreach (range($minWordCount - 1, $maxWordCount) as $variant) {
@@ -214,32 +214,8 @@ class EcomDev_Sphinx_Model_Index_Keyword_Generator
                     continue;
                 }
 
-                $matches = array_slice($keywords, $index - $variant, $index);
-                $matchesShuffled = $matches;
-                shuffle($matchesShuffled);
-
-                $phrases  = [
-                    implode(' ', $matches),
-                    implode(' ', array_reverse($matches)),
-                    implode(' ', $matchesShuffled),
-                ];
-
-                foreach ($phrases as $phrase) {
-                    if (!isset($this->result[$phrase])) {
-                        $this->result[$phrase] = [
-                            'count' => 0,
-                            'category_ids' => []
-                        ];
-                    }
-
-                    $this->result[$phrase]['count'] += 1;
-                    foreach ($categoryIds as $categoryId) {
-                        if (!isset($this->result[$phrase]['category_ids'][$categoryId])) {
-                            $this->result[$phrase]['category_ids'][$categoryId] = 0;
-                        }
-                        $this->result[$phrase]['category_ids'][$categoryId] += 1;
-                    }
-                }
+                $phrases = $this->generateKeywordVariationList($keywords, $index, $variant);
+                $this->storeKeywordsWithStatistics($categoryIds, $phrases);
             }
         }
 
@@ -259,5 +235,45 @@ class EcomDev_Sphinx_Model_Index_Keyword_Generator
         }
         
         return mb_substr($keyword, 0, 3);
+    }
+
+    protected function generateKeywordVariationList($keywords, $index, $variant)
+    {
+        $matches = array_slice($keywords, $index - $variant, $index);
+        $matchesShuffled = $matches;
+        shuffle($matchesShuffled);
+
+        $phrases = [
+            implode(' ', $matches),
+            implode(' ', array_reverse($matches)),
+            implode(' ', $matchesShuffled),
+        ];
+
+        return $phrases;
+    }
+
+    /**
+     * @param $categoryIds
+     * @param $phrases
+     *
+     */
+    protected function storeKeywordsWithStatistics($categoryIds, $phrases)
+    {
+        foreach ($phrases as $phrase) {
+            if (!isset($this->result[$phrase])) {
+                $this->result[$phrase] = [
+                    'count' => 0,
+                    'category_ids' => []
+                ];
+            }
+
+            $this->result[$phrase]['count'] += 1;
+            foreach ($categoryIds as $categoryId) {
+                if (!isset($this->result[$phrase]['category_ids'][$categoryId])) {
+                    $this->result[$phrase]['category_ids'][$categoryId] = 0;
+                }
+                $this->result[$phrase]['category_ids'][$categoryId] += 1;
+            }
+        }
     }
 }

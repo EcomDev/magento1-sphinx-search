@@ -181,11 +181,10 @@ class EcomDev_Sphinx_Model_Index_Keyword
         $query
             ->select('keyword', $query->exprFormat('weight() as rank', $keywordLength))
             ->from($scope->getContainer()->getIndexNames('keyword'))
-            ->match('*', $query->expr(sprintf('"%s"/2', $query->escapeMatch($trigrams))))
-            ->where('length', 'BETWEEN', [$keywordLength - 3, $keywordLength + 20])
+            ->match('trigram_list', $query->expr(sprintf('"%s"/0.7', $query->escapeMatch($trigrams))))
             ->orderBy('rank', 'desc')
             ->orderBy('frequency', 'desc')
-            ->option('field_weights', ['trigram_list' => 2])
+            ->option('ranker', 'sph04')
             ->limit($limit + 20);
 
         if ($categoryId !== null) {
@@ -200,27 +199,12 @@ class EcomDev_Sphinx_Model_Index_Keyword
                 0
             );
 
-            $query->orderBy('category_frequency', 'asc');
+            $query->orderBy('category_frequency', 'desc');
         }
 
         $result = [];
-        $keywordCount = count(explode(' ', $keyword));
         foreach ($query->execute()->store() as $item) {
-            $matched = $this->extractKeywords($item['keyword']);
-
-            if (count($matched) > $keywordCount) {
-                $matchedStart = array_slice($matched, 0, $keywordCount);
-                $matchedEnd = array_slice($matched, -$keywordCount);
-
-                $levenstein = min(
-                    levenshtein(implode(' ', $matchedStart), $keyword),
-                    levenshtein(implode(' ', $matchedEnd), $keyword)
-                );
-            } else {
-                $levenstein = levenshtein(implode(' ', $matched), $keyword);
-            }
-
-            $result[$item['keyword']] = $levenstein;
+            $result[] = $item['keyword'];
         }
 
         asort($result);
@@ -229,7 +213,7 @@ class EcomDev_Sphinx_Model_Index_Keyword
             $result = array_slice($result, 0, $limit);
         }
 
-        return array_keys($result);
+        return $result;
     }
 
     /**
