@@ -75,14 +75,14 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
 
             $query->match(
                 's_' . $filterName,
-                sprintf('"%s"', Mage::helper('ecomdev_sphinx')->getCategoryMatch(
+                $query->exprFormat('"%s"', Mage::helper('ecomdev_sphinx')->getCategoryMatch(
                     (int)$this->_productLimitationFilters['category_id']
                 )),
                 true
             );
         }
-        
-        if (isset($this->_productLimitationFilters['search_query'])) {
+
+        if ($keywordMatch = $this->getKeywordsForSearch($query)) {
             $fields = $this->getScope()->getSearchableAttributes();
 
             foreach (array_keys($fields) as $field) {
@@ -93,11 +93,12 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
 
             $query->match(
                 array_keys($fields),
-                $this->getScope()->prepareMatchString($this->_productLimitationFilters['search_query'], $query),
+                $keywordMatch,
                 true
             );
 
             $query->option('field_weights', $fields);
+            $query->option('ranker', 'sph04');
         }
 
         $this->_currentQuery = $query;
@@ -411,6 +412,41 @@ class EcomDev_Sphinx_Model_Resource_Product_Collection
     public function getSize()
     {
         return $this->_totalRecords;
+    }
+
+    private function getKeywordsForSearch(QueryBuilder $query)
+    {
+        if (!isset($this->_productLimitationFilters['search_query'])) {
+            return '';
+        }
+
+        $keywords = Mage::getSingleton('ecomdev_sphinx/index_keyword')
+            ->extractKeywords($this->_productLimitationFilters['search_query']);
+
+        if (empty($keywords)) {
+            return '';
+        }
+
+        return $this->createSearchExpression($keywords, $query);
+    }
+
+    private function createSearchExpression($keywords, $query)
+    {
+        $escapedKeywordExpression = $this->getScope()->prepareMatchString(
+            implode(
+                " ",
+                $keywords
+            ),
+            $query
+        );
+
+
+        // Use quorum expression
+        if (count($keywords) >= 3) {
+            return $query->exprFormat('"%s"/0.8', $escapedKeywordExpression);
+        }
+
+        return $query->exprFormat('"%s"~3', $escapedKeywordExpression);
     }
 
 

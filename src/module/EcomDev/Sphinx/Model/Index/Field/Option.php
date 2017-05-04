@@ -17,17 +17,25 @@ class EcomDev_Sphinx_Model_Index_Field_Option
     private $attributeCode;
 
     /**
+     * Multi-value separator for text
+     *
+     * @var string
+     */
+    private $textSeparator;
+
+    /**
      * @param string $type
      * @param string $name
      * @param string|null $attributeCode
      */
-    public function __construct($type, $name, $attributeCode = null)
+    public function __construct($type, $name, $attributeCode = null, $textSeparator = ' ')
     {
         if ($attributeCode === null) {
             $attributeCode = $name;
         }
         parent::__construct($type, $name);
         $this->attributeCode = $attributeCode;
+        $this->textSeparator = $textSeparator;
     }
 
     /**
@@ -72,7 +80,7 @@ class EcomDev_Sphinx_Model_Index_Field_Option
 
         if ($this->isText()) {
             // Just string output for a field
-            return implode(' ', $result);
+            return implode($this->textSeparator, $result);
         }
 
         return $result;

@@ -726,7 +726,7 @@ class EcomDev_Sphinx_Model_Scope
         }
 
         $formatWord = function ($word) use ($query) {
-            return sprintf('"%s"', addcslashes($word, '"*'));
+            return sprintf('%s', addcslashes($word, '"*'));
         };
 
         return implode(' ', array_map($formatWord, $keywords));

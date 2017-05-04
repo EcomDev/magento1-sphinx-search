@@ -123,7 +123,11 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
                 );
             }
 
-            $stemmerConfig = $this->getStemmerConfig($storeId);
+            $index = 2;
+            $stemmerConfig = [];
+            foreach ($this->getStemmerConfig($storeId) as $line) {
+                $stemmerConfig[++$index] = $line;
+            }
 
             $config['indexes'][sprintf('category_%s', $storeId)] = array(
                 sprintf('source = category_%s', $storeId),
@@ -168,19 +172,14 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
 
     protected function getStemmerConfig($storeId)
     {
-        $stemmerConfig = [];
-        if (Mage::getStoreConfigFlag('ecomdev_sphinx/general/stemmer', $storeId)) {
-            $morphology = Mage::getStoreConfig('ecomdev_sphinx/general/stemmer_morphology', $storeId);
-            $stemmerConfig = [3 => sprintf('morphology = %s', $morphology)];
+        $configuration = [];
 
-            // Replace morphology with NGRAM for CJK languages.
-            if ($morphology === EcomDev_Sphinx_Model_Source_Morphology::NGRAM_CJK) {
-                $stemmerConfig[3] = sprintf('ngram_chars = %s', 'U+3000..U+2FA1F');
-                $stemmerConfig[4] = sprintf('ngram_len = %s', 1);
-            }
+        if (Mage::getStoreConfigFlag('ecomdev_sphinx/general/stemmer', $storeId)) {
+            $configuration = $this->applyMorphologySettings($storeId, $configuration);
         }
 
-        return $stemmerConfig;
+        $configuration = $this->addCharacterMapToStemmerConfig($storeId, $configuration);
+        return $configuration;
     }
 
     /**
@@ -290,5 +289,50 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
     public function getPendingRowCount($index, $storeId)
     {
         return (int)$this->getResource()->getPendingRowCount($index, $storeId);
+    }
+
+    /**
+     * @param $storeId
+     * @param $stemmerConfig
+     *
+     * @return array
+     */
+    protected function addCharacterMapToStemmerConfig($storeId, $stemmerConfig)
+    {
+        $charMap = array_filter(
+            array_map(
+                'trim',
+                explode("\n", trim(Mage::getStoreConfig('ecomdev_sphinx/general/charset_table', $storeId)))
+            ),
+            function ($v) {
+                return !empty($v)
+                    && preg_match('/^[a-zA-Z0-9\.\-_\+](+->[a-zA-Z0-9\.\-_\+]+)?$/', $v);
+            }
+        );
+
+        if ($charMap) {
+            $stemmerConfig[] = sprintf('charset_table = %s', implode(', ', $charMap));
+        }
+        return $stemmerConfig;
+    }
+
+    /**
+     * @param $storeId
+     *
+     * @return array|string
+     */
+    protected function applyMorphologySettings($storeId, $stemmerConfig)
+    {
+        $morphology = Mage::getStoreConfig('ecomdev_sphinx/general/stemmer_morphology', $storeId);
+        $stemmerConfig[] = sprintf('morphology = %s', $morphology);
+
+        // Replace morphology with NGRAM for CJK languages.
+        if ($morphology === EcomDev_Sphinx_Model_Source_Morphology::NGRAM_CJK) {
+            array_pop($stemmerConfig);
+            $stemmerConfig[] = sprintf('ngram_chars = %s', 'U+3000..U+2FA1F');
+            $stemmerConfig[] = sprintf('ngram_len = %s', 1);
+        }
+
+        return $stemmerConfig;
     }
 }

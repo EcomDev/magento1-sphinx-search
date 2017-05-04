@@ -531,7 +531,7 @@ class EcomDev_Sphinx_Model_Sphinx_Config
         $writer = \League\Csv\Writer::createFromPath($outputFile, 'w');
         $writer->appendStreamFilter($writer);
 
-        foreach ($generator->generate(2, 4, true) as $keyword => $info) {
+        foreach ($generator->generate(2, 5, true) as $keyword => $info) {
             $writer->insertOne([$keyword, $info['count'], json_encode((object)$info['category_ids'])]);
         }
 
