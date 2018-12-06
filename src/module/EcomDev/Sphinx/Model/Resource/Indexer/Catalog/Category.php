@@ -5,6 +5,8 @@ use EcomDev_Sphinx_Model_Indexer_Catalog_Category as CategoryIndexer;
 class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_Category
     extends EcomDev_Sphinx_Model_Resource_Indexer_Catalog_AbstractIndexer
 {
+    /** @var EcomDev_Sphinx_Model_Resource_Trigger */
+    private $trigger;
 
     /**
      * Resource initialization
@@ -13,6 +15,7 @@ class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_Category
     protected function _construct()
     {
         $this->_init('ecomdev_sphinx/index_category', 'document_id');
+        $this->trigger = Mage::getResourceSingleton('ecomdev_sphinx/trigger');
     }
 
     /**
@@ -41,7 +44,7 @@ class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_Category
      */
     public function reindexAll()
     {
-        $this->_validateTriggers('category', ['ecomdev_sphinx/index_category', 'category_id']);
+        $this->trigger->validateTriggers();
         $this->_reindexCategories();
         return $this;
     }

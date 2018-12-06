@@ -131,22 +131,8 @@
                                 <value>1</value>
                             </update>
                         </entity_media_gallery>
-                        <price_index>
-                            <table>catalog/product_index_price</table>
-                            <field>entity_id</field>
-                            <types>
-                                <delete>0</delete>
-                                <insert>1</insert>
-                                <update>1</update>
-                            </types>
-                            <update>
-                                <price>1</price>
-                                <min_price>1</min_price>
-                                <max_price>1</max_price>
-                            </update>
-                        </price_index>
                         <stock_index>
-                            <table>cataloginventory/stock_status</table>
+                            <table>cataloginventory/stock_item</table>
                             <field>product_id</field>
                             <types>
                                 <delete>0</delete>
@@ -154,7 +140,7 @@
                                 <update>1</update>
                             </types>
                             <update>
-                                <stock_status>1</stock_status>
+                                <is_in_stock>1</is_in_stock>
                             </update>
                         </stock_index>
                         <product_website>
@@ -178,18 +164,6 @@
                                 <position>1</position>
                             </update>
                         </category_product>
-                        <category_product_index>
-                            <table>catalog/category_product_index</table>
-                            <field>product_id</field>
-                            <types>
-                                <insert>0</insert>
-                                <delete>0</delete>
-                                <update>1</update>
-                            </types>
-                            <update>
-                                <position>1</position>
-                            </update>
-                        </category_product_index>
                     </trigger>
                 </product>
                 <category>
@@ -198,10 +172,10 @@
                             <table>catalog/category</table>
                             <field>entity_id</field>
                             <update>
-                                <parent_id />
-                                <path />
-                                <position />
-                                <level />
+                                <parent_id>1</parent_id>
+                                <path>1</path>
+                                <position>1</position>
+                                <level>1</level>
                             </update>
                         </entity>
                         <entity_int>

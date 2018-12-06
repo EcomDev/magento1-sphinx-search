@@ -3,7 +3,10 @@
 abstract class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_AbstractIndexer
     extends Mage_Index_Model_Resource_Abstract
 {
-    const TRIGGER_FORMAT = 'ecomdev_sphinx_trigger_%2$s_%1$s';
+    const TRIGGER_PREFIX = 'ecomdev_sphinx_trigger_';
+
+    const TRIGGER_FORMAT = self::TRIGGER_PREFIX . '_%2$s_%1$s';
+
     const CODE_DELIMETER = '/*--ECOMDEV_SPHINX_ADDITIONAL_STATEMENT--*/';
 
     /**
@@ -241,6 +244,11 @@ abstract class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_AbstractIndexer
         return $name;
     }
 
+    private function isManagedTrigger($triggerName): bool
+    {
+        return strpos($triggerName, self::TRIGGER_PREFIX) === 0;
+    }
+
     /**
      * Returns additional trigger code
      *
@@ -251,7 +259,7 @@ abstract class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_AbstractIndexer
     {
         $code = '';
         $matches = [];
-        if (strpos($row['Trigger'], 'ecomdev_sphinx') !== false) {
+        if ($this->isManagedTrigger($row['Trigger'])) {
             $pattern = preg_quote(self::CODE_DELIMETER, '/');
             if (preg_match(sprintf('/^%1$s(.*?)%1$s$/m', $pattern), $row['Statement'], $matches)) {
                 $code = self::CODE_DELIMETER . "\n" . $matches[1] . "\n" . self::CODE_DELIMETER;

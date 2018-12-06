@@ -116,4 +116,17 @@ class EcomDev_Sphinx_Model_Resource_Update extends Mage_Core_Model_Resource_Db_A
 
         return $dateTime;
     }
+
+    public function updatedIndexSelect(string $type, DateTimeInterface $startingFrom)
+    {
+        if (!isset($this->typeMap[$type])) {
+            throw new \InvalidArgumentException('Type must be product or category');
+        }
+
+        $select = $this->_getReadAdapter()->select();
+        $select->from($this->getTable($this->typeMap[$type]), [$type . '_id'])
+            ->where('updated_at >= ?', $startingFrom->format('Y-m-d H:i:s'));
+
+        return $select;
+    }
 }

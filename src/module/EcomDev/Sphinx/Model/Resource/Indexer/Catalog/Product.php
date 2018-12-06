@@ -14,6 +14,8 @@ class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_Product
         'status', 'visibility'
     );
 
+    /** @var EcomDev_Sphinx_Model_Resource_Trigger */
+    private $trigger;
     
     /**
      * Resource initialization
@@ -22,6 +24,7 @@ class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_Product
     protected function _construct()
     {
         $this->_init('ecomdev_sphinx/index_product', 'product_id');
+        $this->trigger = Mage::getResourceSingleton('ecomdev_sphinx/trigger');
     }
 
     /**
@@ -42,7 +45,7 @@ class EcomDev_Sphinx_Model_Resource_Indexer_Catalog_Product
      */
     public function reindexAll()
     {
-        $this->_validateTriggers('product', ['ecomdev_sphinx/index_product', 'product_id']);
+        $this->trigger->validateTriggers();
         $this->_reindexProducts();
         return $this;
     }
