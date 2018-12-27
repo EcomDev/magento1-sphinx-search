@@ -346,6 +346,8 @@ class EcomDev_Sphinx_Model_Sphinx_Config
 
         $collection = Mage::getResourceModel('ecomdev_sphinx/sphinx_config_index_collection');
 
+        $forceReindexList = [];
+
         // Keywords are enabled only when sphinx search is used
         if ($forceReindex && $indexKeywords) {
             $forceReindexList = $this->collectKeywordIndexerCodesAndImportKeywordData($collection);
