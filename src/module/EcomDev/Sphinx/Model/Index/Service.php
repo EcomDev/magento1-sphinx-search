@@ -301,18 +301,20 @@ class EcomDev_Sphinx_Model_Index_Service
      */
     public function getKeywordGenerator($storeId)
     {
-        $scope = $this->getProductScope(
-            $storeId,
+        $cache = Mage::getSingleton('ecomdev_sphinx/index_cache');
+        return $this->createModel(
+            'ecomdev_sphinx/index_keyword_generator',
             [
-                Mage_Catalog_Model_Product_Visibility::VISIBILITY_BOTH,
-                Mage_Catalog_Model_Product_Visibility::VISIBILITY_IN_SEARCH
-            ],
-            null,
-            'keyword_product'
+                $cache->fetchProducts(
+                    $storeId,
+                    [
+                        Mage_Catalog_Model_Product_Visibility::VISIBILITY_BOTH,
+                        Mage_Catalog_Model_Product_Visibility::VISIBILITY_IN_SEARCH
+                    ]
+                ),
+                $storeId
+            ]
         );
-
-        $reader = $this->getReader('keyword_product');
-        return $this->createModel('ecomdev_sphinx/index_keyword_generator', [$reader, $scope]);
     }
 
     /**

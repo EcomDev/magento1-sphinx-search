@@ -28,7 +28,7 @@ class EcomDev_Sphinx_Model_Index_Field_Option
      * @param string $name
      * @param string|null $attributeCode
      */
-    public function __construct($type, $name, $attributeCode = null, $textSeparator = ' ')
+    public function __construct($type, $name, $attributeCode = null, $textSeparator = ' # ')
     {
         if ($attributeCode === null) {
             $attributeCode = $name;

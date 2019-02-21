@@ -73,8 +73,6 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Category
             )
         ;
 
-
-
         $scope->getFilter('store_id')->render('index', $select);
         $data = [];
 

@@ -103,11 +103,8 @@ class EcomDev_Sphinx_Model_Index_Reader_Plugin_Container
         $result = [];
 
         foreach (array_reverse($this->pluginSort) as $pluginId => $order) {
-            $data = $this->plugins[$pluginId]->read($identifiers, $scope);
-
-            if (!$data) {
-                continue;
-            }
+            $plugin = $this->plugins[$pluginId];
+            $data = $plugin->read($identifiers, $scope);
 
             // Smart and fast merge process
             foreach ($data as $identifier => $row) {
@@ -116,6 +113,10 @@ class EcomDev_Sphinx_Model_Index_Reader_Plugin_Container
                 }
 
                 $result[$identifier] += $row;
+            }
+
+            if ($plugin instanceof EcomDev_Sphinx_Model_Resource_Index_Reader_CleanUpInterface) {
+                $plugin->cleanUp();
             }
         }
 

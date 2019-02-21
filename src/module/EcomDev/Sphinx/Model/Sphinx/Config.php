@@ -17,6 +17,8 @@ class EcomDev_Sphinx_Model_Sphinx_Config
     const TYPE_KEYWORD = 'keyword';
     const XML_PATH_KEYWORD_SIZE = 'ecomdev_sphinx/export/keyword_size';
 
+    const TEXT_SEPARATOR = ' # ';
+
     /**
      * Contains an instance of index config model
      * 
@@ -345,8 +347,13 @@ class EcomDev_Sphinx_Model_Sphinx_Config
         }
 
         $collection = Mage::getResourceModel('ecomdev_sphinx/sphinx_config_index_collection');
+        $cacheModel = Mage::getSingleton('ecomdev_sphinx/index_cache');
 
         $forceReindexList = [];
+
+        if ($forceReindex) {
+            $cacheModel->createProductCache();
+        }
 
         // Keywords are enabled only when sphinx search is used
         if ($forceReindex && $indexKeywords) {
@@ -527,7 +534,7 @@ class EcomDev_Sphinx_Model_Sphinx_Config
         $generator->setKeywords($reader);
         unset($reader);
         unlink($originalKeywordsFile);
-        $generator->setAttributeCodes(['category_names', 'name', 'manufacturer']);
+        $generator->setAttributeCodes(['s_direct_category_names', 'name', 'manufacturer']);
 
         \Ajgl\Csv\Rfc\CsvRfcWriteStreamFilter::register();
         $writer = \League\Csv\Writer::createFromPath($outputFile, 'w');

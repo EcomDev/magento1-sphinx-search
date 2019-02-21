@@ -103,4 +103,11 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav_Option_Has
 
         return $this;
     }
+
+    public static function __set_state($data)
+    {
+        $instance = new self();
+        $instance->options = $data['options'];
+        return $instance;
+    }
 }

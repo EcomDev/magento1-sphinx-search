@@ -42,7 +42,6 @@ class EcomDev_Sphinx_Model_Index_Reader_Scope
         $this->configuration = $configuration;
     }
 
-
     /**
      * Returns all filters that are assigned to scope
      *
@@ -117,7 +116,6 @@ class EcomDev_Sphinx_Model_Index_Reader_Scope
         return $this;
     }
 
-
     /**
      * Returns configuration instance
      *
@@ -127,5 +125,4 @@ class EcomDev_Sphinx_Model_Index_Reader_Scope
     {
         return $this->configuration;
     }
-
 }

@@ -133,7 +133,6 @@ class EcomDev_Sphinx_Model_Resource_Index_Reader_Plugin_Attribute_Eav
 
             if ($row['is_multiple']) {
                 $this->attributeCache['has_multiple'] = true;
-
             }
         }
 

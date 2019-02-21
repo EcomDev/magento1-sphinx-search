@@ -58,7 +58,7 @@ class EcomDev_Sphinx_Model_Index_Field_Product_Category
         if ($this->isMultiple()) {
             return $result;
         } elseif ($this->isText()) {
-            return implode(' ', $result);
+            return implode(' # ', $result);
         } elseif ($this->isInt() && $result) {
             return min($result);
         }

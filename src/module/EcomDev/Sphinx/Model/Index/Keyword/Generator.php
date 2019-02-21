@@ -3,14 +3,9 @@
 class EcomDev_Sphinx_Model_Index_Keyword_Generator
 {
     /**
-     * @var EcomDev_Sphinx_Contract_ReaderInterface
+     * @var Traversable
      */
-    private $reader;
-
-    /**
-     * @var EcomDev_Sphinx_Contract_Reader_ScopeInterface
-     */
-    private $scope;
+    private $productData;
 
     /**
      * Attribute codes to use for keyword generation
@@ -54,19 +49,27 @@ class EcomDev_Sphinx_Model_Index_Keyword_Generator
      */
     private $result;
 
+    /** @var int */
+    private $storeId;
+
     /**
      * EcomDev_Sphinx_Model_Index_Keyword_Generator constructor.
      * @param EcomDev_Sphinx_Contract_Reader_ScopeInterface $scope
      * @param EcomDev_Sphinx_Contract_ReaderInterface $reader
      */
     public function __construct(
-        EcomDev_Sphinx_Contract_ReaderInterface $reader,
-        EcomDev_Sphinx_Contract_Reader_ScopeInterface $scope
+        $productData,
+        $storeId
     ) {
-        $this->scope = $scope;
-        $this->reader = $reader;
+        $this->productData = $productData;
+        $this->storeId = $storeId;
         $this->keywordModel = Mage::getSingleton('ecomdev_sphinx/index_keyword');
         mb_internal_encoding('UTF-8');
+    }
+
+    public function getStoreId()
+    {
+        return $this->storeId;
     }
 
     public function setKeywords($keywords)
@@ -98,10 +101,32 @@ class EcomDev_Sphinx_Model_Index_Keyword_Generator
         $phrase = '';
 
         foreach ($this->attributeCodes as $code) {
-            $phrase .= ' ' . $row->getValue($code, '');
+            $phrase .= ' ' . $this->getValue($code, $row);
         }
 
         return $phrase;
+    }
+
+    public function getValue($code, $row)
+    {
+        $possibleLabelKey = sprintf('s_%s_label', $code);
+        $possibleStringKey = sprintf('s_%s', $code);
+
+        return $row[$possibleLabelKey] ?? $row[$possibleStringKey] ?? $row[$code] ?? '';
+    }
+
+    public function getIntValueAsArray($code, $row)
+    {
+        $value = $this->getValue($code, $row);
+
+        return array_filter(explode(',', $value));
+    }
+
+    public function getTextValueAsArray($code, $row)
+    {
+        $value = $this->getValue($code, $row);
+
+        return array_filter(explode(EcomDev_Sphinx_Model_Sphinx_Config::TEXT_SEPARATOR, $value));
     }
 
     /**
@@ -182,21 +207,19 @@ class EcomDev_Sphinx_Model_Index_Keyword_Generator
     public function generate($minWordCount, $maxWordCount, $addSku)
     {
         $this->result = [];
-
-        $this->reader->setScope($this->scope);
         
-        foreach ($this->reader as $row) {
-            $keywords = $this->getKeywords($this->getPhrase($row));
+        foreach ($this->productData as $row) {
+            $generatedKeywords = $this->getKeywords($this->getPhrase($row));
 
             $this->generateVariations(
-                $keywords,
-                array_keys($row->getValue('_anchor_category_names')),
+                $generatedKeywords,
+                $this->getIntValueAsArray('anchor_category_ids', $row),
                 $minWordCount,
                 $maxWordCount
             );
 
             if ($addSku) {
-                $this->result[$row->getValue('sku')] = [
+                $this->result[$this->getValue('sku', $row)] = [
                     'count' => 1,
                     'category_ids' => []
                 ];

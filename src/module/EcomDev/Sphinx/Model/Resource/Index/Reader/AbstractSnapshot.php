@@ -226,7 +226,6 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractSnapshot
                     'store_id' => (int)$filterStoreId
                 ]
             );
-
         }
 
         $this->disableIndexSwitch();

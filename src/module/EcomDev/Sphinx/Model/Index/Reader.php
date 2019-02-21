@@ -201,15 +201,18 @@ class EcomDev_Sphinx_Model_Index_Reader
             $this->nextIdentifier = end($entityIdentifiers) + 1;
             $additionalData = $this->pluginContainer->read($entityIdentifiers, $this->scope);
             $this->dataRow = $this->dataRowFactory->createDataRow($rows, $additionalData);
-            return true;
         }
 
         if ($snapshot) {
             $snapshot->destroySnapshot();
         }
 
+        if ($this->provider instanceof EcomDev_Sphinx_Model_Resource_Index_Reader_CleanUpInterface) {
+            $this->provider->cleanUp();
+        }
+
         // In case there is no more data for batch we returns nothing
-        return false;
+        return !empty($entityIdentifiers);
     }
 
     /**

@@ -55,11 +55,15 @@ class EcomDev_Sphinx_Block_Adminhtml_Scope_Edit_Form
                 ->_addField('exclude_order', 'multiselect', $this->__('Exclude Sort Order'), array(
                         'option_model' => 'ecomdev_sphinx/source_sort_order'
                     ) + $nonRequired)
-                ->_fieldComment('is_active', $this->__('Enabling this feature, allows to use custom sort orders'))
+            ->_addField('default_sort_order', 'select', $this->__('Include Sort Order'), array(
+                    'option_model' => 'ecomdev_sphinx/source_sort_order'
+                ) + $nonRequired)
+            ->_fieldComment('is_active', $this->__('Enabling this feature, allows to use custom sort orders'))
                 ->_fieldComment('include_order', $this->__('Specifing value in Including rule, overrides excluding rule'))
                 ->_fieldComment('exclude_order', $this->__('Leave empty to use all sort order for layered navigation'))
                 ->_fieldDependence('exclude_order', 'is_active', '1')
                 ->_fieldDependence('include_order', 'is_active', '1')
+                ->_fieldDependence('default_sort_order', 'is_active', '1')
             ->_setUpFieldset('category_filter', $this->__('Category Filter Options'))
                 ->_addField('is_active', 'select', $this->__('Is Active'), array(
                         'option_model' => 'ecomdev_sphinx/source_yesno'

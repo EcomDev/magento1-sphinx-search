@@ -41,6 +41,12 @@ class EcomDev_Sphinx_Shell extends Mage_Shell_Abstract
             'output' => 'o',
             'header' => 't'
         ),
+        'export:cached:product' => array(
+            'store' => 's',
+            'visibility' => 'v',
+            'output' => 'o',
+            'header' => 't'
+        ),
         'export:category' => array(
             'store' => 's',
             'visibility' => 'v',
@@ -56,8 +62,9 @@ class EcomDev_Sphinx_Shell extends Mage_Shell_Abstract
         ),
         'export:keyword:product' => array(
             'store' => 's',
-            'format' => 'f',
-            'output' => 'o'
+            'output' => 'o',
+            'fields' => 'f',
+            'header' => 't'
         ),
         'console' => array(),
         'notify:category' => array(),
@@ -68,6 +75,7 @@ class EcomDev_Sphinx_Shell extends Mage_Shell_Abstract
         'config:daemon' => array(
             'output' => 'o'
         ),
+        'create:product:cache' => array(),
         'keyword:dump' => array(
             'store' => 's',
             'output' => 'o'
@@ -103,6 +111,14 @@ Defined <action>s:
     -f --format         Format of the output, allowed values: csv, tsv, xml  [required]
     -o --output         Output filename, by default outputs to STDOUT
     -t --header         Output header of CSV or TSV file
+    
+   export:cached:product    Exports cached product index
+
+    -s --store          Store identifier for index                           [required]
+    -v --visibility     Visibility, possible values: category, search        [required]
+    -o --output         Output filename, by default outputs to STDOUT
+    -t --header         Output header of CSV file
+
 
   export:category   Exports category index
 
@@ -121,7 +137,7 @@ Defined <action>s:
   export:keyword:product    Export keyword product index base
 
     -s --store          Store identifier for index                           [required]
-    -f --format         Format of the output, allowed values: csv, tsv, xml  [required]
+    --fields            Comma separated list of fields to use            
     -o --output         Output file, by default outputs to STDOUT
 
   notify:category   Notifies changes in category entities to indexer
@@ -131,6 +147,8 @@ Defined <action>s:
   config:index      Generates index configuration
 
   config:daemon     Generates daemon configuration
+  
+  create:product:cache Creates product data cache for indexation
 
   index:all         Indexes all sphinx data
 
@@ -293,6 +311,12 @@ USAGE;
         return Mage::getSingleton('ecomdev_sphinx/sphinx_config');
     }
 
+    /** @return EcomDev_Sphinx_Model_Index_Cache */
+    private function getIndexCache()
+    {
+        return Mage::getSingleton('ecomdev_sphinx/index_cache');
+    }
+
     /**
      * Runs mysql console for sphinx daemon
      *
@@ -364,30 +388,28 @@ USAGE;
     protected function runExportKeywordProduct()
     {
         $this->validateArgs([
-            'store' => 'Store argument is missing',
-            'format' => 'Format argument is missing'
+            'store' => 'Store argument is missing'
         ]);
 
-        $output = $this->getOutput(false);
-
-        $store = Mage::app()->getStore($this->getArg('store'))->getId();
-
-        $reader = $this->getService()->getReader('keyword_product');
-        $scope = $this->getService()->getProductScope(
-            $store,
-            [Visibility::VISIBILITY_BOTH, Visibility::VISIBILITY_IN_SEARCH],
-            null,
-            'keyword_product'
+        $visibility = [Visibility::VISIBILITY_BOTH, Visibility::VISIBILITY_IN_SEARCH];
+        $fields = array_filter(
+            array_map('trim', explode(',', $this->getArg('fields', '')))
         );
 
-        $writer = $this->getService()->getWriter($this->getArg('format'), $output);
-        if ($writer instanceof EcomDev_Sphinx_Contract_Writer_HeaderAwareInterface && $this->getArg('header')) {
-            $writer->setOutputHeaders(true);
+        $output = $this->getOutput(false);
+        $includeHeaders = (bool)$this->getArg('header');
+        $storeId = Mage::app()->getStore($this->getArg('store'))->getId();
+
+        if ($fields) {
+            $this->getIndexCache()->exportProductsWithColumns($storeId, $visibility, $output, $fields, $includeHeaders);
+        } else {
+            $this->getIndexCache()->exportProducts($storeId, $visibility, $output, $includeHeaders);
         }
-        $writer->process($reader, $scope);
     }
 
-    protected function runExportProduct()
+
+
+    public function runExportProduct()
     {
         $this->validateArgs([
             'store' => 'Store argument is missing',
@@ -422,10 +444,38 @@ USAGE;
 
         $scope = $this->getService()->getProductScope($store, $visibility, $updatedAt);
         $writer = $this->getService()->getWriter($this->getArg('format'), $output);
-        if ($writer instanceof EcomDev_Sphinx_Contract_Writer_HeaderAwareInterface && $this->getArg('header')) {
-            $writer->setOutputHeaders(true);
-        }
+        $this->applyHeaderOutput($writer);
         $writer->process($reader, $scope);
+    }
+
+    public function runExportCachedProduct()
+    {
+        $this->validateArgs([
+            'store' => 'Store argument is missing',
+            'visibility' => 'Visibility argument is missing'
+        ]);
+
+        $visibilityToCode = [
+            'catalog' => [Visibility::VISIBILITY_BOTH, Visibility::VISIBILITY_IN_CATALOG],
+            'search' => [Visibility::VISIBILITY_BOTH, Visibility::VISIBILITY_IN_SEARCH]
+        ];
+
+        if (!isset($visibilityToCode[$this->getArg('visibility')])) {
+            throw new InvalidArgumentException('Unknown visibility type');
+        }
+
+        $visibility = $visibilityToCode[$this->getArg('visibility')];
+
+        $output = $this->getOutput(false);
+        $includeHeaders = (bool)$this->getArg('header');
+        $storeId = Mage::app()->getStore($this->getArg('store'))->getId();
+
+        $this->getIndexCache()->exportProducts($storeId, $visibility, $output, $includeHeaders);
+    }
+
+    public function runCreateProductCache()
+    {
+        $this->getIndexCache()->createProductCache();
     }
 
     /**
@@ -614,6 +664,19 @@ USAGE;
             }
         }
     }
+
+    /**
+     * @param $writer
+     *
+     */
+    private function applyHeaderOutput($writer)
+    {
+        if ($writer instanceof EcomDev_Sphinx_Contract_Writer_HeaderAwareInterface && $this->getArg('header')) {
+            $writer->setOutputHeaders(true);
+        }
+    }
+
+
 }
 
 $shell = new EcomDev_Sphinx_Shell();

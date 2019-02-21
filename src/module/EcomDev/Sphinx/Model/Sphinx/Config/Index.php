@@ -102,7 +102,7 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
             );
 
             $config['sources'][sprintf('product_%s : product_base', $storeId)] = $this->getCommandSource(
-                'product', $baseType, $storeId, ['--visibility', 'catalog']
+                'cached:product', $baseType, $storeId, ['--visibility', 'catalog']
             );
 
             $config['sources'][sprintf('product_delta_%s : product_delta_base', $storeId)] = $this->getCommandSource(
@@ -110,7 +110,7 @@ class EcomDev_Sphinx_Model_Sphinx_Config_Index
             );
 
             $config['sources'][sprintf('product_search_%s : product_base', $storeId)] = $this->getCommandSource(
-                'product', $baseType, $storeId, ['--visibility', 'search']
+                'cached:product', $baseType, $storeId, ['--visibility', 'search']
             );
 
             $config['sources'][sprintf('product_search_delta_%s : product_delta_base', $storeId)] = $this->getCommandSource(
