@@ -2,6 +2,7 @@
 
 abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractResource
     extends Mage_Core_Model_Resource_Db_Abstract
+    implements EcomDev_Sphinx_Model_Resource_Index_Reader_CleanUpInterface
 {
     /**
      * Created memory tables
@@ -168,6 +169,7 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractResource
         return $this->memoryTables[$tableName];
     }
 
+
     /**
      * Fills memory table with data
      *
@@ -220,8 +222,15 @@ abstract class EcomDev_Sphinx_Model_Resource_Index_Reader_AbstractResource
      */
     public function __destruct()
     {
+        $this->cleanUp();
+    }
+
+    public function cleanUp()
+    {
         foreach ($this->memoryTables as $tableName) {
             $this->_getReadAdapter()->dropTable($tableName);
         }
+
+        $this->memoryTables = [];
     }
 }

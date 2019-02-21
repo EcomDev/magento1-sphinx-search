@@ -237,6 +237,7 @@ class EcomDev_Sphinx_Model_Config
         }
 
         foreach (Mage::getModel('ecomdev_sphinx/sort')->getCollection()
+                     ->setOrder('position', 'ASC')
                      ->getItems() as $sort) {
             $this->_sortOrders[$sort->getCode()] = $sort;
         }

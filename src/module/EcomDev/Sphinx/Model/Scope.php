@@ -237,8 +237,19 @@ class EcomDev_Sphinx_Model_Scope
 
         }
 
-        
         return $this->_sortOptions;
+    }
+
+    public function getDefaultSortOrder()
+    {
+        $sortOrders = $this->getSortOrders();
+
+        if ($this->getConfigurationValue('sort_order/is_active')
+            && $this->getConfigurationValue('default_sort_order')) {
+            return $this->getConfigurationValue('default_sort_order');
+        }
+
+        return key($sortOrders);
     }
 
     /**
@@ -518,7 +529,7 @@ class EcomDev_Sphinx_Model_Scope
         if ($currentOrder && isset($sortOptions[$currentOrder])) {
             $this->setCurrentOrder($currentOrder);
         } else {
-            $this->setCurrentOrder(current(array_keys($sortOptions)));
+            $this->setCurrentOrder($this->getDefaultSortOrder());
         }
 
         Varien_Profiler::stop(__METHOD__ . '::getSortOrders');
