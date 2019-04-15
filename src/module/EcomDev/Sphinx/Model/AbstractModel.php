@@ -144,10 +144,10 @@ abstract class EcomDev_Sphinx_Model_AbstractModel
     {
         $this->_addValueValidation(
             $field, 
-            $this->__('Field "%s" requires a value', $label), 
+            $this->__('Field "%s" requires a value', $label),
             function ($value) use ($allowNull) { 
-                return ($allowNull && $value === null) || trim((string)$value) !== ''; 
-            }, 
+                return ($allowNull && $value === null) || !is_array($value) && trim((string)$value) !== '' || $value;
+            },
             $mode
         );
         
